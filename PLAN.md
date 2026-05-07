@@ -1,6 +1,10 @@
-# MSU Policies MCP Server — Plan (v2)
+# MSU Policies MCP Server — Plan (v4)
 
-> **What changed from v1:** scope cut from 8 tools to 3, eval set is now a v1 prerequisite, hardcoded Drupal taxonomy IDs removed, MCP gotchas (stderr logging, zod→JSON Schema, `isError`) made explicit, success metrics + kill criteria added, license picked (MIT), CI specified, `dist/` drift defended with a CI check.
+> **What changed from v3:** no privileged persona — the audience is the **MSU community broadly** (students, staff, faculty). The accuracy north star is **99.99%**, decomposed into measurable sub-metrics (retrieval correctness, answer correctness, refusal correctness) because no single eval can measure 99.99% directly. Tool descriptions now enforce "quote verbatim when stakes are high, refuse if uncertain" — the only realistic path to that bar with an LLM in the loop.
+
+> **What changed from v2:** v1 ships three install paths (Claude Code plugin, plain MCP via `npx`, and copy-pasteable claude.ai MCP-connector instructions), plus a "Claude Project starter" zip for free claude.ai users with no install. Grounded-answer target raised from 85% → 99.99% (north star), kill criterion from 70% → 95%, eval set grown 30 → 50 questions, **hybrid retrieval (BM25 + pre-computed embeddings) is now v1**, not deferred.
+
+> **What changed from v1:** scope cut from 8 tools to 5, eval set is now a v1 prerequisite, hardcoded Drupal taxonomy IDs removed, MCP gotchas (stderr logging, zod→JSON Schema, `isError`) made explicit, success metrics + kill criteria added, license picked (MIT), CI specified, `dist/` drift defended with a CI check.
 
 ## Context
 
@@ -19,31 +23,59 @@ The user uploaded a saved copy of `/current` so we have ground truth on the mark
 - Policy numbers are **NN.NN** (regex `^\d{2}\.\d{2}$`), 4 digits total. Slug = number with dot stripped.
 - "Date Authored" ≠ "Last Revised". Treat the index `<time datetime>` as **first-authored / table sort date** only. True revision dates live in the PDF metadata block; do not surface "recent changes" semantics off the index column alone.
 
-## Users & Problem (be honest about the segments)
+## Users & Problem
 
-The headline JTBD — "*a student asks Claude 'what are the rules on amnesty?' at 11pm and gets a grounded answer*" — collapses three different personas with very different distribution fits:
+**Audience: the MSU community broadly** — students, staff, faculty, RAs, advisors, conduct officers, anyone who asks a question that has an answer in an MSU Operating Policy. The JTBD is unchanged: *"ask Claude a policy question, get an answer grounded in official MSU policy text."* No privileged persona; we don't optimize the build around any one segment.
 
-| Persona | Volume / urgency | MCP install fit | Best surface |
-|---|---|---|---|
-| Undergrad in a jam at 11pm | Spiky, high urgency | Near zero — won't edit JSON config | **Hosted web demo** (post-v1) |
-| Staff / RA / advisor answering the same question repeatedly | Steady, business hours | Moderate — Claude Desktop plausible | **MCP server** (this v1) |
-| Faculty / dept admin (HR 91.xx, travel, IP, grants) | Low volume, citation-grade | High — already power users | **MCP server** (this v1) |
+What we *do* optimize for is **friction-matched install paths** so anyone in that audience can reach the same MCP server through whatever client they already use:
 
-**v1 explicitly targets the staff/faculty personas**, where MCP install friction is acceptable. The 11pm-undergrad surface is deferred to v0.2 (see "Out of scope for v1" below) and will likely be a thin hosted web app sharing the same scraper/search modules.
+| Surface | Who it serves | Friction |
+|---|---|---|
+| **Claude Code plugin** (`/plugin install msstate-policies@msstate-mcp`) | Anyone using Claude Code | 2 commands, no JSON |
+| **Plain MCP via `npx`** for Claude Desktop / Cursor / Windsurf / Zed | Power users on any MCP-capable client | Paste a JSON snippet |
+| **claude.ai MCP-connector** (documented copy-paste path) | Paid claude.ai users | UI install, no JSON edit |
+| **Claude Project starter zip** (curated PDF bundle + system prompt template) | Free claude.ai users, anyone who wants no install | Drag-and-drop into a Project |
 
-Hidden segments worth noting but not building for: Title IX / conduct officers, internal auditors, accreditors (SACSCOC reaffirmation cycles), MSU's own legal/comms team, and other SEC universities who'd want the same shape of tool for their policy site (the actual TAM story).
+The "Claude Project starter" path is a 1-script artifact (`scripts/build-project-bundle.mjs`): downloads ~30 high-traffic policies (amnesty, withdrawal, FERPA, parking, dorms, conduct, grade appeals, Title IX, financial aid, leave-of-absence, sick leave, travel reimbursement, IT acceptable use, IP, conflict of interest, etc.) and zips them with a system-prompt template that says "answer only from these PDFs, quote verbatim for normative claims, cite the OP number, refuse if not covered." Released as a GitHub release asset. Not as good as the live MCP — partial corpus, no daily refresh — but works for users who can't or won't install MCP.
+
+A **hosted web demo** stays on the v0.2 list (see "Out of scope for v1"). We ship v1 first, watch the metrics, then justify hosting cost with eval + usage data.
+
+Adjacent audiences noted but not built for: accreditors (SACSCOC reaffirmation cycles), MSU's own legal/comms team, other SEC universities who'd want the same shape of tool for their policy site (the actual TAM story).
 
 ## Success metrics & kill criteria
 
-PLAN.md v1 had none. v1 ships with these instrumented from day one (the eval set is the only one that needs new infra; the rest are log counters):
+### Accuracy: 99.99% as the north star, decomposed into measurable sub-metrics
 
-1. **Grounded-answer rate** (the only metric that says the product *works*): on a hand-built eval set of 30 representative questions, % where the model's answer cites a correct OP number AND that OP is the canonical source. **Target ≥ 85%.** Eval lives in `msstate-policies/eval/questions.jsonl` and is run by `npm run eval` against a local Claude session via the MCP inspector or scripted JSON-RPC.
-2. **Activation:** % of installs that issue ≥1 successful `tools/call` within 24h. Target ≥ 60%.
-3. **Time-to-answer:** p50 wall-clock from `chain_find_relevant_policies` invocation → return. Target < 6s warm, < 12s cold.
-4. **Stale-content incidents:** count of cases where cache served text from a revision superseded by a newer one in the live index. Target = 0; alert (log-level `error`) if > 0.
-5. **Weekly active questions:** opt-in anonymous counter (off by default) or, failing that, npm download trend + GitHub stars/issues as proxy.
+A wrong answer about amnesty, Title IX, FERPA, or grade appeals isn't a search miss — it can affect a real decision. The aspiration is **99.99% answer correctness** ("never wrong"). Honestly: no eval of any practical size measures 99.99% directly — a 50-question eval can only confirm "0 errors observed at this sample size." So we decompose accuracy into three sub-metrics that ARE measurable, and we hold each to a high bar:
 
-**Kill criteria** (explicit so the project doesn't zombie-run): if 60 days post-launch we have < 25 weekly install-and-use signals OR eval grounded-answer rate < 70%, sunset the project or pivot to the hosted web surface.
+| Metric | What it measures | Target | How |
+|---|---|---|---|
+| **Retrieval correctness** | For each eval question with a known canonical OP, did the chain tool's top-k include it? | **≥ 99%** on the 50-question eval | Deterministic check — does `chain_find_relevant_policies(question).map(p => p.number)` contain `expected_op_numbers[0]`? Independent of the LLM. |
+| **Answer correctness** | Given correct retrieval, is the model's prose answer consistent with the cited policy text? No hallucinated "except"/"unless" clauses, no fabricated procedures, no wrong dates. | **0 errors observed** on the 50-question eval (≈ 99% lower-bound at this sample size) | LLM-judge: a separate Claude API call grades each answer against the retrieved policy text. Plus 100% manual review of all eval runs before each release. |
+| **Refusal correctness** | When no MSU policy applies (negative cases), did the model refuse plainly without fabricating a citation? | **100%** on the 12 negative cases in the eval | Deterministic — answer must contain a refusal phrase ("no MSU policy directly covers", "the available policies do not address", etc.) and must NOT contain a fabricated OP number. |
+
+The 99.99% bar lives in three places in the design, not just in the eval:
+1. **Retrieval is hybrid (BM25 + pre-computed embeddings)** so conceptual queries don't get dropped on the floor.
+2. **`chain_find_relevant_policies` returns full policy text**, and its tool description aggressively pushes the LLM to **quote verbatim** for normative claims and **refuse if uncertain** rather than paraphrase.
+3. **`health_check` exposes parse-failure state** so the LLM can apologize coherently rather than confidently saying "MSU has no policy on amnesty" when the scraper is just broken.
+
+We do not claim 99.99% to users. The README quotes the eval-measured numbers honestly.
+
+### Other v1 metrics
+
+1. **Activation:** % of installs that issue ≥1 successful `tools/call` within 24h. Target ≥ 60%.
+2. **Time-to-answer:** p50 wall-clock from `chain_find_relevant_policies` invocation → return. Target < 6s warm, < 12s cold.
+3. **Stale-content incidents:** count of cases where cache served text from a revision superseded by a newer one in the live index. Target = 0; log-level `error` if > 0.
+4. **Weekly active questions:** opt-in anonymous counter (off by default), or npm download trend + Claude Project zip download count + GitHub stars/issues as proxy.
+
+### Kill criteria
+
+If 60 days post-launch:
+- Retrieval correctness < 95% on the eval, OR
+- Any answer-correctness errors persist across two consecutive eval runs that aren't a stale-content fluke, OR
+- < 25 weekly install-and-use signals,
+
+then sunset the project or pivot to the hosted web surface.
 
 ## Distribution — dual mode (plugin + plain MCP)
 
@@ -61,11 +93,12 @@ To make the plugin path work without `npm install` on the user's machine, the bu
 
 ### Out of scope for v1 (deliberate)
 
-- **Hosted web demo** for the undergrad JTBD.
-- **Embeddings-based search** (Voyage / `text-embedding-3-small`). Token+BM25 is fine for 218 docs.
+- **Hosted web demo** for the undergrad JTBD. Lowest-friction surface for free users; deferred until eval + install signals justify hosting cost. The Claude Project starter zip is the v1 stopgap.
 - **Historical / superseded policies** beyond what the PDF metadata block exposes.
 - **Telemetry server** beyond opt-in local counters.
 - **5 of the original 8 tools** (`find_by_topic`, `get_recent_changes`, `get_policy_history`, `list_by_volume`, `list_by_section`) — see "Tools" section.
+
+> Embeddings-based retrieval was on the v2 deferred list. It's now **in v1** (see "Search" below) because BM25 alone won't hit the 95% bar on conceptual queries.
 
 ## Stack & Layout
 
@@ -100,8 +133,8 @@ msstate-mcp/                              # repo root = Claude Code marketplace
     ├── build.mjs                         # esbuild bundler + version sync + banner
     ├── README.md                         # plugin-local readme
     ├── eval/
-    │   ├── questions.jsonl               # 30 grounded-answer eval questions
-    │   └── run-eval.mjs                  # MCP-driven scoring harness
+    │   ├── questions.jsonl               # 50 grounded-answer eval questions
+    │   └── run-eval.mjs                  # MCP-driven scoring harness (3 sub-metrics)
     ├── tests/
     │   ├── fixtures/
     │   │   ├── current.html              # saved /current (ground truth)
@@ -137,7 +170,7 @@ Tool descriptions are the single highest-leverage piece of prompt engineering in
 |---|---|---|
 | `search_policies` | `{ query: string, limit?: number = 10, include_body?: boolean = false }` | Token-match `query` against title + number; if `include_body`, also against full PDF text. Returns ranked list of `{ number, title, url, snippet, score }`. Description: *"Search Mississippi State University Operating Policies by keyword. Returns policy numbers + titles + URLs + match snippets, ranked by relevance. Use this when the user asks about a topic and you need to find which policies apply. For one-shot natural-language questions ('what's the rule on X?'), prefer `chain_find_relevant_policies` instead, which fetches full bodies in one call."* |
 | `get_policy` | `{ number?: string, url?: string }` | Resolve via index → `pdfUrl`, fetch PDF, extract text + metadata. Returns full `PolicyDocument` including `retrievedAt` ISO timestamp and the canonical landing URL. Description: *"Fetch the full text of one MSU Operating Policy by number (e.g. '91.100') or URL. Returns policy text from the official PDF, plus effective/revised dates and responsible office. Use after `search_policies` to read a specific policy in full."* |
-| **`chain_find_relevant_policies`** *(chain)* | `{ question: string, k?: number = 2 }` | Runs `search_policies` (full-text), picks top-`k` (**default 2 to keep response under ~16k tokens**), fetches each full body, returns array of `PolicyDocument`. Description: *"One-call workflow for natural-language MSU policy questions like 'what are the rules on amnesty?' Searches and returns the full text of the top-k most relevant policies. Answer the user's question using ONLY the returned text and cite the policy number + URL. If none of the returned policies actually answer the question, say so plainly — do not extrapolate."* |
+| **`chain_find_relevant_policies`** *(chain)* | `{ question: string, k?: number = 2 }` | Runs hybrid retrieval (BM25 + pre-computed embeddings), picks top-`k` (**default 2 to keep response under ~16k tokens**), fetches each full body, returns array of `PolicyDocument`. Description: *"One-call workflow for natural-language MSU policy questions ('what are the rules on amnesty?', 'what's the policy on withdrawal?'). Returns the full text of the top-k most relevant MSU Operating Policies. RULES for answering: (1) Use ONLY the returned text — do not draw on outside knowledge. (2) For any normative claim ('the policy says X', 'you must Y', deadlines, eligibility criteria, dollar amounts, exceptions), QUOTE VERBATIM from the policy text in quotation marks and cite the OP number + URL. Do not paraphrase load-bearing language. (3) If the returned policies don't clearly answer the question, say so plainly and recommend contacting the responsible office; do NOT extrapolate. (4) Always include the `retrievedAt` timestamp and the canonical landing URL so the user can verify."* |
 | `cite_policy` | `{ number: string, style?: "short" \| "full" }` | Returns formatted citation, e.g. *"Mississippi State University Operating Policy 91.100, 'Title', effective YYYY-MM-DD. Retrieved from {url} on {today}."* |
 | `health_check` | `{}` | Returns `{ index_row_count, last_index_fetch, last_index_error, volumes_discovered, sections_discovered, cache_hit_rate, version, git_sha }`. Visible to the LLM so it can apologize coherently when the scraper is broken instead of cheerfully saying "MSU has no policy on amnesty." |
 
@@ -177,12 +210,27 @@ Tools never throw across the MCP boundary. On failure, return `{ isError: true, 
 6. Inherit `title`, `firstAuthoredOrSorted`, `landingUrl` from index entry. Add `retrievedAt: new Date().toISOString()`.
 7. Cache 24 h per slug.
 
-### Search (`search.score(query, entry)`)
+### Search — hybrid retrieval (BM25 + embeddings)
+
+The 99.99% accuracy bar requires that retrieval almost never misses the canonical policy. BM25 alone gets the literal hits; embeddings catch conceptual ones ("can my RA write me up for a candle" → fire safety / dorm policy). v1 ships both, fused at query time.
+
+**Lexical (BM25-lite):**
 - Lowercase + NFKC-normalize both query and corpus before tokenization.
 - Token split on `/[\s\-_/.,;:()\[\]{}]+/`.
-- Score: BM25-lite (term frequency × inverse document frequency), with **field weights** title × 3, number × 2, body × 1.
-- Stem-light: lowercase only for v1; explicit "no stemmer" comment so the next person doesn't re-litigate it.
-- Embeddings explicitly out of scope for v1; revisit if eval shows < 85% grounded-answer rate.
+- Score: BM25 (term frequency × inverse document frequency) with **field weights** title × 3, number × 2, body × 1.
+- No stemmer for v1 (explicit "no stemmer" comment in `search.ts` so the next person doesn't re-litigate it).
+
+**Semantic (embeddings):**
+- **Pre-computed at build time**, NOT at runtime. `scripts/build-embeddings.mjs` chunks each policy (~1k-token chunks with 200-token overlap), embeds with `text-embedding-3-small` (cost: ~$0.02 for the whole 218-policy corpus), and writes `dist/embeddings.json` (≈ 5 MB). Committed alongside `dist/index.js`.
+- Runtime: load `embeddings.json` once at startup. For a query, embed it via the same model (this is the one runtime API call — see "API key handling" below) and rank all chunks by cosine similarity.
+- **API key handling:** if no `OPENAI_API_KEY` is set, semantic retrieval is silently skipped and we fall back to BM25-only with a stderr warning. The Claude Code plugin path documents this; the npm path takes the env var. Tools never throw on missing key — they degrade.
+- Alternative considered: a tiny ONNX-runtime model bundled in `dist/` (e.g., `all-MiniLM-L6-v2`) so no API key is needed. **Deferred to v0.2** — adds 25 MB to the bundle and complicates esbuild config. Worth doing once we know the v1 surface lands.
+
+**Fusion (Reciprocal Rank Fusion):**
+- Take top-20 from BM25 + top-20 from embeddings.
+- For each candidate, score = `1/(60 + bm25_rank) + 1/(60 + embed_rank)`.
+- Return top-`k` by fused score.
+- Eval-driven: if RRF underperforms either method on its own, fall back to whichever wins on the eval set. The eval gates the choice.
 
 ## MCP Wiring (`src/index.ts`)
 - Create `Server` from `@modelcontextprotocol/sdk/server/index.js`.
@@ -201,18 +249,26 @@ A 1-hour task that has to happen before we trust `pdf-parse`:
 4. **Pass criteria:** ≥ 95% of PDFs yield ≥ 500 extracted chars per page on average. < 5% with `parse_error`. If we fail this, switch to `pdfjs-dist` (heavier, but maintained).
 5. Output is committed under `eval/audit-{date}.csv` so future regressions are visible.
 
-## Eval set (also a v1 prerequisite)
+## Eval set (v1 prerequisite)
 
-`msstate-policies/eval/questions.jsonl` — 30 questions written by hand from the policy index, covering:
-- 6 student-life questions (amnesty, withdrawal, parking, dorm pets, smoking, dining contracts)
-- 6 academic questions (grade appeals, FERPA, academic integrity, course drops, transcripts, leave of absence)
-- 6 HR questions (sick leave, travel reimbursement, conflict of interest, IT acceptable use, harassment reporting, telework)
-- 6 conceptual questions where keyword overlap is weak ("can my RA write me up for a candle", "rules around firearms in dorms", etc.)
-- 6 negative cases (questions that have no MSU policy answer; correct response is "no MSU policy covers this directly")
+`msstate-policies/eval/questions.jsonl` — **50** questions written by hand from the policy index, covering:
+- 10 student-life questions (amnesty, withdrawal, parking, dorm pets, smoking, dining contracts, residence-hall visitation, candles, financial aid appeals, missed-class)
+- 10 academic questions (grade appeals, FERPA, academic integrity, course drops, transcripts, leave of absence, incomplete grades, repeat-course policy, dean's list, Title IX in classroom)
+- 10 HR / faculty / staff questions (sick leave, travel reimbursement, conflict of interest, IT acceptable use, harassment reporting, telework, IP ownership, outside employment, parental leave, grievance procedure)
+- 8 conceptual questions where keyword overlap is weak — these stress hybrid retrieval ("can my RA write me up for a candle", "rules around firearms in dorms", "what happens if I'm caught vaping in my room", etc.)
+- 12 negative cases (questions that have no MSU OP answer — e.g., "what's MSU's policy on alien encounters?", "what's the dress code for football games?"; correct response is a plain refusal with no fabricated OP cite)
 
-Format per line: `{ "q": "...", "expected_op_numbers": ["91.100"], "must_cite": true, "negative": false, "notes": "..." }`.
+Format per line:
+```json
+{ "q": "...", "expected_op_numbers": ["91.100"], "must_cite": true, "negative": false, "must_quote_verbatim": true, "notes": "..." }
+```
 
-`scripts/run-eval.mjs` drives the MCP server via JSON-RPC, calls `chain_find_relevant_policies`, and scores: did the response cite at least one of the expected OP numbers? For negatives, did it correctly say no policy applies? Output: `eval-{date}.json` with per-question pass/fail + aggregate grounded-answer rate.
+`scripts/run-eval.mjs` drives the MCP server via JSON-RPC and scores three sub-metrics independently (per the metrics table above):
+1. **Retrieval correctness** — deterministic check: was `expected_op_numbers[0]` in `chain_find_relevant_policies(q).results`?
+2. **Answer correctness** — Claude API judge call: graded against the retrieved policy text. Prompt enforces "flag any normative claim not supported by quoted text."
+3. **Refusal correctness** — for `negative: true` questions, response must contain a refusal phrase AND must NOT contain a fabricated OP number pattern (`/^\d{2}\.\d{2}$/`).
+
+Output: `eval-{date}.json` with per-question pass/fail per sub-metric + aggregate scores. CI publishes the latest eval as a release-asset summary.
 
 ## Config Examples (in README + `examples/`)
 
@@ -296,7 +352,10 @@ Eval (`npm run eval`) is not on every CI run because it makes live MSU requests;
 - `src/log.ts` — stderr-only structured logger.
 - `src/http.ts` — fetch wrapper with UA, retry, WAF detection.
 - `src/scraper.ts` — **isolate all selectors/regexes at the top** so it's a one-file fix when MSU changes layout. Runtime-discovered taxonomy maps only.
-- `src/search.ts` — BM25-lite + NFKC + lowercase, no stemmer for v1.
+- `src/search.ts` — hybrid retrieval (BM25 + embeddings via cosine similarity), Reciprocal Rank Fusion. Loads `dist/embeddings.json` at startup; degrades to BM25-only if no `OPENAI_API_KEY`.
+- `src/embed.ts` — runtime query-embedding via `text-embedding-3-small`, with graceful fallback when no API key is present.
+- `scripts/build-embeddings.mjs` — chunk + embed all 218 policies at build time, write `dist/embeddings.json`. Re-runs on every release.
+- `scripts/build-project-bundle.mjs` — builds the "Claude Project starter" zip (curated PDFs + system prompt template) for the GitHub release.
 - `src/tools/*.ts` — one per tool, each exports `{ name, description, inputSchema (zod), handler }`. JSON Schema derived via `zod-to-json-schema`.
 - `src/index.ts` — MCP wiring, error wrapping, deterministic `tools/list`.
 - `eval/questions.jsonl`, `scripts/run-eval.mjs`.
@@ -324,7 +383,8 @@ In `msstate-policies/`:
 - **Drupal taxonomy drift.** Hardcoded IDs are forbidden; runtime label↔id map only.
 - **Committed `dist/`.** CI's `git diff --exit-code dist/` catches drift. Bundle banner self-identifies version + git SHA so you can tell at a glance whether a user is on stale code.
 - **Bundle size.** cheerio + zod + MCP SDK + pdf-parse ≈ 2–3 MB unminified. Acceptable; documented.
-- **Search quality.** BM25-lite + token field-weights is fine for 218 docs. Eval set tells us when to escalate to embeddings.
+- **Search quality.** Hybrid retrieval (BM25 + pre-computed embeddings, RRF-fused) is in v1. Without an `OPENAI_API_KEY` the runtime gracefully degrades to BM25-only — eval will tell us how much that hurts. v0.2 likely swaps the runtime embedding call for a bundled ONNX model so we have zero API dependencies.
+- **LLM hallucination above retrieval.** Even with perfect retrieval, the LLM can paraphrase incorrectly. The `chain_find_relevant_policies` tool description aggressively pushes verbatim quoting + refusal-on-uncertainty as the only path toward 99.99% answer correctness. Eval's "answer correctness" sub-metric is the gate.
 - **No undergrad surface in v1.** The 11pm JTBD genuinely needs a hosted web demo; explicit out-of-scope until eval data justifies the lift.
 - **MSU brand / ToS.** "Unofficial" disclaimer in README + every tool response includes `landingUrl` for verification. No `robots.txt` violations: GET-only, concurrency 4, normal UA, honors `Retry-After`.
 - **Windows path correctness.** `env-paths` instead of `~/.cache/`.
