@@ -1,0 +1,372 @@
+{
+  "summary": {
+    "total": 10,
+    "aborted": false,
+    "k": 5,
+    "judge": {
+      "used": true,
+      "model": "claude-sonnet-4-6"
+    },
+    "retrieval": {
+      "scored": 8,
+      "passed": 8
+    },
+    "answer": {
+      "scored": 8,
+      "passed": 8
+    },
+    "refusal": {
+      "scored": 2,
+      "passed": 2
+    },
+    "cost": {
+      "input_tokens": 32989,
+      "output_tokens": 288,
+      "usd": 0.1033
+    }
+  },
+  "results": [
+    {
+      "q": "What is MSU's policy on academic amnesty for undergraduates?",
+      "expected_op_numbers": [
+        "12.17"
+      ],
+      "returned_numbers": [
+        "12.18",
+        "12.17",
+        "30.08",
+        "12.10",
+        "70.04"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "Mississippi State University's policy on academic amnesty for undergraduates is found in AOP 12.17. Here are the key points:\n\n1. **Eligibility**: To be eligible for Academic Amnesty, undergraduates must be pursuing their first baccalaureate degree and have not attended Mississippi State University for at least four consecutive years.\n\n2. **Petition Process**: Students must petition for admission or readmission through their academic dean's office. This petition must specifically identify the four consecutive years of absence they wish to be evaluated.\n\n3. **Academic Record**: If approved, all credits earned during the specified four consecutive years will be eliminated from the student's GPA and cannot be used towards graduation. Additionally, courses with grades of D or F can be specifically eliminated from the GPA calculation.\n\n4. **Transcript Notation**: The student's transcript will show that the amnesty has been applied, with a new GPA noted. This is recorded upon successful completion of at least 12 credit hours at MSU with a GPA of 2.00 or better.\n\n5. **Limitations**: Academic amnesty can only be applied once, and MSU advises that these provisions may not be recognized by other institutions.\n\nFor further details, you can refer to the full policy here: [AOP 12.17](https://www.policies.msstate.edu/policy/1217).\n\nRetrieved on: 2026-05-08.",
+      "assessment": {
+        "cited_op_numbers": [
+          "12.17"
+        ],
+        "refused": false,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 16101,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 331,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 16432
+      },
+      "notes": "From /policy/1217 — Undergraduate Academic Fresh Start or Academic Amnesty"
+    },
+    {
+      "q": "What is MSU's Code of Student Conduct?",
+      "expected_op_numbers": [
+        "91.100"
+      ],
+      "returned_numbers": [
+        "91.100",
+        "12.07",
+        "60.401",
+        "62.08",
+        "31.01"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "Mississippi State University's Code of Student Conduct is detailed in [OP 91.100](https://www.policies.msstate.edu/policy/91100). It aims \"to develop self-reliance and to form desirable and acceptable habits of conduct among students.\" The University expects students to obey the law and its rules, take responsibility for their conduct, and respect the rights and property of others. Violations may result in sanctions, up to expulsion.\n\nThe policy applies to all students on campus, at university facilities, or involved with university activities, and it extends to off-campus conduct that might impact the university community or mission. Some key aspects of misconduct include alcohol use, assault, disorderly conduct, drug use, and violations related to fire safety, fraud, and harassment.\n\nDisciplinary procedures involve hearings which could be administered by the Dean of Students or various conduct boards, with potential sanctions such as expulsion, suspension, probation, and educational requirements. Students can appeal decisions through the Dean of Students.\n\nFor further information, please refer to the [policy document](https://www.policies.msstate.edu/sites/www.policies.msstate.edu/files/policies/91100.pdf).\n\nRetrieved at: 2026-05-08.",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.100"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 11815,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 287,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 12102
+      },
+      "notes": "From /policy/91100"
+    },
+    {
+      "q": "What governs MSU's parking and traffic rules?",
+      "expected_op_numbers": [
+        "95.501"
+      ],
+      "returned_numbers": [
+        "95.503",
+        "95.501",
+        "95.500",
+        "91.100",
+        "06.05"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "Mississippi State University's parking and traffic rules are governed by two main policies:\n\n1. **Management of Traffic and Parking (OP 95.503)**: This policy outlines the responsibilities for managing traffic and parking. The Mississippi State University Police Department is responsible for enforcing traffic regulations and addressing traffic flow and safety issues. The Division of Finance and Administration manages the repair and maintenance of streets and parking lots, including the installation and maintenance of traffic signs and signals. The Parking and Traffic Regulation Committee considers requests for changes to parking regulations and updates to fines and fees [\"OP 95.503\"](https://www.policies.msstate.edu/policy/95503).\n\n2. **Traffic and Parking Rules and Regulations (OP 95.501)**: This policy establishes the specific rules and procedures for traffic and parking on campus, including definitions, parking permits, zones, fees, and penalties for violations. It specifies procedures for citation appeals and details enforcement mechanisms [\"OP 95.501\"](https://www.policies.msstate.edu/policy/95501).\n\nFor the most current information, you can contact the Mississippi State University Police Department or the Office of Transportation.\n\nRetrieved at: 2026-05-08T14:56:11.855Z",
+      "assessment": {
+        "cited_op_numbers": [
+          "95.503",
+          "95.501"
+        ],
+        "refused": false,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 19614,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 286,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 19900
+      },
+      "notes": "From /policy/95501 — Traffic and Parking Rules and Regulations"
+    },
+    {
+      "q": "What's MSU's policy on study abroad and international travel by students?",
+      "expected_op_numbers": [
+        "11.06"
+      ],
+      "returned_numbers": [
+        "11.06",
+        "91.175",
+        "30.01",
+        "62.01",
+        "35.05"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "Mississippi State University has specific policies regarding study abroad and international travel by students, detailed primarily in AOP 11.06. Here are the key points:\n\n1. **Eligibility and Credit Transfer:** Students who meet the requirements set by the Office of Study Abroad maintain their status as MSU students during their international programs and may receive credits applicable to their degree, as per \"AOP 12.11 Undergraduate Student Requirements for Graduation.\" \n\n2. **Requirements:** Failure to fulfill these requirements means the students will not enjoy MSU student privileges and their credits may not be applicable towards their degree.\n\n3. **Risk Management and Procedures:** The Provost is responsible for assigning the office that will handle risk management standards, registration procedures, and applicable fees for international programs.\n\n4. **Review Process:** The policy is reviewed every four years or as necessary by the Associate Vice President for International Programs/Executive Director of the International Institute and the Executive Vice Provost.\n\nFor detailed information, you can refer to the policy directly: [AOP 11.06](https://www.policies.msstate.edu/policy/1106).\n\nRetrieved at: 2026-05-08T14:56:11.855Z.",
+      "assessment": {
+        "cited_op_numbers": [
+          "11.06",
+          "12.11"
+        ],
+        "refused": false,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 4441,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 285,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 4726
+      },
+      "notes": "From /policy/1106"
+    },
+    {
+      "q": "How does the grade appeal process work?",
+      "expected_op_numbers": [
+        "13.14"
+      ],
+      "returned_numbers": [
+        "13.14",
+        "30.08",
+        "12.20",
+        "12.26",
+        "12.09"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "The grade appeal process at Mississippi State University is detailed in OP 13.14: \"Grade Appeal & Academic Review Board.\"\n\n1. **Initial Steps**: If a student believes they received an incorrect grade, they must first discuss the issue in writing with the instructor within 15 business days of the next regular semester (Fall or Spring). The instructor has 5 business days to respond.\n\n2. **Formal Appeal**: If unresolved, the student can file a formal appeal using a grade appeal form within 5 business days. This form and instructions are available at any academic dean's office or the Registrar's Office.\n\n3. **Department and Dean Review**: The department head reviews the appeal and issues a decision within 5 business days. Either the student or instructor can appeal the department head's decision to the academic dean within 5 business days. The dean's decision can similarly be appealed to the Provost and Executive Vice President.\n\n4. **Academic Review Board**: The Provost may refer the case to the Academic Review Board for a hearing. The Board, composed of faculty members and one student representative, holds a hearing where both the student and instructor can present their cases and question witnesses.\n\n5. **Final Decision**: The Board makes a recommendation within 5 business days of the hearing, which is sent to the Provost for a final decision. The decision is then communicated to the student and instructor within 10 business days.\n\nFor full details and procedures, you can view the policy here: [OP 13.14](https://www.policies.msstate.edu/policy/1314).\n\nRetrieved at: 2026-05-08T14:56:11.855Z\nCanonical URL: [MSU Policies](https://www.policies.msstate.edu/policy/1314)",
+      "assessment": {
+        "cited_op_numbers": [
+          "13.14"
+        ],
+        "refused": false,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 17986,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 406,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 18392
+      },
+      "notes": "From /policy/1314 — Grade Appeal & Academic Review Board"
+    },
+    {
+      "q": "What is MSU's policy on student education records?",
+      "expected_op_numbers": [
+        "30.02"
+      ],
+      "returned_numbers": [
+        "30.02",
+        "06.04",
+        "10.16",
+        "60.109",
+        "12.23"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "Mississippi State University's policy on student education records is outlined in OP 30.02 \"Education Records.\" This policy is based on the Family Educational Rights and Privacy Act of 1974 (FERPA) and ensures student privacy regarding their education records.\n\nKey points include:\n\n- **Student Access**: Students have the right to inspect and review their education records and request amendments to records they believe are inaccurate, misleading, or violate their privacy rights. \n\n- **Annual Notification**: The university provides yearly notifications to students about their rights under this policy, which is published in the University's bulletin.\n\n- **Directory Information**: Includes items like name, address, email, and major. It may be disclosed without consent unless a student requests otherwise.\n\n- **Record Release**: Education records can be released with student consent or under specific circumstances without consent, such as to university officials with legitimate educational interests.\n\nFor more details, you can view the full policy at [this link](https://www.policies.msstate.edu/policy/3002).\n\nRetrieved at: 2026-05-08T14:56:11.855Z",
+      "assessment": {
+        "cited_op_numbers": [
+          "30.02"
+        ],
+        "refused": false,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 10694,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 262,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 10956
+      },
+      "notes": "From /policy/3002 — Education Records (FERPA-related)"
+    },
+    {
+      "q": "What is the distance education policy?",
+      "expected_op_numbers": [
+        "10.16"
+      ],
+      "returned_numbers": [
+        "10.16",
+        "12.23",
+        "01.20",
+        "91.179",
+        "30.06"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "The Distance Education policy at Mississippi State University is outlined in AOP 10.16. Here are the key points:\n\n1. **Purpose**: To establish procedures for developing, implementing, and maintaining distance learning programs, courses, minors, and certificates.\n\n2. **Definition**: Distance education follows the Southern Association of Colleges and Schools Commission on Colleges (SACSCOC) definition.\n\n3. **Programs and Compliance**: Distance education programs must align with MSU’s role and mission, comply with University curricula approval processes, and maintain equivalency in academic rigor and outcomes compared to on-campus programs.\n\n4. **Faculty and Instruction**: Only approved faculty can teach distance courses, maintaining the same credential requirements as for on-campus teaching. Faculty involvement in distance education is part of normal workload assignments.\n\n5. **Student Services**: Distance education students should have access to a range of student services comparable to those provided on-campus.\n\n6. **Technology and Support**: MSU commits to ongoing financial and technical support for distance education programs. Faculty are encouraged to use a central learning management system.\n\nFor the full policy details, refer to [AOP 10.16: Distance Education](https://www.policies.msstate.edu/policy/1016).\n\nRetrieved at: 2026-05-08T14:56:11.855Z.",
+      "assessment": {
+        "cited_op_numbers": [
+          "10.16"
+        ],
+        "refused": false,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 7202,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 311,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 7513
+      },
+      "notes": "From /policy/1016 — Distance Education"
+    },
+    {
+      "q": "What is MSU's discrimination, harassment, and retaliation policy?",
+      "expected_op_numbers": [
+        "03.03"
+      ],
+      "returned_numbers": [
+        "03.03",
+        "03.02",
+        "03.04",
+        "91.122",
+        "12.37"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "Mississippi State University's policy on discrimination, harassment, and retaliation is outlined in Operating Policy 03.03. The university is committed to ensuring its programs are free from unlawful discrimination and harassment based on protected characteristics. The policy prohibits discrimination, harassment, or retaliation, and is applicable to all university employees, students, visitors, and others involved in university activities. It emphasizes that retaliation against individuals who report or participate in investigations of discrimination or harassment is strictly prohibited.\n\nThe policy provides definitions of key terms, outlines the process for reporting incidents, and describes the procedures for complaint resolution. It also stresses the importance of reporting and the availability of supportive measures. \n\nYou can access the full text of the policy [here](https://www.policies.msstate.edu/policy/0303).\n\nFor more detailed guidance or if you have specific concerns, it is recommended to contact the Director of Civil Rights Compliance at titleix@msstate.edu or by phone at 662-325-5839.\n\nRetrieved at 2026-05-08.",
+      "assessment": {
+        "cited_op_numbers": [
+          "03.03"
+        ],
+        "refused": false,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 33916,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 244,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 34160
+      },
+      "notes": "From /policy/0303"
+    },
+    {
+      "q": "What's the weather forecast for Starkville next weekend?",
+      "expected_op_numbers": null,
+      "returned_numbers": [],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "I'm sorry, but I can only provide information about Mississippi State University Operating Policies. For weather forecasts, you might want to check a weather website or app for the most current information.",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 753,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 38,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 791
+      },
+      "notes": "Weather is not in MSU policy scope."
+    },
+    {
+      "q": "What was the score of last night's MSU football game?",
+      "expected_op_numbers": null,
+      "returned_numbers": [],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "I'm sorry, but I can only provide information about Mississippi State University Operating Policies. For sports scores, please check a sports news website or the official MSU Athletics page.",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 755,
+        "input_tokens_details": {
+          "cached_tokens": 0
+        },
+        "output_tokens": 36,
+        "output_tokens_details": {
+          "reasoning_tokens": 0
+        },
+        "total_tokens": 791
+      },
+      "notes": "Game scores are not in MSU OP scope."
+    }
+  ]
+}
