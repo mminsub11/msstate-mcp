@@ -76,7 +76,18 @@ export function isPolicyTextUsable(text: string): boolean {
 // ---- Module state -----------------------------------------------------------
 
 const indexCache = new TTLCache<PolicyIndex>(INDEX_TTL_MS);
-const policyCache = new TTLCache<PolicyDocument>(POLICY_TTL_MS);
+
+// Per PLAN.md: in-memory by default; opt in to disk persistence for the 24h
+// policy-body cache via env var so PDFs survive process restarts. Index cache
+// stays in-memory (its value type contains cheerio-derived Maps that don't
+// JSON round-trip cleanly, and a cold rescrape is cheap anyway).
+const policyCache =
+  process.env.MSSTATE_POLICIES_CACHE === "disk"
+    ? new TTLCache<PolicyDocument>({
+        ttlMs: POLICY_TTL_MS,
+        persistKey: "policy-bodies",
+      })
+    : new TTLCache<PolicyDocument>(POLICY_TTL_MS);
 
 interface ScraperHealth {
   lastIndexFetch: string | null;
