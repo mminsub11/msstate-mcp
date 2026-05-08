@@ -31,9 +31,21 @@ If no MSU policy applies (e.g. *"what's the weather forecast?"*), Claude refuses
 
 Done. Restart Claude Code if needed and ask a policy question.
 
-### Claude Desktop, Cursor, Windsurf, Zed
+### Claude Desktop (step-by-step)
 
-Paste this into your client's MCP-server config:
+You'll need [Node.js](https://nodejs.org) installed on your machine (any version 18 or newer). The `npx` command comes with Node.
+
+**1. Find your config file.** It's a JSON file in a fixed location per OS:
+
+| OS | Path |
+|---|---|
+| macOS | `~/Library/Application Support/Claude/claude_desktop_config.json` |
+| Windows | `%APPDATA%\Claude\claude_desktop_config.json` |
+| Linux | `~/.config/Claude/claude_desktop_config.json` |
+
+If the file doesn't exist yet, create it. From Claude Desktop you can also click **Settings → Developer → Edit Config** (it'll open the right file in your default editor).
+
+**2. Add the MCP server entry.** If the file is empty, paste this whole snippet:
 
 ```json
 {
@@ -46,25 +58,55 @@ Paste this into your client's MCP-server config:
 }
 ```
 
-Restart the client.
+If the file already has content (other MCP servers configured), just add `"msstate-policies"` inside the existing `"mcpServers"` object — like this:
 
-A copy lives at [`examples/claude_desktop_config.json`](examples/claude_desktop_config.json) — drop it into the right location for your platform:
+```json
+{
+  "mcpServers": {
+    "some-other-server": { "...": "..." },
+    "msstate-policies": {
+      "command": "npx",
+      "args": ["-y", "msstate-policies-mcp"]
+    }
+  }
+}
+```
 
-| Client | Config path |
+**3. Save the file and fully quit Claude Desktop.** Don't just close the window — on macOS use Cmd+Q; on Windows right-click the system tray icon and pick Quit. Reopen Claude Desktop.
+
+**4. Verify it loaded.** In a new chat, look for the tools indicator (usually a small icon near the chat input or in the bottom toolbar). You should see `msstate-policies` listed with 5 tools. If it's missing, see [Troubleshooting](#troubleshooting) below.
+
+**5. Try a sample question.** Ask *"What is MSU's hazing policy?"* — Claude should call the `chain_find_relevant_policies` tool and return a grounded answer with a citation.
+
+The first call takes a few seconds (the server fetches MSU's index and the relevant PDF). Later calls reuse cached data and are faster.
+
+### Cursor / Windsurf / Zed
+
+Same `npx -y msstate-policies-mcp` command, different paste location:
+
+| Client | Where to paste |
 |---|---|
-| Claude Desktop (macOS) | `~/Library/Application Support/Claude/claude_desktop_config.json` |
-| Claude Desktop (Windows) | `%APPDATA%\Claude\claude_desktop_config.json` |
 | Cursor | Settings → MCP → Add server |
 | Windsurf | Settings → MCP servers |
 | Zed | `~/.config/zed/settings.json` under `context_servers` |
 
-### Free claude.ai users (no install)
+A reference snippet lives at [`examples/claude_desktop_config.json`](examples/claude_desktop_config.json).
 
-The latest GitHub release ships a starter zip (`msstate-policies-starter.zip`) with 22 high-traffic policy PDFs and a system-prompt template that pushes Claude toward verbatim quoting. Download from the [latest release](https://github.com/mminsub11/msstate-mcp/releases/latest), drag-and-drop into a Claude Project. Smaller corpus than the live MCP but no install required.
+### Free claude.ai users — no install (works on web AND mobile)
 
-### claude.ai web (paid users): not currently supported
+The latest GitHub release ships a starter zip (`msstate-policies-starter.zip`) with 22 high-traffic policy PDFs and a system-prompt template that pushes Claude toward verbatim quoting.
 
-claude.ai's web-app custom-connector feature only accepts **remote** MCP servers (HTTP/SSE), and this server is **local stdio** (runs on your machine via the methods above). For paid claude.ai users, install Claude Desktop — same account, full MCP support, and the snippet above works. A remote variant of this server is on the roadmap but not in this release.
+1. Download `msstate-policies-starter.zip` from the [latest release](https://github.com/mminsub11/msstate-mcp/releases/latest).
+2. On a computer, sign in to <https://claude.ai>.
+3. Create a new **Project** (or open an existing one).
+4. Unzip the file and drag the PDFs + the `SYSTEM_PROMPT.txt` into the Project's knowledge area.
+5. Ask policy questions inside that Project's chats.
+
+This works on the **Claude mobile app** too — once the Project is set up on web, your phone sees the same Project and you can ask questions from mobile. The starter zip is a smaller corpus than the live MCP (22 policies vs. 218), but it's the only path that works without installing anything.
+
+### Why claude.ai web and mobile can't use the live MCP directly
+
+Anthropic's claude.ai (web and mobile) supports MCP servers through the **Connectors** feature, which only accepts **remote HTTP/SSE servers**. This project is a **local stdio** server — it runs on your machine. For full corpus access on web/mobile, you'd need a remote variant deployed somewhere (Cloudflare Workers, fly.io, etc.); that's on the roadmap but not in this release. Workaround: use the Project starter zip above, or install Claude Desktop on a computer for full MCP support.
 
 ## What you get back
 
