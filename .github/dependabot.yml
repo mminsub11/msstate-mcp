@@ -1,0 +1,73 @@
+# Dependabot configuration for msstate-mcp.
+#
+# Three ecosystems to track:
+#   - npm in /msstate-policies (the published MCP server)
+#   - npm in /worker          (the Cloudflare Worker variant)
+#   - github-actions          (CI workflows in .github/workflows)
+#
+# Schedule: weekly on Monday so the maintainer sees a single batched
+# review window. Limit open PRs to 5 per ecosystem to avoid noise.
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/msstate-policies"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Chicago"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(msstate-policies)"
+    labels:
+      - "dependencies"
+      - "msstate-policies"
+    # Group patch + minor updates so we don't get a PR per tiny bump.
+    groups:
+      patch-and-minor:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+    # pdf-parse is intentionally pinned (no caret) — see docs/BUILD.md.
+    # Block automatic updates so a Dependabot PR can't silently change
+    # the inner-module import behavior.
+    ignore:
+      - dependency-name: "pdf-parse"
+
+  - package-ecosystem: "npm"
+    directory: "/worker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Chicago"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(worker)"
+    labels:
+      - "dependencies"
+      - "worker"
+    groups:
+      patch-and-minor:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "America/Chicago"
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: "ci"
+    labels:
+      - "dependencies"
+      - "ci"
