@@ -1,7 +1,10 @@
 node_modules/
-dist/
+# Cover .env, .env.local, .env.production, .env.openai, etc.
 .env
-.env.local
+.env.*
 *.log
 .DS_Store
 .cache/
+tmp/
+# We commit dist/ on purpose — the plugin path resolves to ${CLAUDE_PLUGIN_ROOT}/dist/index.js
+# without an npm install step. CI verifies dist/ matches src/ via `git diff --exit-code dist/`.

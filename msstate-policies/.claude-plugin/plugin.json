@@ -1,0 +1,11 @@
+{
+  "name": "msstate-policies",
+  "version": "0.1.0",
+  "description": "Mississippi State University Operating Policies via MCP. Unofficial.",
+  "mcpServers": {
+    "msstate-policies": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/dist/index.js"]
+    }
+  }
+}

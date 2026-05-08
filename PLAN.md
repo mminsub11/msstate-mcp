@@ -1,4 +1,14 @@
-# MSU Policies MCP Server — Plan (v6)
+# MSU Policies MCP Server — Plan (v7)
+
+> **What changed from v6:** verified plan against the live site (`https://www.policies.msstate.edu/current` fetched 2026-05-07) and corrected three gotchas the v6 plan would have crashed on:
+>
+> 1. **Policy-number regex was wrong.** Plan's `^\d{2}\.(\d{2}|\d{3})$` rejects `91.100`, `60.321`, the entire 91.NNN/60.NNN/95.NNN families. Corrected everywhere to `^\d{2}\.(\d{2}|\d{3})$`. Slug rule is unchanged in spirit ("number with dots removed") but now produces 4 *or* 5 digits.
+> 2. **PDF URLs are not all under `/sites/.../files/policies/{slug}.pdf`.** Some live under `/sites/.../files/YYYY-MM/{slug}.pdf` (Drupal media-folder dating) and some carry `_0`/`_N` suffixes from re-uploads. **Never construct `pdfUrl` from the slug — always read it verbatim from `<a class="btn-download">[href]`.** Caching key stays slug-based, but the URL itself is taken from the index row.
+> 3. **WAF detection needs F5 signatures, not just Cloudflare.** The live site is fronted by F5 (visible as `<style>form.antibot * :not(.antibot-message) { display: none !important; }</style>` and `id="f5_cspm"`). Cloudflare-style patterns (`Just a moment...`, `cf-chl-bypass`) probably never fire. Detection list updated.
+>
+> Two non-bug tweaks while we were in there:
+> - Volume IDs are 36–44 and section IDs are 1–35 on the live site **today** — exactly the values v1 of the plan hardcoded. The "do not hardcode IDs" rule survives unchanged: those IDs are still Drupal taxonomy term surrogate keys and will renumber on a re-import.
+> - **No-trained-knowledge corpus rule** (already in `CLAUDE.md`) is mirrored here so future plan revisions can't quietly drop it. Every datum the server returns must trace back to an HTTP fetch of `policies.msstate.edu` made by *this* server. No Claude memory, no `WebSearch`, no third-party mirror.
 
 > **What changed from v5:** added a **Roadmap / future sources** section. The architecture's site-isolation design (one source module per dataset under `src/sources/`) is now explicitly framed as supporting multi-source expansion; **MSU's master course catalog is the planned v2.0 second source.** Adoption metrics that v1–v5 framed as v1 gates (activation %, weekly install signals) are downgraded to *observational* — accuracy is now the only kill-gate, consistent with the v5 portfolio framing. Out-of-scope expansion sources (live enrollment, GPA averages) are named explicitly so the safety contract stays clean as we add datasets.
 
@@ -14,17 +24,29 @@
 
 The user wants an MCP server analogous to [`chrisryugj/korean-law-mcp`](https://github.com/chrisryugj/korean-law-mcp) but for **Mississippi State University Operating Policies** at <https://www.policies.msstate.edu/current>. Architecture mirrors `korean-law-mcp`: expose **search + fetch primitives** plus one **chain** tool that bundles search→fetch into a single call. Grounding arises naturally — the LLM only ever sees official MSU text the MCP just returned.
 
-The user uploaded a saved copy of `/current` so we have ground truth on the markup; the scraper is written against verified selectors rather than guesses.
+The user uploaded a saved copy of `/current` so we have ground truth on the markup; the scraper is written against verified selectors rather than guesses. As of v7 the v6 plan was also re-verified live, with the saved fixture (`msstate-policies/tests/fixtures/current.html`) refreshed from a 2026-05-07 fetch.
+
+### Corpus rule — no trained knowledge, no web searches
+
+Mirrored from `CLAUDE.md` because it's a load-bearing safety constraint, not just style guidance:
+
+**Every fact this server returns — policy text, OP numbers, effective dates, responsible offices, citations, eval-question expected answers, anything — must trace back to an HTTP fetch of `policies.msstate.edu` made by *this* server.** No Claude memory, no `WebSearch`, no Wayback Machine, no third-party mirror, no AI-generated summary, no "general knowledge of how universities usually phrase this."
+
+Two practical implications:
+- The scraper is the only ingestion path. Don't seed `dist/embeddings.json`, the eval set, or any corpus snapshot from anything other than scrape output.
+- Eval-question authoring: never invent `expected_op_numbers` from memory. Either pull them by searching the live index for the relevant title, or leave them blank with a `TODO: confirm against live index` and let a human close the loop.
+
+If a future plan revision wants to relax this, it has to argue *why* the grounding story still holds; the default is "no."
 
 ### Verified site structure (from uploaded HTML)
 
 - Index page is a Drupal view with one table `<table id="datatable">`.
-- Each `<tr>` has six cells: `Number` (e.g. `01.01`), `Title` (links to `/policy/{slug}` where slug is the 4-digit concatenation, e.g. `0101`), `Status` (`<span class="badge bg-success">Current</span>`), `Date Authored` (`<time datetime="ISO">` — see note below), `Attachment` (yes/no), `Download` (`<a class="btn-download" href="/sites/www.policies.msstate.edu/files/policies/{slug}.pdf">`).
+- Each `<tr>` has six cells: `Number` (e.g. `01.01` or `91.100`), `Title` (links to `/policy/{slug}` where slug is the digits of the number with the dot stripped — 4 digits for `NN.NN`, 5 digits for `NN.NNN`; e.g. `0101`, `91100`), `Status` (`<span class="badge bg-success">Current</span>`), `Date Authored` (`<time datetime="ISO">` — see note below), `Attachment` (yes/no), `Download` (`<a class="btn btn-primary w-100 btn-download" href="...">`). **The PDF URL pattern is not stable across rows** — most are `/sites/www.policies.msstate.edu/files/policies/{slug}.pdf`, but some are `/sites/www.policies.msstate.edu/files/YYYY-MM/{slug}.pdf` (Drupal date-folder layout) and some have `_0`/`_N` suffixes from re-uploads. Always **read the href verbatim from `a.btn-download`**; never reconstruct it from the slug.
 - **Policy text lives in the PDF**, not on the landing page. The landing page only shows metadata + a download button. So `get_policy` must download and parse the PDF.
 - Filters: `<select name="volume">` (9 volumes labeled `Volume I … Volume IX`) and `<select name="section">` (35 sections, e.g. `Academic OP/Faculty`, `Intercollegiate Athletics`).
   - **Important: do not hardcode the option values.** Drupal taxonomy term IDs are DB surrogate keys, not stable identifiers — they renumber on migrations, restores, or re-imports. Parse the dropdowns at runtime to build a `label ↔ id` map; tools accept human inputs ("Volume I", "Intercollegiate Athletics") and resolve through the map. Hardcoding `36–44` / `1–35` (as v1 of this plan did) silently breaks the day MSU touches Drupal.
 - Volume/section is **not** inferable from the policy number prefix (`01.02 Sports Wagering` is Athletics, not Presidential Matters). Membership requires the filtered request.
-- Policy numbers are **NN.NN** (regex `^\d{2}\.\d{2}$`), 4 digits total. Slug = number with dot stripped.
+- Policy numbers are **NN.NN or NN.NNN** (regex `^\d{2}\.(\d{2}|\d{3})$`), 4 *or* 5 digits total. Slug = number with dot stripped.
 - "Date Authored" ≠ "Last Revised". Treat the index `<time datetime>` as **first-authored / table sort date** only. True revision dates live in the PDF metadata block; do not surface "recent changes" semantics off the index column alone.
 
 ## Users & Problem
@@ -195,9 +217,9 @@ Tools never throw across the MCP boundary. On failure, return `{ isError: true, 
 
 ### Index fetch (`scraper.fetchIndex({ volumeId?, sectionId? })`)
 1. GET `https://www.policies.msstate.edu/current` (with optional `?volume={id}` or `?section={id}`) using a desktop User-Agent. Concurrency 4, retry on 429 honoring `Retry-After`.
-2. **WAF / challenge detection:** if the response body contains `Just a moment...`, `cf-chl-bypass`, or `<meta http-equiv="refresh"` pointing back to the same host with a token, throw `WAFChallengeError`. Do NOT cache empty results from a challenge page for an hour.
+2. **WAF / challenge detection:** if the response body contains `Just a moment...`, `cf-chl-bypass` (Cloudflare), `id="f5_cspm"` or a sole `<form class="antibot">` shell with no `#datatable` (F5 / antibot module), or `<meta http-equiv="refresh"` pointing back to the same host with a token, throw `WAFChallengeError`. Note: the live site is normally fronted by F5; the `f5_cspm` script is *always* present in normal responses too, so use it as a challenge signal **only** when combined with absent `#datatable`. Do NOT cache empty results from a challenge page for an hour.
 3. cheerio: select `#datatable tbody tr`. For each row:
-   - `td:nth-child(1)` text → `number`. Skip rows that don't match `/^\d{2}\.\d{2}$/`.
+   - `td:nth-child(1)` text → `number`. Skip rows that don't match `/^\d{2}\.(\d{2}|\d{3})$/` (covers both `01.01` and `91.100`).
    - `td:nth-child(2) a` → `title` (link text) and `landingUrl` (resolve `href="/policy/0101"` → absolute).
    - `td:nth-child(3) .badge` text → `status`.
    - `td:nth-child(4) time[datetime]` → `firstAuthoredOrSorted` (NOT `lastUpdated` — see header note).
@@ -272,7 +294,7 @@ Format per line:
 `scripts/run-eval.mjs` drives the MCP server via JSON-RPC and scores three sub-metrics independently (per the metrics table above):
 1. **Retrieval correctness** — deterministic check: was `expected_op_numbers[0]` in `chain_find_relevant_policies(q).results`?
 2. **Answer correctness** — Claude API judge call: graded against the retrieved policy text. Prompt enforces "flag any normative claim not supported by quoted text."
-3. **Refusal correctness** — for `negative: true` questions, response must contain a refusal phrase AND must NOT contain a fabricated OP number pattern (`/^\d{2}\.\d{2}$/`).
+3. **Refusal correctness** — for `negative: true` questions, response must contain a refusal phrase AND must NOT contain a fabricated OP number pattern (`/^\d{2}\.(\d{2}|\d{3})$/`).
 
 Output: `eval-{date}.json` with per-question pass/fail per sub-metric + aggregate scores. CI publishes the latest eval as a release-asset summary.
 

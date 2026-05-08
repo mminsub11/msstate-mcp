@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "msstate-policies": {
+      "command": "npx",
+      "args": ["-y", "msstate-policies-mcp"]
+    }
+  }
+}
