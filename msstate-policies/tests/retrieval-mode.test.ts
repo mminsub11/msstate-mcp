@@ -22,9 +22,9 @@ function withEnv(value: string | undefined, fn: () => void): void {
   }
 }
 
-test("getRetrievalMode: default is hybrid when env var unset", () => {
+test("getRetrievalMode: default is bm25 when env var unset (per 2026-05-08 comparative eval)", () => {
   withEnv(undefined, () => {
-    assert.equal(getRetrievalMode(), "hybrid");
+    assert.equal(getRetrievalMode(), "bm25");
   });
 });
 
@@ -39,7 +39,12 @@ test("getRetrievalMode: 'embed' selects embeddings-only mode", () => {
   withEnv("EMBED", () => assert.equal(getRetrievalMode(), "embed"));
 });
 
-test("getRetrievalMode: unrecognized value falls back to hybrid (defensive default)", () => {
-  withEnv("nonsense", () => assert.equal(getRetrievalMode(), "hybrid"));
-  withEnv("", () => assert.equal(getRetrievalMode(), "hybrid"));
+test("getRetrievalMode: 'hybrid' is accepted as an explicit override", () => {
+  withEnv("hybrid", () => assert.equal(getRetrievalMode(), "hybrid"));
+  withEnv("HYBRID", () => assert.equal(getRetrievalMode(), "hybrid"));
+});
+
+test("getRetrievalMode: unrecognized value falls back to bm25 (defensive default)", () => {
+  withEnv("nonsense", () => assert.equal(getRetrievalMode(), "bm25"));
+  withEnv("", () => assert.equal(getRetrievalMode(), "bm25"));
 });

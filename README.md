@@ -54,15 +54,27 @@ The MCP exposes 5 tools, in deterministic order:
 
 The chain tool's description tells Claude to **quote verbatim** for any normative claim and **refuse** rather than paraphrase load-bearing language. That, plus hybrid retrieval (BM25 + optional pre-computed embeddings), is the design's path toward the 99.99% answer-correctness north star.
 
-## Optional: hybrid retrieval with embeddings
+## Retrieval modes
 
-By default the server runs BM25-only. To enable semantic retrieval, run the build-time embedding step with an `OPENAI_API_KEY` set; this writes `dist/embeddings.json` (~5 MB) which is committed and shipped with the package. At runtime, query embedding also hits the OpenAI API; if no key is set we silently degrade to BM25-only.
+The server has three retrieval modes, selectable via the `MSSTATE_POLICIES_RETRIEVAL` env var:
+
+| `MSSTATE_POLICIES_RETRIEVAL=` | Behavior | Needs `OPENAI_API_KEY` at runtime? |
+|---|---|---|
+| `bm25` *(default)* | Lexical BM25 over title + number + body tokens. | No. |
+| `embed` | Cosine similarity over the prebuilt `dist/embeddings.json`. | Yes (for query embedding). |
+| `hybrid` | RRF fusion of BM25 + embeddings. | Yes. |
+
+Default is `bm25` because the [2026-05-08 comparative eval](msstate-policies/eval/COMPARATIVE-2026-05-08.md) found that BM25 ties embed at composite 86/88 while hybrid (RRF) underperforms at 84/88 — RRF averaged two weak conceptual signals into a wrong top-1 on at least one question. Per [Sprint 2 task 2.9](ROADMAP.md), we default to the winning method.
+
+The shipped `dist/embeddings.json` (~24 MB, all 218 policies) is built at release time:
 
 ```bash
 cd msstate-policies
-OPENAI_API_KEY=sk-... npm run embeddings
-npm run build  # rebundle so dist/ contains the new embeddings.json
+OPENAI_API_KEY=sk-... npm run embeddings    # writes dist/embeddings.json
+npm run build                                # rebundle dist/index.js
 ```
+
+Users opting in to `embed` or `hybrid` mode also need `OPENAI_API_KEY` set at runtime so query embedding can run. If it isn't set, the embedding pass returns no results and the fused/embed-only path effectively degrades to BM25.
 
 ## Verification
 
@@ -78,7 +90,7 @@ The only thing that kills this project is failing the accuracy bars (PLAN.md "Ki
 
 - **All policies suddenly have empty text** — `health_check` likely shows `last_index_error`. The scraper's selectors may be stale (MSU touched their Drupal layout); fix lives in `msstate-policies/src/scraper.ts` near the `SEL` const at the top of the file.
 - **`tools/list` returns 0 tools** — `dist/index.js` is stale or mis-bundled. Re-run `npm run build` in `msstate-policies/`.
-- **Hybrid retrieval seems off** — check `health_check.embeddings_loaded`. If `false`, either `dist/embeddings.json` wasn't bundled, or `OPENAI_API_KEY` is missing at runtime.
+- **Hybrid or embed retrieval seems off** — check `health_check.embeddings_loaded`. If `false`, either `dist/embeddings.json` wasn't bundled, or `OPENAI_API_KEY` is missing at runtime. Also confirm `MSSTATE_POLICIES_RETRIEVAL` is set to `embed` or `hybrid` — default is `bm25`.
 
 ## License
 

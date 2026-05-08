@@ -238,19 +238,29 @@ async function embedSearch(query: string, limit = 50): Promise<EmbedRank[]> {
 const RRF_K = 60;
 
 // Retrieval mode gate — controlled by MSSTATE_POLICIES_RETRIEVAL.
-//   "bm25"   -> only BM25; embedding pass is skipped (used for cheap eval).
-//   "embed"  -> only embeddings; BM25 pass is skipped (comparative eval).
-//   "hybrid" -> both signals (default; production behavior).
-// Unrecognized / unset value falls back to "hybrid" so callers don't have to
-// set anything in normal use. embedSearch already returns [] when no
+//   "bm25"   -> only BM25; embedding pass is skipped (DEFAULT — see below).
+//   "embed"  -> only embeddings; BM25 pass is skipped.
+//   "hybrid" -> RRF fusion of both signals.
+//
+// Default is "bm25" per the 2026-05-08 comparative eval (see
+// msstate-policies/eval/COMPARATIVE-2026-05-08.md): BM25 ties embed at
+// composite 86/88 and beats hybrid (RRF) at 84/88. Hybrid uniquely failed
+// the underage-drinking-at-tailgate case because embedding-side concept
+// drift ranked Sexual Misconduct (03.04) above the canonical Sanctions for
+// Alcohol and Drug Offenses (91.119), and RRF's rank-averaging let that
+// stand. Per Sprint 2 task 2.9 ("if RRF underperforms either method,
+// configure to use the winning method"), default to BM25.
+//
+// Unrecognized / unset value falls back to "bm25" so the default path is
+// preserved when the var is absent. embedSearch already returns [] when no
 // OPENAI_API_KEY or no embeddings.json — this gate is the *symmetric* knob
 // for skipping BM25 instead.
 export type RetrievalMode = "bm25" | "embed" | "hybrid";
 
 export function getRetrievalMode(): RetrievalMode {
   const v = (process.env.MSSTATE_POLICIES_RETRIEVAL ?? "").toLowerCase();
-  if (v === "bm25" || v === "embed") return v;
-  return "hybrid";
+  if (v === "bm25" || v === "embed" || v === "hybrid") return v;
+  return "bm25";
 }
 
 export interface FusedHit {
