@@ -437,7 +437,10 @@ async function handleRpc(req: JsonRpcRequest): Promise<JsonRpcResponse | null> {
 const CORS_HEADERS: Record<string, string> = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Mcp-Session-Id, Authorization",
+  // N10: no auth surface exists, so don't advertise Authorization in the
+  // allow-list. Re-add only when real auth lands; until then it's a
+  // confused-deputy hint to future maintainers.
+  "Access-Control-Allow-Headers": "Content-Type, Mcp-Session-Id",
   "Access-Control-Max-Age": "86400",
 };
 
