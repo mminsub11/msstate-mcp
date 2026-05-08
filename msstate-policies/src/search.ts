@@ -384,4 +384,64 @@ export function extractMatchedPassages(
   return passages.slice(0, maxPassages);
 }
 
+// ---- Retrieval confidence gate (F2 in codex_review.md) ---------------------
+//
+// Returns a calibrated accept/reject decision instead of letting downstream
+// code blindly trust hybridSearch's top-k. Lets the MCP layer say "no relevant
+// policy found" itself rather than pushing all refusal logic to the LLM.
+
+export interface GateThresholds {
+  minScore?: number;
+  minMargin?: number;
+}
+
+export interface GateResult {
+  accept: FusedHit[];
+  rejected: boolean;
+  reason?: string;
+}
+
+const DEFAULT_MIN_SCORE = 0.005;
+const DEFAULT_MIN_MARGIN = 0;
+
+export function gateRetrieval(
+  fused: FusedHit[],
+  thresholds: GateThresholds = {},
+): GateResult {
+  const minScore = thresholds.minScore ?? DEFAULT_MIN_SCORE;
+  const minMargin = thresholds.minMargin ?? DEFAULT_MIN_MARGIN;
+
+  if (fused.length === 0) {
+    return {
+      accept: [],
+      rejected: true,
+      reason: "no candidates returned by hybrid search (empty result)",
+    };
+  }
+
+  const sorted = [...fused].sort((a, b) => b.score - a.score);
+  const top = sorted[0];
+  if (top.score < minScore) {
+    return {
+      accept: [],
+      rejected: true,
+      reason: `top-1 score ${top.score.toFixed(4)} below floor ${minScore.toFixed(4)} (insufficient confidence)`,
+    };
+  }
+
+  if (sorted.length >= 2 && minMargin > 0) {
+    const margin = top.score - sorted[1].score;
+    if (margin < minMargin) {
+      return {
+        accept: [],
+        rejected: true,
+        reason: `top-1 margin ${margin.toFixed(4)} below required ${minMargin.toFixed(4)} (top candidates too close to disambiguate)`,
+      };
+    }
+  }
+
+  const accepted = sorted.filter((h) => h.score >= minScore);
+  return { accept: accepted, rejected: false };
+}
+
 export const __test__ = { tokenize, bm25Search, cosine };
