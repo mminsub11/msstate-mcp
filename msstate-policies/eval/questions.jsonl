@@ -1,0 +1,73 @@
+// 50-question eval set, sourced from the live MSU policy index (2026-05-07).
+// Every expected_op_numbers value below was confirmed against
+// https://www.policies.msstate.edu/current — no trained-knowledge guesses.
+//
+// Schema per line: { "q": string, "expected_op_numbers"?: string[],
+//   "must_cite"?: bool, "must_quote_verbatim"?: bool, "negative"?: bool,
+//   "conceptual"?: bool, "k"?: number, "notes"?: string }
+//
+// Categories (per PLAN.md):
+//   - Student-life:        10  ✓
+//   - Academic:            10  ✓
+//   - HR / faculty / staff:10  ✓
+//   - Conceptual stress:    8  (weak keyword overlap; tests embeddings)
+//   - Negative:            12  (no MSU OP applies; correct response is refusal)
+//
+// Refusal correctness depends on LLM-judge output, not raw MCP retrieval.
+// run-eval.mjs scores it only when ANTHROPIC_API_KEY is set.
+//
+// ----- student life (10) -----
+{ "q": "What is MSU's policy on academic amnesty for undergraduates?", "expected_op_numbers": ["12.17"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1217 — Undergraduate Academic Fresh Start or Academic Amnesty" }
+{ "q": "What is MSU's Code of Student Conduct?", "expected_op_numbers": ["91.100"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/91100" }
+{ "q": "What governs MSU's parking and traffic rules?", "expected_op_numbers": ["95.501"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/95501 — Traffic and Parking Rules and Regulations" }
+{ "q": "What's the rule on smoking and tobacco use on campus?", "expected_op_numbers": ["91.301"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/91301" }
+{ "q": "What is MSU's hazing policy?", "expected_op_numbers": ["91.208"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/91208" }
+{ "q": "What does MSU's policy on possession of weapons or firearms say?", "expected_op_numbers": ["91.120"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/91120" }
+{ "q": "What sanctions apply to alcohol and drug offenses for MSU students?", "expected_op_numbers": ["91.119"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/91119" }
+{ "q": "What support does MSU provide for students with disabilities?", "expected_op_numbers": ["91.122"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/91122" }
+{ "q": "What is the health insurance and repatriation insurance policy for international students?", "expected_op_numbers": ["91.175"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/91175" }
+{ "q": "What's MSU's policy on study abroad and international travel by students?", "expected_op_numbers": ["11.06"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1106" }
+// ----- academic (10) -----
+{ "q": "How does a graduate student request academic amnesty?", "expected_op_numbers": ["12.18"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1218 — Academic Amnesty for Graduate Students" }
+{ "q": "What is the policy on withdrawing from the university?", "expected_op_numbers": ["12.02"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1202 — Withdrawal from the University" }
+{ "q": "How does the grade appeal process work?", "expected_op_numbers": ["13.14"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1314 — Grade Appeal & Academic Review Board" }
+{ "q": "What's the policy on final examinations?", "expected_op_numbers": ["12.04"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1204 — Final Examination" }
+{ "q": "What is the policy on auditing a class?", "expected_op_numbers": ["11.11"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1111 — Auditing a Class" }
+{ "q": "Can an undergraduate repeat a course for grade forgiveness?", "expected_op_numbers": ["12.20"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1220 — Undergraduate Course Grade Forgiveness and Repeating a Course" }
+{ "q": "What is MSU's policy on student education records?", "expected_op_numbers": ["30.02"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/3002 — Education Records (FERPA-related)" }
+{ "q": "What's the academic grievance procedure for graduate students?", "expected_op_numbers": ["12.37"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1237 — Graduate Student Academic Grievance Procedures" }
+{ "q": "What is the distance education policy?", "expected_op_numbers": ["10.16"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1016 — Distance Education" }
+{ "q": "What's the policy on class attendance and reporting absences?", "expected_op_numbers": ["12.09"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1209" }
+// ----- HR / faculty / staff (10) -----
+{ "q": "What is MSU's discrimination, harassment, and retaliation policy?", "expected_op_numbers": ["03.03"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/0303" }
+{ "q": "What's the policy on sexual misconduct at MSU?", "expected_op_numbers": ["03.04"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/0304 — Sexual Misconduct" }
+{ "q": "What is the use-of-information-technology-resources policy?", "expected_op_numbers": ["01.12"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/0112" }
+{ "q": "What's MSU's faculty grievance procedure?", "expected_op_numbers": ["13.05"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1305 — Faculty Grievance Procedures" }
+{ "q": "What's MSU's policy on intellectual property?", "expected_op_numbers": ["76.01"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/7601 — Intellectual Property" }
+{ "q": "What is MSU's whistleblower policy?", "expected_op_numbers": ["01.07"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/0107" }
+{ "q": "What governs employee leave and leave without pay?", "expected_op_numbers": ["60.201"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/60201 — Leave/Leave Without Pay" }
+{ "q": "What's the policy on outside employment and consulting for MSU staff?", "expected_op_numbers": ["60.415"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/60415" }
+{ "q": "How does MSU handle sabbatical leave for faculty?", "expected_op_numbers": ["13.06"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/1306 — Sabbatical Leave for Faculty Members of State IHL" }
+{ "q": "What's MSU's travel reimbursement policy?", "expected_op_numbers": ["62.01"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "notes": "From /policy/6201 — Travel" }
+// ----- conceptual stress tests (8) — title has weak/no keyword overlap with the question; tests hybrid retrieval -----
+{ "q": "Can my RA write me up for lighting a candle in my dorm room?", "expected_op_numbers": ["91.100"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "conceptual": true, "notes": "Should retrieve Code of Student Conduct (/policy/91100); title contains no candle/dorm/RA keywords." }
+{ "q": "What's the rule on vaping in my dorm room?", "expected_op_numbers": ["91.301"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "conceptual": true, "notes": "Smoking and Tobacco Use on Campus covers vaping; title doesn't say 'vape'." }
+{ "q": "Can I keep a hunting rifle locked in my dorm room?", "expected_op_numbers": ["91.120"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "conceptual": true, "notes": "Possession of Weapons Including Firearms; conceptual phrasing 'hunting rifle in dorm'." }
+{ "q": "If I have ADHD, what classroom accommodations can I request?", "expected_op_numbers": ["91.122"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "conceptual": true, "notes": "Students with Disabilities — title doesn't mention ADHD or accommodations." }
+{ "q": "My professor cancelled three weeks of class — am I supposed to keep showing up?", "expected_op_numbers": ["13.03", "12.09"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "conceptual": true, "notes": "Faculty Responsibilities in Instruction (1303) and Class Attendance (1209) both apply; conceptual phrasing." }
+{ "q": "Are fraternity initiation rituals allowed at MSU?", "expected_op_numbers": ["91.208"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "conceptual": true, "notes": "Hazing — title doesn't mention 'fraternity' or 'initiation'." }
+{ "q": "What happens if I get cited for underage drinking at a tailgate?", "expected_op_numbers": ["91.119"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "conceptual": true, "notes": "Sanctions for Alcohol and Drug Offenses; 'tailgate' isn't in any title." }
+{ "q": "Are there protocols if a tornado warning hits during my class?", "expected_op_numbers": ["01.04"], "must_cite": true, "must_quote_verbatim": true, "negative": false, "conceptual": true, "notes": "Emergency Operations — title doesn't mention 'tornado' or 'class'." }
+// ----- negative cases (12) — no MSU OP should apply; correct response is a plain refusal -----
+{ "q": "What's the weather forecast for Starkville next weekend?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "Weather is not in MSU policy scope." }
+{ "q": "What was the score of last night's MSU football game?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "Game scores are not in MSU OP scope." }
+{ "q": "Where can I find the best coffee shop in downtown Starkville?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "Local business recommendations not in MSU OP scope." }
+{ "q": "Is the Starkville post office open on Saturdays?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "Off-campus civic services not in MSU OP scope." }
+{ "q": "What's a good recipe for traditional Southern cornbread?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "Cooking is not in MSU OP scope." }
+{ "q": "Who is the current governor of Mississippi?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "State government is not in MSU OP scope." }
+{ "q": "What is the population of Starkville, Mississippi?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "Demographic facts are not in MSU OP scope." }
+{ "q": "Can I get a refund on my Netflix subscription?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "Third-party consumer services are not in MSU OP scope." }
+{ "q": "What's the closest international airport to MSU?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "Travel logistics not addressed by an MSU OP." }
+{ "q": "Does MSU have a policy on Mars colonization?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "No applicable MSU OP." }
+{ "q": "What is MSU's official protocol for first contact with extraterrestrial life?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "No applicable MSU OP." }
+{ "q": "Can MSU help me find tickets to a Taylor Swift concert?", "negative": true, "must_cite": false, "must_quote_verbatim": false, "notes": "Concert tickets are not addressed by any MSU OP." }

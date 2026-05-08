@@ -1,0 +1,1845 @@
+{
+  "summary": {
+    "total": 50,
+    "aborted": false,
+    "k": 5,
+    "judge": {
+      "used": true,
+      "model": "claude-sonnet-4-6"
+    },
+    "retrieval": {
+      "scored": 38,
+      "passed": 37
+    },
+    "answer": {
+      "scored": 38,
+      "passed": 37
+    },
+    "refusal": {
+      "scored": 12,
+      "passed": 12
+    },
+    "cost": {
+      "input_tokens": 187046,
+      "output_tokens": 17107,
+      "usd": 0.8177
+    }
+  },
+  "results": [
+    {
+      "q": "What is MSU's policy on academic amnesty for undergraduates?",
+      "expected_op_numbers": [
+        "12.17"
+      ],
+      "returned_numbers": [
+        "12.18",
+        "12.17",
+        "12.39",
+        "12.15",
+        "12.08"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER:\n\nMSU's policy on academic amnesty for undergraduates is governed by AOP 12.17: Undergraduate Academic Fresh-Start or Academic Amnesty. The policy offers two distinct options:\n\n**Academic Fresh Start:**\n\"To be eligible for Academic Fresh Start, an individual must be pursuing their first baccalaureate degree and may not have attended Mississippi State University for a period of at least twenty-four consecutive months.\" (OP 12.17) If approved, \"all college credits earned prior to being granted academic fresh start will be eliminated from the computation of the student's grade point average and may never be used toward graduation at Mississippi State University.\" (OP 12.17)\n\n**Academic Amnesty:**\n\"To be eligible for Academic Amnesty, an individual must be pursuing their first baccalaureate degree and may not have attended Mississippi State University for a period of at least four consecutive years.\" (OP 12.17) The individual \"may petition for admission or readmission through the student's academic dean's office under the academic amnesty policy at any time up until the end of the semester preceding that in which the student graduates.\" (OP 12.17)\n\nBoth policies share important limitations: \"Students admitted under these policies must complete current curriculum requirements in residency to earn a degree. These policies pertain only to Mississippi State University and students should be advised that they may not be honored in other institutions of higher learning.\" (OP 12.17)\n\nNote: The retrieved policy text for Academic Amnesty (Section B) was cut off before providing the complete details of that option's procedures.\n\nASSESSMENT:\n{\"cited_op_numbers\":[\"12.17\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "12.17"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 4024,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 383,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1217 — Undergraduate Academic Fresh Start or Academic Amnesty"
+    },
+    {
+      "q": "What is MSU's Code of Student Conduct?",
+      "expected_op_numbers": [
+        "91.100"
+      ],
+      "returned_numbers": [
+        "91.100",
+        "12.07",
+        "60.401",
+        "31.01",
+        "91.200"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: MSU's Code of Student Conduct is described in OP 91.100. Its purpose is \"to develop self-reliance and to form desirable and acceptable habits of conduct among students.\"\n\nThe policy states: \"Mississippi State University recognizes students as adults who are expected to obey the law and the rules and regulations of the university, to take personal responsibility for their conduct, to respect the rights of others, and to have regard for the preservation of state and university property, as well as the private property of others. Those found responsible of violating the law or rules and regulations of the university may receive a maximum sanction of expulsion from the university.\"\n\n**Application:**\n\"The Code of Student Conduct applies to all students while present on campus or at a University facility. It further applies to all student conduct that occurs in connection with a University program or activity, regardless of the location.\"\n\nAdditionally, \"the University reserves the right to take appropriate action, up to and including expulsion, when, in the University's judgment, a student's conduct off-campus and not connected to any University program or activity: (1) indicates that the student may pose a danger to others; or (2) the conduct has a negative impact on the University community or the University's mission.\"\n\n**Violations** listed in OP 91.100 include (but are not limited to):\n- **Alcohol:** Unlawful sale, possession, consumption, use, or distribution\n- **Assault:** Any intentional behavior that causes or may cause physical harm\n- **Assisting or Cooperating:** Helping another violate the Code\n- **Failure to follow administrative direction:** Non-compliance with university officials\n- **Disorderly Conduct/Disruptive Behavior:** Violent, noisy, threatening, or drunken behavior\n- **Drugs:** Unlawful sale, possession, use, or distribution of illegal drugs\n- **Explosive Devices:** (policy text was truncated)\n\nASSESSMENT: {\"cited_op_numbers\":[\"91.100\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.100"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3559,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 461,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/91100"
+    },
+    {
+      "q": "What governs MSU's parking and traffic rules?",
+      "expected_op_numbers": [
+        "95.501"
+      ],
+      "returned_numbers": [
+        "95.501",
+        "95.503",
+        "30.06",
+        "02.01",
+        "03.03"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: MSU's parking and traffic rules are governed primarily by two operating policies. According to OP 95.501, \"The purpose of this policy is to establish the traffic and parking rules and regulations on the campus and streets of Mississippi State University as approved and authorized by the Board of Trustees of State Institutions of Higher Learning of the State of Mississippi.\" Enforcement responsibility is divided: \"The Mississippi State University Police Department is charged with enforcing traffic rules and regulations and the Office of Transportation is charged with enforcing the parking rules and regulations promulgated and approved by the Board of Trustees of State Institutions of Higher Learning for the State of Mississippi.\"\n\nOP 95.503 further delineates management responsibilities among multiple parties:\n- The **MSU Police Department** is responsible for enforcing traffic regulations and monitoring safety hazards.\n- The **MSU Division of Finance and Administration** is responsible for repairing and maintaining streets, parking lots, and installing traffic signs and signals.\n- The **MSU Parking and Traffic Regulation Committee** is responsible for \"considering request for changes to parking and traffic regulations,\" \"considering annual changes for parking and traffic fines and fees,\" and \"annually reviewing OP 95.501 Traffic and Parking Rules and Regulation.\"\n\nThese regulations apply to \"the use of vehicles on the campus and streets of Mississippi State University and other roads or property within 500 feet of campus\" (OP 95.501).\n\nASSESSMENT: {\"cited_op_numbers\":[\"95.501\",\"95.503\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "95.501",
+          "95.503"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3582,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 346,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/95501 — Traffic and Parking Rules and Regulations"
+    },
+    {
+      "q": "What's the rule on smoking and tobacco use on campus?",
+      "expected_op_numbers": [
+        "91.301"
+      ],
+      "returned_numbers": [
+        "91.301",
+        "91.110",
+        "60.120",
+        "91.306",
+        "95.502"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: According to OP 91.301, Mississippi State University has a comprehensive tobacco and smoking policy:\n\n**Scope of Prohibition:**\n- \"Tobacco use in any form, including e-cigarettes, shall not be permitted in any university facility or in vehicles owned or leased by the university, regardless of location.\"\n- \"Mississippi State University is a Smoke-Free Campus. Smoking of any tobacco based product is prohibited on all university campuses.\"\n\n**Products Covered:**\nThe policy restricts \"smoking and use of tobacco products (cigarettes, cigars, pipes, smokeless tobacco, e-cigarettes, snuff, and chewing tobacco).\"\n\n**Sales and Advertising:**\n\"Tobacco products will not be sold on campus or advertised in any campus publication.\"\n\n**Who It Applies To:**\n\"This policy applies to all students, faculty, staff, and visitors.\"\n\n**Enforcement:**\n- Visitors and contractors \"should be reminded of the policy and asked to comply with our smoke-free campus policy.\"\n- Faculty, staff, and students in violation \"should be reminded of the policy and asked to comply and provided with information about smoking cessation programs.\"\n- \"Students who are repeatedly in violation of this policy can be referred to the Dean of Students office.\"\n- \"Faculty and staff who are repeatedly in violation of this policy can be referred to their immediate supervisor.\"\n\nSmoking cessation programs are also available through the Longest Student Health Center and Human Resources Management.\n\nASSESSMENT: {\"cited_op_numbers\":[\"91.301\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.301"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3619,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 353,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/91301"
+    },
+    {
+      "q": "What is MSU's hazing policy?",
+      "expected_op_numbers": [
+        "91.208"
+      ],
+      "returned_numbers": [
+        "91.208",
+        "01.07",
+        "30.06",
+        "03.07",
+        "12.07"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: MSU's hazing policy, as established in OP 91.208, is as follows:\n\n**Prohibition:** \"Hazing is prohibited. Any organization, student, or other person affiliated with the university found to have engaged in hazing as defined in this policy is subject to disciplinary action under the Student Code of Conduct and other applicable university policies. Under certain circumstances, hazing may also be a violation applicable laws, resulting in a criminal prosecution.\" (OP 91.208)\n\n**Definition:** \"Hazing is defined as any intentional, knowing, or reckless act committed by a person (whether individually or in concert with other persons) against another person or persons, regardless of the latter's willingness to participate, that (i) is committed in the course of an initiation into, an affiliation with, or the maintenance of membership in, a student organization; and (ii) causes or creates a risk, above the reasonable risk encountered in participation in the organization (such as the physical preparation necessary for participation in an athletic team), of physical or psychological injury.\" (OP 91.208)\n\n**Examples of hazing include but are not limited to** (OP 91.208):\n- \"Beating, striking, electronic shocking, or the placement of a harmful substance on someone's body\"\n- \"Causing, coercing, or otherwise inducing sleep deprivation, exposure to the elements, confinement in a small space, extreme calisthenics, or similar activities\"\n- \"Causing, coercing, or otherwise inducing another person to consume food, liquid, alcohol, drugs, or other substances\"\n- \"Causing, coercing, or otherwise inducing another person to perform sexual acts\"\n- \"Any activity that places another person in reasonable fear of bodily harm though the use of threatening words or conduct\"\n- \"Any activity against another person that includes a criminal violation of local, state, tribal, or federal law\"\n- \"Any activity that would be reasonably expected to unduly impair a person's academic efforts\"\n\n**Reporting:** Hazing may be reported by contacting the Dean of Students Office (662-325-3611), Fraternity & Sorority Life (662-325-2930), MSU Police Department (662-325-2121), or the Associate Dean of Students for Meridian (601-696-2344), or online through the Office of Fraternity & Sorority Life or Dean of Students Office websites. (OP 91.208)\n\nASSESSMENT: {\"cited_op_numbers\":[\"91.208\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.208"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3874,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 581,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/91208"
+    },
+    {
+      "q": "What does MSU's policy on possession of weapons or firearms say?",
+      "expected_op_numbers": [
+        "91.120"
+      ],
+      "returned_numbers": [
+        "91.120",
+        "79.09",
+        "91.123",
+        "30.06",
+        "91.301"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER:\n\nMSU's policy on possession of weapons or firearms is governed by **OP 91.120: Possession of Weapons Including Firearms**. Here are the key elements:\n\n**Purpose:**\nThe policy exists \"to provide regulations regarding the possession of weapons, including firearms, in compliance with Institutions of Higher Learning policies and state law.\"\n\n**Definition of a Weapon:**\n\"Any gun, rifle, pistol or other firearm of any kind, or any dynamite cartridge, bomb, grenade, mine or powerful explosive.\"\n\n**University Controlled Property:**\nThis includes \"(1) all campuses, (2) all University buildings, offices, and grounds, regardless of whether the University owns, leases or otherwise controls the space, and (3) University-owned vehicles.\"\n\n**General Rule:**\n\"The University permits duly authorized law enforcement officials and Authorized Persons to carry firearms and other weapons on or in University Controlled Property. Authorized Persons may not possess a firearm in Non-Public Locations.\"\n\n**Students and Employees:**\n\"No University student or employee, unless a duly authorized law enforcement official or authorized in accordance with the following procedure, may possess a weapon or firearm on or in University Controlled Property regardless of the possession of any kind of firearms permit.\"\n\n**Non-Public Locations** (where Authorized Persons may NOT carry firearms) include academic buildings, administrative offices, athletic facilities, residence halls, fraternity & sorority housing, the Sanderson Recreation Center, patient care areas, the Child Development Center, the University Television Center, ticketed events, and research centers/laboratories.\n\n**Authorization Process:**\nEmployees may submit a \"Weapons Authorization Request Form\" that must receive approval/signature from the Department Head, Dean, Vice President, and President before possessing a weapon on University Controlled Property.\n\n**Authorized Persons** (non-employees/students) must have \"a valid, unexpired state firearms permit with the 'Instructor Certified' (IC) sticker on the back or the equivalent permit issued by a state with a reciprocity agreement with Mississippi,\" but still may not carry in Non-Public Locations.\n\nASSESSMENT:\n{\"cited_op_numbers\":[\"91.120\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.120"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3889,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 501,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/91120"
+    },
+    {
+      "q": "What sanctions apply to alcohol and drug offenses for MSU students?",
+      "expected_op_numbers": [
+        "91.119"
+      ],
+      "returned_numbers": [
+        "91.119",
+        "60.118",
+        "12.15",
+        "60.120",
+        "91.102"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: According to OP 91.119, the following sanctions apply to MSU students for alcohol and drug offenses:\n\n**First Offense (not on probation):**\n\"A student who is currently found responsible for an alcohol policy infraction, and who is not on probation for previous alcohol or drug-related infractions, will attend a meeting in the Dean of Students' office in which the student will receive a verbal admonishment and a description of the consequences for future infractions. This meeting will be followed by a letter which contains the same information.\"\n\nAdditionally, the student may receive one of the following:\n- \"The student may be assigned to an online education class covering the health, safety, academic, and legal consequences of alcohol or drug misuse. Furthermore the student will be required to pass a test on the information provided by the website. The student may also be placed on probation.\"\n- \"The student may be assigned to attend an alcohol or drug education course as determined by the Dean of Students' office and may be placed on probation.\"\n\n**Repeat/Probation Offenses:**\n- \"A student who is already on probation for alcohol or drug infractions, and who is currently found responsible for any other policy infraction, may be suspended from the university.\"\n- \"If a student is already on probation for an offense not related to alcohol or drug, and is found responsible for an alcohol or drug infraction, it will be at the discretion of the Dean of Students' office to link the two offenses.\"\n\n**Underage Students:**\n\"If a student is under the age of twenty-one and is found responsible for an alcohol or drug violation, a letter will be sent to the parent/guardian notifying them of the student's violation of Mississippi State University's alcohol or drug policy unless in certain extreme circumstance at the discretion of the Dean of Students Office.\"\n\n**Financial Penalty:**\n\"If a student is found responsible for an alcohol or drug infraction, that student will pay a fee as decided by the university.\"\n\nOP 60.120 further notes that \"For students, sanctions may include suspension or expulsion\" and that students \"may be referred to the appropriate authorities for prosecution.\"\n\nASSESSMENT: {\"cited_op_numbers\":[\"91.119\",\"60.120\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.119",
+          "60.120"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3758,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 510,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/91119"
+    },
+    {
+      "q": "What support does MSU provide for students with disabilities?",
+      "expected_op_numbers": [
+        "91.122"
+      ],
+      "returned_numbers": [
+        "91.122",
+        "12.15",
+        "60.123",
+        "30.06",
+        "91.353"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: Mississippi State University provides the following support for students with disabilities:\n\n**Non-Discrimination Commitment**\nAccording to OP 91.122, \"Mississippi State University does not permit discrimination against qualified individuals with disabilities in its programs\" and is \"committed to the integration of all individuals with disabilities into the programs and services of the University and to full compliance with all laws regarding equal opportunity for qualified students with a disability.\"\n\n**Disability Resource Center (DRC)**\nPer OP 91.122, \"Disability Resource Center ('DRC') provides disability consultation and the coordination of support services and accommodations for all qualified students with disabilities.\" The DRC is located in Montgomery Hall, ground floor, and directions for applying are available at www.drc.msstate.edu/students/apply-for-accommodations.\n\n**Accommodations Process**\nOP 91.122 states that \"MSU provides appropriate support and accommodations through the voluntary disclosure of a disability and a request for accommodation.\" Students must register with the DRC and submit accommodation requests. Importantly, \"Students who do not voluntarily disclose their disability to DRC and request accommodations are not eligible for services.\"\n\n**Documentation**\nPer OP 91.122, accommodations are \"determined based on appropriate disability documentation,\" which can include student self-reports, DRC staff impressions, and third-party documentation such as IEPs, 504 Plans, and reports from licensed psychologists or healthcare providers.\n\n**Accommodations at Campus Events**\nPer OP 91.353, \"the policy of Mississippi State University is to make its programs, services, and activities accessible to students, faculty, staff, and the general public with disabilities who visit or attend a campus-sponsored program or event.\"\n\nASSESSMENT: {\"cited_op_numbers\":[\"91.122\",\"91.353\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.122",
+          "91.353"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3941,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 413,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/91122"
+    },
+    {
+      "q": "What is the health insurance and repatriation insurance policy for international students?",
+      "expected_op_numbers": [
+        "91.175"
+      ],
+      "returned_numbers": [
+        "91.175",
+        "91.400",
+        "11.06",
+        "30.01",
+        "12.32"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: According to OP 91.175, the health insurance and repatriation insurance policy for international students at Mississippi State University is as follows:\n\n**Scope:**\nThe policy applies to \"all international students enrolled at Mississippi State University, including branch campuses, but excluding all distance students.\"\n\n**Health Insurance Requirement:**\n\"All international students enrolled at Mississippi State University are required to purchase the MSU Student Association Sponsored Student Insurance Plan which is made available through the Longest Student Health Center. The premium for this plan will be automatically assessed with tuition and other student fees.\"\n\n**Exception for Alternate Coverage:**\n\"International students who are covered by any alternate health insurance plan that meets the standards of coverage may submit proof of insurance coverage as required. If such alternate coverage meets the same standards as the MSU student coverage, the MSU Student coverage can be waived.\" However, \"Requests for exceptions to waive MSU Student Insurance must be made by the 10th day of class each semester.\"\n\n**Repatriation and Medical Evacuation Insurance:**\n\"All enrolled international students are required to maintain repatriation and medical evacuation coverage.\" Covered expenses may include \"costs for embalming, an autopsy, a hermetically-sealed coffin, a wooden shipment box, mortuary services, and shipping costs.\" Importantly, \"the university will not be responsible for payment of repatriation or medical evacuation expenses.\"\n\n**For Students with Alternate Insurance:**\n\"All students with approved alternate insurance must purchase additional repatriation and medical evacuation coverage if not included.\" This coverage \"must be done by the tenth day of class,\" and \"MSU insurance charges will not be removed from a student's account until repatriation and medical evacuation coverage is purchased.\"\n\nASSESSMENT: {\"cited_op_numbers\":[\"91.175\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.175"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3492,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 415,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/91175"
+    },
+    {
+      "q": "What's MSU's policy on study abroad and international travel by students?",
+      "expected_op_numbers": [
+        "11.06"
+      ],
+      "returned_numbers": [
+        "11.06",
+        "91.175",
+        "62.01",
+        "12.39",
+        "30.01"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER:\n\nMSU's policy on study abroad and other international travel by students is governed primarily by **AOP 11.06**. Here are the key provisions:\n\n**Student Status and Credit:**\n- \"Students who fulfill the requirements according to the Office of Study Abroad are able to maintain their status as an MSU student while studying abroad or participating in other experiential learning exercises and receive credit for their studies when applicable.\" (AOP 11.06)\n- \"Students who do not fulfill the requirements according to the Office of Study Abroad will not have the privileges of a MSU student, and the credit earned abroad may not fulfill MSU degree requirements.\" (AOP 11.06)\n\n**Administrative Responsibility:**\n- \"The Provost and Executive Vice President shall designate the office responsible for maintaining the risk management standards, registration procedures, and applicable fees for students and faculty participating in study abroad programs and other experiential learning exercises associated with MSU occurring outside of the United States.\" (AOP 11.06)\n\n**Policy Review:**\n- The policy \"will be reviewed every four years or whenever circumstances require an earlier review by the Associate Vice President for International Programs/Executive Director of the International Institute and the Executive Vice Provost.\" (AOP 11.06)\n\nAdditionally, related policies address fees and insurance for international students. Under **OP 30.01**, \"All international students enrolled at Mississippi State University are required to pay an administrative fee of $100.00 each term (Fall, Spring, and Summer) of enrollment.\" Under **OP 91.175**, \"all international students...be required to purchase stipulated levels of health insurance and maintain repatriation and medical evacuation coverage.\"\n\nFor general travel reimbursement on official University business, **OP 62.01** applies and covers \"all University related travel within state, out-of-state, and outside the continental United States.\"\n\nASSESSMENT:\n{\"cited_op_numbers\":[\"11.06\",\"91.175\",\"30.01\",\"62.01\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "11.06",
+          "91.175",
+          "30.01",
+          "62.01"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3206,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 456,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1106"
+    },
+    {
+      "q": "How does a graduate student request academic amnesty?",
+      "expected_op_numbers": [
+        "12.18"
+      ],
+      "returned_numbers": [
+        "12.18",
+        "12.17",
+        "12.37",
+        "12.20",
+        "91.100"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: According to AOP 12.18, a graduate student requests academic amnesty through the following process:\n\n1. **Eligibility requirement**: The student \"must not have been enrolled as a graduate student at Mississippi State University for at least three years.\"\n\n2. **Initial admission step**: \"Academic amnesty may be requested through the student's academic dean's office after either provisional admission to a graduate program or provisional readmission has been granted by the department.\"\n\n3. **Completion requirement before invoking amnesty**: \"Upon successful completion of at least 9 credit hours with a 3.0 or higher GPA provisional admission is removed, and the student can then invoke academic amnesty.\"\n\n4. **Processing**: \"With notification from the Dean of The Graduate School, the Registrar's Office will update the student's academic record showing all courses and grades to be included in academic amnesty and recalculate the graduate GPA accordingly.\"\n\nIn summary, the student must: (1) be absent for at least three years, (2) be provisionally admitted or readmitted, (3) complete at least 9 credit hours with a 3.0 or higher GPA, and then (4) request academic amnesty through their academic dean's office. The request is processed via notification from the Dean of The Graduate School to the Registrar's Office.\n\nASSESSMENT: {\"cited_op_numbers\":[\"12.18\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "12.18"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3898,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 326,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1218 — Academic Amnesty for Graduate Students"
+    },
+    {
+      "q": "What is the policy on withdrawing from the university?",
+      "expected_op_numbers": [
+        "12.02"
+      ],
+      "returned_numbers": [
+        "12.02",
+        "12.32",
+        "91.301",
+        "91.113",
+        "12.39"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: According to AOP 12.02, the policy on withdrawing from the university is as follows:\n\n**Initiating Withdrawal:**\n\"Any student leaving the University prior to the end of the period of enrollment, except for temporary absences, should initiate withdrawal procedures at his/her Academic Dean's office. By completing this procedure, the student may prevent future difficulties in obtaining transcripts or in re-entering the University, and will avoid having a grade of F (failure) automatically recorded for all courses taken during the semester.\"\n\n**Grades Assigned Upon Withdrawal:**\n\"A student who withdraws after the 10th day of classes for the fall and spring semesters will receive a grade of W for each course scheduled. A student who withdraws after the 2nd day for the five-week term, after the 3rd day for the ten-week term, or after the 2nd day of a shortened format course (10-24 class meetings), will receive a grade of W for each course scheduled.\"\n\n**Withdrawal Deadlines:**\n\"No withdrawals will be allowed during the last two weeks before the beginning of final examinations for the fall and spring semesters, during the last week prior to the beginning of examinations for each five-week/ten-week summer term, or during the last three days of a shortened format course (10 to 24 class meetings).\"\n\n**Effective Date of Withdrawal:**\n\"The withdrawal of any student shall not be effective on a date prior to the last day of class attendance.\"\n\n**Retroactive Withdrawal:**\n\"In highly unusual circumstances resulting from extreme hardship, a student may petition to withdraw retroactively from a semester within one calendar year.\" Such requests require documentation and \"must be approved by the student's advisor, department head, dean, and the Provost.\" Additionally, \"In no case will more than one semester's work be retroactively withdrawn during a student's matriculation at Mississippi State University.\"\n\nAdditionally, under OP 91.113, students may be subject to **administrative withdrawal** (voluntary or involuntary) in extraordinary circumstances where a student poses a direct threat of harm or is unable to meet reasonable standards of conduct.\n\nASSESSMENT: {\"cited_op_numbers\":[\"12.02\",\"91.113\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "12.02",
+          "91.113"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3854,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 511,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1202 — Withdrawal from the University"
+    },
+    {
+      "q": "How does the grade appeal process work?",
+      "expected_op_numbers": [
+        "13.14"
+      ],
+      "returned_numbers": [
+        "13.14",
+        "12.32",
+        "13.24",
+        "12.20",
+        "03.04"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER:\n\nBased on AOP 13.14, here is how the grade appeal process works at Mississippi State University:\n\n**Guiding Principles**\n\nThe policy establishes that \"student performance should be evaluated according to academic criteria, not on the basis of opinions or conduct in matters unrelated to academic standards.\" Additionally, \"the instructor shall be presumed to have assigned the proper grade until it is proven otherwise. The burden of proof to the contrary rests with the student.\"\n\nStudents are also protected, as \"students shall have protection through orderly appellate procedures against prejudiced or capricious academic evaluation.\"\n\n**The Academic Review Board**\n\nAppeals are heard by the Academic Review Board, which is composed of:\n- \"One member of the teaching faculty from each of the schools or colleges of the University\"\n- \"One alternate from each of the schools or colleges\"\n- \"A student recommended by the Student Association president\"\n- \"Three faculty members at large appointed by the Provost and Executive Vice President\"\n- The Dean of Students and Dean of Graduate School serve as \"ex-officio (non-voting) members\"\n\n**Instructor Obligations**\n\nPer AOP 13.14, \"the method of grading by instructors should be made clear to students, and instructors should be required to justify disputed grades. All records on which grades are based should be retained on file for a minimum of one year.\"\n\n**Note:** The retrieved policy text for Section C (Appeal Procedure) was cut off before detailing the full step-by-step appeal procedure. For complete procedural details, I would recommend consulting the full text of AOP 13.14 directly.\n\nASSESSMENT:\n{\"cited_op_numbers\":[\"13.14\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "13.14"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3743,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 391,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1314 — Grade Appeal & Academic Review Board"
+    },
+    {
+      "q": "What's the policy on final examinations?",
+      "expected_op_numbers": [
+        "12.04"
+      ],
+      "returned_numbers": [
+        "12.04",
+        "12.32",
+        "12.39",
+        "12.12",
+        "01.07"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: Mississippi State University's policy on final examinations is governed by AOP 12.04. Here are the key provisions:\n\n**Scheduling:**\n\"All final examinations will be held as specified on the Examination Schedule except those for classes meeting fewer than two lecture hours per week and/or certain other classes which may be given at particular times by special permission from the Provost and Executive Vice President.\"\n\n**Special Class Types:**\n\"Classes meeting fewer than two lecture hours per week and all laboratories will have their examinations at the last regular meeting of the class. Evening classes will have their examination on the same night of the week during the final examination period. Classes offered in shortened formats should hold the final exam during the last class period for synchronous delivery or the last class day for asynchronous delivery when the exams are not scheduled in the University academic calendar.\"\n\n**Reading Day:**\n\"The purpose of the Reading Day, when scheduled, is to allow students time to study and prepare for final examinations. No student activity, meeting, assignment, or event should be scheduled on this day. These restrictions apply to all Mississippi State University classes (e.g., face-to-face, online, etc.).\"\n\n**Multiple Sections:**\n\"When an instructor teaches more than one section of the same course, permission may be given in advance at the instructor's discretion to a student registered for the course to take the examination in any one of the sections, provided that procedure does not result in too many examinations for the student in one day.\"\n\n**Student Time Entitlement and Late Arrivals:**\n\"Students are entitled to sit through the full three hours of the allocated exam time. If a student is late for the examination but no classmates have completed the examination before the student's arrival, then the faculty member must allow the student to take the examination within the remaining examination time. If a student arrives after an examination has been submitted for evaluation, the faculty member or proctor may refuse to administer the final examination to the late student.\"\n\n**Online/Asynchronous Classes:**\n\"Asynchronous online classes will have their examination during the regular examination period. Examinations for traditional 15-week semester courses must be available to online students for at least 72 hours between the end of Reading Day and prior to the end of the exam period.\"\n\nAll of the above is from AOP 12.04.\n\nASSESSMENT: {\"cited_op_numbers\":[\"12.04\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "12.04"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3828,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 543,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1204 — Final Examination"
+    },
+    {
+      "q": "What is the policy on auditing a class?",
+      "expected_op_numbers": [
+        "11.11"
+      ],
+      "returned_numbers": [
+        "11.11",
+        "12.09",
+        "12.32",
+        "12.20",
+        "12.39"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: According to AOP 11.11, the policy on auditing a class at Mississippi State University is as follows:\n\n**Approval Process:**\n\"Upon recommendation from the relevant course instructor and subject to approval by the appropriate dean and Registrar, a student may enroll to audit a course. The approval to audit must occur by the last day to add a course in the semester.\"\n\n**Changing Status:**\n\"A student may not change from credit to audit or audit to credit status after the last day to add a course in the semester.\"\n\n**Course Load:**\n\"An audited course counts as part of an undergraduate student's regular load. For graduate students, regardless of whether they receive an assistantship, audit hours may not be used to satisfy the full-time enrollment requirement in any semester.\"\n\n**Expectations for Auditing Students:**\n\"Students auditing a class are not required to take tests and/or exams or to prepare other written assignments. Otherwise, conformity to regular classroom rules including attendance requirements is the same as for students taking the course for credit. At the time the request for audit is approved, the professor will inform the student auditing the class of attendance expectations.\"\n\n**Consequences of Non-Compliance:**\n\"Failure to meet any or all of these requirements may result in that student being administratively dropped from the class roll.\"\n\n**Degree Requirements:**\n\"No audited course may be counted as part of the required hours of any degree or program requirement.\"\n\nASSESSMENT: {\"cited_op_numbers\":[\"11.11\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "11.11"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3654,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 350,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1111 — Auditing a Class"
+    },
+    {
+      "q": "Can an undergraduate repeat a course for grade forgiveness?",
+      "expected_op_numbers": [
+        "12.20"
+      ],
+      "returned_numbers": [
+        "12.20",
+        "12.15",
+        "12.32",
+        "10.12",
+        "12.17"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: Yes, an undergraduate student can repeat a course, and may also request grade forgiveness in connection with a repeated course. According to OP 12.20:\n\n**Repeating a Course:** \"Repeats are ordinarily used when an undergraduate student has not achieved a satisfactory grade in a course and must repeat the course to meet degree requirements.\" However, \"a course that is repeated and in which the student originally received a passing grade will not generate additional credit hours toward graduation unless the course has been approved by the University Committee on Courses and Curricula (UCCC) as repeatable.\"\n\n**Grade Forgiveness:** \"An undergraduate student may request forgiveness for up to 9 credits of undergraduate semester hours at Mississippi State University in which they made a D or an F.\" Key conditions include:\n- \"This policy is only applicable to the first baccalaureate degree being earned by a student at Mississippi State University.\"\n- \"This policy is only applicable to courses that have been taken at Mississippi State University.\"\n- \"Only courses in which a D or F grade was earned after fall 2003 are eligible for forgiveness.\"\n- \"Students may not receive course grade forgiveness under this policy if the grade was received as a sanction for academic misconduct.\"\n\nWhen repeating a course without activating grade forgiveness, \"the grade in the repeated course will be averaged with all previously completed courses, including the one repeated, for the computation of the grade point average.\"\n\nASSESSMENT: {\"cited_op_numbers\":[\"12.20\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "12.20"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3942,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 348,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1220 — Undergraduate Course Grade Forgiveness and Repeating a Course"
+    },
+    {
+      "q": "What is MSU's policy on student education records?",
+      "expected_op_numbers": [
+        "30.02"
+      ],
+      "returned_numbers": [
+        "30.02",
+        "06.04",
+        "60.109",
+        "30.06",
+        "10.16"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: MSU's policy on student education records is governed by OP 30.02. Here are the key elements:\n\n**Purpose:** \"The purpose of this Operating Policy and Procedure (OP) is to clarify policies and procedures which relate to student education records at Mississippi State University. This policy is adopted pursuant to the Family Educational Rights and Privacy Act of 1974, as amended, 20 U.S.C. §1232g ('FERPA'), and is not intended to impose any restrictions or grant any rights not specifically required by this Act.\" (OP 30.02)\n\n**University's Recognition of Obligations:** \"The University recognizes that the maintenance of student information and education records is necessary and vital to assist the student's education and development and to provide opportunities for University research and policy formulation. The University recognizes its obligation to exercise discretion in recording and disseminating information about students to insure that their rights of privacy are maintained.\" (OP 30.02)\n\n**Annual Notification:** \"The University will furnish annual notification to students of their right to inspect and review their education records, to request amendment of education records considered by them to be inaccurate or misleading or that violate privacy or other rights, and to a hearing should the University decline to amend such records. The annual notice will be published in the University's bulletin.\" (OP 30.02)\n\n**Records Disposal:** \"The University utilizes The Guide for Retention and Disposal of Records as published by the American Association of Collegiate Registrars and Admissions Officers as the policy for disposal of student records.\" (OP 30.02)\n\n**Definition of Student:** \"A student is defined as an individual who has been admitted and has been in attendance in a component unit of the University (OP 31.01). Classification as a student in one component unit of the University (e.g., an undergraduate program) does not imply that the person has been accorded the rights outlined below in other component units (i.e. graduate studies, professional schools, and branch campus).\" (OP 30.02)\n\n**Student Access Rights:** \"Students have the right to be provided a list of the type of education records maintained by the University which are directly related to the student; the right to inspect and review the contents of those records; the right to a response from the University to reasonable requests for explanation and interpretation of those records; the right to an opportunity for a hearing to challenge the content of those records.\" (OP 30.02)\n\nNote that the retrieved policy text for OP 30.02 is truncated, so additional details regarding specific procedures may exist in the full policy document.\n\nASSESSMENT: {\"cited_op_numbers\":[\"30.02\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "30.02"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3911,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 614,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/3002 — Education Records (FERPA-related)"
+    },
+    {
+      "q": "What's the academic grievance procedure for graduate students?",
+      "expected_op_numbers": [
+        "12.37"
+      ],
+      "returned_numbers": [
+        "12.37",
+        "13.05",
+        "12.15",
+        "12.18",
+        "12.32"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER:\n\nAccording to OP 12.37, the academic grievance procedure for graduate students involves the following key elements:\n\n**Definition:**\n\"An Academic Grievance is a deviation from standard or appropriate practices or University policy or procedure pertaining to the conduct of academic activities, including mentoring. The action(s) adversely impacts the ability of a student to progress toward timely fulfillment of degree requirements.\"\n\n**Time Limit:**\n\"Unless extenuating circumstances exist, a student must initiate the academic grievance procedure within 30 days of the occurrence of the alleged grievance.\"\n\n**Step 1 – Determining Course of Action:**\n\"The graduate student should seek the counsel of the Dean of Students to determine whether the grievance has sufficient merit to warrant the initiation of the academic grievance procedure, or if the grievance should be referred to some other office or falls under another policy of the University.\"\n\n**Note on Other Policies:**\n\"Matters related to harassment and discrimination (OP 03.03), grade appeals (AOP 13.14), and employment issues are managed by other University Policies or Academic Operating Policy and Procedures.\"\n\n**Informal vs. Formal Process:**\n\"Each graduate student shall have the right to petition for a hearing to address an academic grievance. For example, the student may choose to by-pass the informal procedure (section III A) and begin with the formal procedure (section III B).\"\n\nAdditionally, \"the times noted for response are to be strictly followed except under extenuating circumstances agreed upon in writing by the student and the accused faculty or staff member.\"\n\nThe policy (OP 12.37) outlines both informal and formal procedures in Section III, but the full text of Section III was not included in the retrieved policy excerpt. For complete procedural details, the full text of OP 12.37 should be consulted directly.\n\nASSESSMENT:\n{\"cited_op_numbers\":[\"12.37\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "12.37"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 4081,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 442,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1237 — Graduate Student Academic Grievance Procedures"
+    },
+    {
+      "q": "What is the distance education policy?",
+      "expected_op_numbers": [
+        "10.16"
+      ],
+      "returned_numbers": [
+        "10.16",
+        "30.02",
+        "91.126",
+        "56.01",
+        "02.01"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER:\n\nMississippi State University's distance education policy is outlined in AOP 10.16. Here are the key elements:\n\n**Purpose:** \"The purpose of this Academic Operating Policy and Procedure (AOP) is to ensure an understanding of the procedures for the development, implementation, and maintenance of formal distance learning degree programs, courses, minors, and certificates offered for academic credit at Mississippi State University (MSU).\" (OP 10.16)\n\n**Definition:** \"MSU uses the Southern Association of Colleges and Schools Commission on Colleges (SACSCOC) definition of distance education.\" (OP 10.16)\n\n**Students:** \"A distance education student is defined as one who has been admitted into a distance education program at MSU. Although geographically dispersed, distance students meet the definition of a 'student at Mississippi State University' as defined under OP 31.01 Definition of a Student.\" (OP 10.16)\n\n**Programs:** \"Any academic unit may provide distance education programs, courses, minors, or certificates that serve populations of students with a demonstrated need, who are not on campus, and whereby the curricula can be developed and effectively delivered in a distance format.\" (OP 10.16)\n\n**Key Compliance Requirements:**\n- \"All distance education degree programs, courses, minors, and certificates must be consistent with the role and mission of both Mississippi State University and the units providing them.\" (OP 10.16)\n- \"All distance programs, courses, minors, and certificates are subject to the same University curricula approval processes, guidelines, and requirements as is required for on-campus programs and courses.\" (OP 10.16)\n- \"Academic units must demonstrate and maintain equivalency between on-campus and distance degree programs relative to academic rigor, breadth, and expected outcomes.\" (OP 10.16)\n- \"Only persons holding a faculty position, approved and assigned by their department head, may teach distance classes.\" (OP 10.16)\n\nASSESSMENT:\n{\"cited_op_numbers\":[\"10.16\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "10.16"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3630,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 471,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1016 — Distance Education"
+    },
+    {
+      "q": "What's the policy on class attendance and reporting absences?",
+      "expected_op_numbers": [
+        "12.09"
+      ],
+      "returned_numbers": [
+        "12.09",
+        "13.03",
+        "12.32",
+        "01.07",
+        "12.39"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: Mississippi State University's class attendance policy is governed primarily by AOP 12.09. Here are the key elements:\n\n**Student Responsibilities:**\n\"Upon registration, the student accepts the responsibility of attending all classes and completing all in-class and out-of-class work that the instructor formally assigns. When absence from class is essential, the student must inform the instructor through a designated means of communication and provide satisfactory documentation of the impending absence unless prescribed otherwise in the syllabus. If possible, all arrangements should be made prior to the absence.\" (AOP 12.09)\n\n**Making Up Missed Work:**\n\"The student should discuss and document the scope and time frame for completion of missed work with the instructor in an agreed-upon timely manner. The student should recognize that failure to comply with this documented, mutually agreed-upon procedure could result in a grade penalty, if prescribed in course syllabus.\" (AOP 12.09)\n\n**Instructor Responsibilities:**\n\"A reasonable attendance policy is the purview of an individual instructor... Each instructor must describe his or her attendance and participation policy in the course syllabus.\" The instructor should also \"inform students in writing how attendance will be measured; maintain current, verifiable attendance records; and recognize that failure to comply could constitute grounds for grade appeal.\" (AOP 12.09)\n\n**Best Practices:**\n\"Best practices would dictate if attendance and participation are used in the evaluation of a student's performance, passing or failing a course should not rest solely on class attendance and participation.\" (AOP 12.09)\n\n**Oversight:**\n\"The instructor's department head will supervise all class attendance policies so as to assure compliance with departmental standards and university policy.\" (AOP 12.09)\n\nAdditionally, under AOP 13.03, instructors are required to \"meet all assigned classes, unless hindered by reason beyond one's control,\" and if absent without prior notice, \"students are expected to remain in the classroom ten minutes after the beginning of the period, unless otherwise indicated by the instructor of record.\"\n\nNote: The retrieved policy text for AOP 12.09 was cut off before listing the specific approved excused absences. For a complete list of excused absences, you should consult the full policy document.\n\nASSESSMENT: {\"cited_op_numbers\":[\"12.09\",\"13.03\"],\"refused\":false,\"quoted_verbatim\":true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "12.09",
+          "13.03"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3833,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 529,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1209"
+    },
+    {
+      "q": "What is MSU's discrimination, harassment, and retaliation policy?",
+      "expected_op_numbers": [
+        "03.03"
+      ],
+      "returned_numbers": [
+        "03.03",
+        "01.07",
+        "60.103",
+        "60.123",
+        "30.06"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: Mississippi State University's discrimination, harassment, and retaliation policy (OP 03.03) covers the following key areas:\n\n**Commitment:** \"Mississippi State University is committed to assuring that the University and its programs are free from unlawful discrimination and harassment based upon race, color, ethnicity, sex, pregnancy, religion, national origin, disability, age, sexual orientation, genetic information, status as a U.S. veteran, or any other status to the extent protected by applicable law. The University will not tolerate discrimination, harassment, or retaliation, as defined below, and is committed to preventing or stopping them whenever they may occur at the University or in its programs.\" (OP 03.03)\n\n**Prohibited Conduct:** \"Mississippi State University prohibits unlawful discrimination or harassment on the basis of a person's race, color, ethnicity, sex, pregnancy, religion, national origin, disability, age, sexual orientation, genetic information, status as a U.S. veteran, or any other status to the extent protected by applicable law. This policy also prohibits retaliation against a person who has made a report or filed a complaint of discrimination or harassment, is a witness to discrimination or harassment, or has participated in an investigation of a complaint of discrimination or harassment.\" (OP 03.03)\n\n**Mandatory Reporting:** \"In certain cases, this and other University policies mandate reporting discrimination or harassment to the University. It is a violation of this policy for a mandatory reporter to disregard or unreasonably delay reporting.\" (OP 03.03)\n\n**Application:** \"This policy applies to all Mississippi State employees, students, visitors, volunteers, applicants, vendors, contractors, or program participants. It prohibits discrimination and/or harassment on the basis of any of the protected characteristics listed below in any University program, service, opportunity, or activity, which includes without limitation all academic, educational, research, extracurricular, athletic, housing, and other programs, regardless of where they may occur.\" (OP 03.03)\n\n**Retaliation Definition:** The policy \"prohibits retaliation, which includes any intimidation, coercion, discrimination, threat, or other action against any individual that would deter a reasonable person from reporting, testifying, assisting, or cooperating with an investigation or proceeding.\" (OP 03.03)\n\n**Scope Limitations:** \"This policy does not govern disputes over offensive conduct, employment decisions, or other matters in which the alleged conduct was not based on one or more protected characteristics. Such disputes may be covered by other applicable policies or procedures, such as the Guidelines for Employee Conduct (OP 60.401) or the Code of Student Conduct (OP 91.100).\" (OP 03.03)\n\nASSESSMENT: {\"cited_op_numbers\":[\"03.03\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "03.03"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3820,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 635,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/0303"
+    },
+    {
+      "q": "What's the policy on sexual misconduct at MSU?",
+      "expected_op_numbers": [
+        "03.04"
+      ],
+      "returned_numbers": [
+        "03.04",
+        "01.07",
+        "03.02",
+        "12.39",
+        "03.03"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: MSU's sexual misconduct policy is governed by OP 03.04. Here are the key elements:\n\n**Statement of Policy:**\nAs stated in OP 03.04, \"Mississippi State University ('the university' or 'MSU') does not permit discrimination on the basis of sex in its educational programs or activities\" and the university's \"policy is to comply fully with the requirements of Title IX of the Education Amendments of 1972, as well as other applicable laws and their implementing regulations.\"\n\n**Who It Applies To:**\n\"It is the policy of the university that no member of its community, including students, employees, contractors, and visitors on its campuses, shall engage in sexual harassment, sexual assault, dating or domestic violence, sexual exploitation, or stalking toward any other member of the university community or in connection with any University program.\"\n\n**Reporting:**\n\"Reporting of sexual misconduct to the authorities listed in this policy is strongly encouraged and in some circumstances is required.\"\n\n**Consequences:**\n\"Any person who violates this policy is subject to disciplinary action, which may include expulsion from the university or its programs or termination of employment.\"\n\n**Retaliation:**\n\"Retaliation of any kind against any person who brings a complaint or participates in any capacity in proceedings under this policy will not be tolerated and will be independent grounds for disciplinary action.\"\n\n**Scope:**\n\"Application of this policy is not limited to sexual misconduct that occurs on an MSU campus. It may also include sexual misconduct that occurs off-campus if it involves a university program or members of the university community.\"\n\nFor concerns about sexual misconduct or Title IX inquiries, OP 03.02 directs individuals to contact Lateshia Butler, Director of Civil Rights Compliance, at titleix@msstate.edu or 662-325-5839.\n\nASSESSMENT: {\"cited_op_numbers\":[\"03.04\",\"03.02\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "03.04",
+          "03.02"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3850,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 444,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/0304 — Sexual Misconduct"
+    },
+    {
+      "q": "What is the use-of-information-technology-resources policy?",
+      "expected_op_numbers": [
+        "01.12"
+      ],
+      "returned_numbers": [
+        "01.12",
+        "01.16",
+        "01.11",
+        "01.25",
+        "01.10"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: Mississippi State University's Use of Information Technology Resources policy (OP 01.12) establishes that \"All users are required to use University IT resources in an effective, efficient, ethical, and lawful manner. Use of Mississippi State University's IT resources must be consistent with the mission of the University and all applicable laws and policies.\"\n\nThe policy covers several key areas:\n\n**Security:**\nUsers are responsible for maintaining security of electronically stored information per OP 01.10. Specifically:\n- \"Accounts, passwords, and other types of authorization are assigned to individual users and must not be shared with others.\"\n- \"Two-factor authentication is required as specified by the Information Security Program.\"\n- \"Each user should be aware of computer viruses and other malicious computer programs and take steps to avoid being either their victim or propagator. Minimally, each user must ensure that appropriate and current antivirus software is operational on all personal computers and that virus definitions are kept current.\"\n\n**Digital and Electronic Copyright Infringement:**\nThe policy states that \"All users of University IT resources must understand that copying, using, downloading, uploading, sharing, or otherwise distributing copyrighted material (including, but not limited to, music, movies, books, articles, and computer software) without explicit permission of the copyright owner or agent or as allowed by OP 01.20 (Policy on Use of Copyrighted Works for Education and Research) is a violation of federal law and MSU policy.\"\n\nThis policy applies to all users of IT resources \"whether provided on premise, via the cloud, or other hosted services.\"\n\nASSESSMENT: {\"cited_op_numbers\":[\"01.12\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "01.12"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 4072,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 378,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/0112"
+    },
+    {
+      "q": "What's MSU's faculty grievance procedure?",
+      "expected_op_numbers": [
+        "13.05"
+      ],
+      "returned_numbers": [
+        "13.05",
+        "12.37",
+        "13.24",
+        "60.121",
+        "30.06"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: MSU's faculty grievance procedure is outlined in AOP 13.05. Here are the key elements:\n\n**Purpose and Scope**\nThe policy exists because \"when a faculty member has a grievance, efforts will be made to gather the necessary information surrounding the grievance and to respond appropriately and justly in a timely manner.\" (AOP 13.05)\n\n**What It Does NOT Cover**\nAOP 13.05 explicitly excludes several matters: \"allegations of discrimination or harassment, which shall be directed to the Office of Civil Rights Compliance; termination, termination procedures, or notice of non-reappointment, which shall be addressed in accordance with OP 60.113; promotion or tenure, which shall follow the procedures outlined in AOP 13.07; grievances filed by students or against students, which shall be referred to the Office of the Dean of Students; and grievances related to compensation, which shall be directed to Human Resources Management.\"\n\n**Key Definitions**\n- **Grievance**: \"the claim of a faculty member that there has been a violation, misinterpretation or misapplication of a rule, policy or procedure in relation to personnel policies, including work responsibilities, working hours, working conditions, work environment, work leaves, and other conditions of employment.\"\n- **Faculty eligibility**: \"A faculty member holding an administrative position will have access to these procedures regarding their faculty duties, but will not have access to the procedures related to their administrative duties.\"\n\n**Faculty Grievance Committee**\nThe committee is \"a standing university committee charged with determining whether a grievance falls within the scope of this policy and overseeing the administration of the faculty grievance process.\" Members must be \"full-time faculty members with a rank 2 or higher,\" and include the President and Chair of relevant Faculty Senate bodies, plus \"two faculty members elected from each college.\" (AOP 13.05)\n\nThe retrieved policy text does not include the full step-by-step procedural details beyond what is cited above. For complete procedural steps, I would recommend consulting the full AOP 13.05 document directly.\n\nASSESSMENT: {\"cited_op_numbers\":[\"13.05\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "13.05"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3885,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 494,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1305 — Faculty Grievance Procedures"
+    },
+    {
+      "q": "What's MSU's policy on intellectual property?",
+      "expected_op_numbers": [
+        "76.01"
+      ],
+      "returned_numbers": [
+        "76.01",
+        "60.121",
+        "01.12",
+        "12.39",
+        "01.20"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: MSU's intellectual property policy is governed primarily by **OP 76.01**. While the full text of that policy was only partially retrieved, it covers several key areas. Here is what can be confirmed from the provided policy text:\n\n**Scope and Coverage:**\nOP 76.01 defines and addresses multiple categories of intellectual property, including:\n- **\"Intellectual Property\"** (Section 2.1)\n- **\"Patentable Materials\"** (Section 2.2)\n- **\"Copyrighted Materials\"** (Section 2.3)\n- **\"Software\"** (Section 2.4)\n- **\"Trademarks\"** (Section 2.5)\n- **\"Trade Secrets\"** (Section 2.6)\n- **\"Plant Germplasm and Related Plant Materials\"** (Section 2.7)\n- **\"Plant Intellectual Property\"** (Section 2.8)\n- **\"Mask Work\"** (Section 2.9)\n- **\"Scholarly and Creative Works\"** (Section 2.10)\n\n**Assignment of Rights (Section V)** and **Determination of Rights (Section VI)** address ownership under different circumstances, including:\n- **\"Sponsored Research Efforts\"** (6.1)\n- **\"University Assigned Efforts\"** (6.2)\n- **\"Scholarly or Creative Works\"** (6.3)\n- **\"University Nonexclusive License to Use Instructional Materials\"** (6.4)\n- **\"Intellectual Property Resulting from Activities Outside the Scope of Employment\"** (6.5)\n\n**Related Copyright Policy:**\nOP 01.20 adds that \"Mississippi State University (MSU) is committed to complying with all applicable laws regarding intellectual property\" and that \"MSU facilitates the exercise in good faith of full fair use rights, as set forth in 17 U.S.C. §107, by faculty and staff in furtherance of their teaching, research, and service activities.\"\n\nFor the full details of OP 76.01 (including specific ownership determinations and revenue sharing), please consult the complete policy document, as only a partial version was available here.\n\nASSESSMENT: {\"cited_op_numbers\":[\"76.01\",\"01.20\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "76.01",
+          "01.20"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3756,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 541,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/7601 — Intellectual Property"
+    },
+    {
+      "q": "What is MSU's whistleblower policy?",
+      "expected_op_numbers": [
+        "01.07"
+      ],
+      "returned_numbers": [
+        "01.07",
+        "30.06",
+        "03.03",
+        "62.03",
+        "60.123"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: MSU's whistleblower policy (OP 01.07) is designed to protect individuals who report suspected wrongful conduct in good faith. Here are the key elements:\n\n**Purpose:**\nThe policy \"prohibits retaliation against any Mississippi State University (MSU) employee or other member of the MSU community (hereinafter collectively 'Individual') who makes a good faith disclosure of suspected wrongful conduct.\" It also \"encourages Individuals to disclose instances where they have a good faith belief that there has been conduct that is a violation of law and/or MSU policy.\" (OP 01.07)\n\n**Expectations:**\n\"Individuals are expected to abide by state and federal laws and regulations as well as University policies. Furthermore, an MSU employee cannot be compelled as a term or condition of his/her employment or his/her student status to violate a law or MSU policy.\" (OP 01.07)\n\n**Mandatory Reporting for Administrators:**\n\"Deans, directors, department/unit heads and other administrators who have knowledge of such acts must disclose those acts to an appropriate MSU official.\" (OP 01.07)\n\n**Prohibition on Retaliation:**\n\"No person at MSU may retaliate against an Individual who has made a Good Faith Report or who has refused to obey an illegal order.\" (OP 01.07)\n\n**Key Definitions:**\n\n- **Wrongful Conduct** includes: a violation of applicable state and/or federal laws and regulations; a violation of University policy; or \"the use of University property, resources, or authority for personal gain or other non-University-related purpose except as provided under University policy.\" (OP 01.07)\n\n- **Good Faith Report** is \"an allegation or report made in good faith by an Individual who reasonably believes that Wrongful Conduct may have occurred.\" However, it is NOT a Good Faith Report \"if it is made with reckless disregard for or willful ignorance of facts that would disprove the allegation\" or \"for the purpose of harassing an MSU student or employee or for any other improper purpose.\" (OP 01.07)\n\n- **Retaliation** is \"an adverse action or the failure to take a positive action that occurs because of the Good Faith Report\" and \"may include academic or employment decisions.\" (OP 01.07)\n\nNote: The policy text provided was cut off before fully defining when retaliation coverage applies. The policy also supplements \"the existing Mississippi Code of 1972, § 25-9-171 through 25-9-177.\" (OP 01.07)\n\nASSESSMENT: {\"cited_op_numbers\":[\"01.07\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "01.07"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3796,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 623,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/0107"
+    },
+    {
+      "q": "What governs employee leave and leave without pay?",
+      "expected_op_numbers": [
+        "60.201"
+      ],
+      "returned_numbers": [
+        "60.201",
+        "13.06",
+        "02.01",
+        "60.112",
+        "60.401"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: Employee leave and leave without pay at Mississippi State University is governed by **OP 60.201 (HRM 60.201: Leave/Leave Without Pay)**. This policy covers a comprehensive range of leave topics, including:\n\n- Personal Leave with Pay\n- Major Medical Leave with Pay\n- Major Medical Leave for Adoption or Foster Care\n- Parental Leave\n- Separation Leave Payout/Transferring Leave Policy\n- Donated Leave Policy\n- Leave for Death in the Immediate Family\n- Administrative Leave\n- Military Leave/Veteran's Re-Employment Rights\n- Family and Medical Leave (effective January 1, 2026)\n- Organ Donor Leave\n- General Leave of Absence (Leave Without Pay)\n- Professional Leave of Absence\n\nThe policy is found under the Human Resources Management section and is titled \"HRM 60.201: LEAVE/LEAVE WITHOUT PAY.\"\n\nAdditionally, for faculty members specifically, **OP 13.06 (AOP 13.06: Sabbatical Leave)** governs sabbatical leave, stating that \"Faculty members shall be eligible for Sabbatical leaves for the purpose of professional improvement\" and that such leaves \"shall be in accordance with\" specific eligibility, approval, compensation, and reimbursement requirements outlined in that policy.\n\nASSESSMENT: {\"cited_op_numbers\":[\"60.201\",\"13.06\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "60.201",
+          "13.06"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3216,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 326,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/60201 — Leave/Leave Without Pay"
+    },
+    {
+      "q": "What's the policy on outside employment and consulting for MSU staff?",
+      "expected_op_numbers": [
+        "60.415"
+      ],
+      "returned_numbers": [
+        "60.415",
+        "60.323",
+        "60.104",
+        "12.39",
+        "61.04"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: According to OP 60.415, MSU's policy on outside employment and consulting for staff is as follows:\n\n**Who May Participate:**\n\"Staff may participate only in certain consulting or non-consulting activities, but only as outside employment (including business activities).\" Note that unlike faculty, staff are **not** eligible for Faculty Consulting Activities — those are restricted to faculty members only.\n\n**Conditions for Approval:**\nOutside employment activities \"may be permitted provided that activities do not conflict with faculty and staff normal duties and responsibilities at MSU and do not otherwise violate state law or university policy.\"\n\n**Approval Process:**\n\"MSU employees proposing to conduct these activities must obtain approval from their relevant immediate supervisors, dean/director(s), and vice president(s). This approval must be obtained in advance by submitting an Outside Employment Request Form.\"\n\n**Prohibited Activities:**\nApproved activities must not:\n- \"Damage the prestige or image of MSU\"\n- \"Constitute an ethical breach or create a real or perceived conflict of interest\"\n- \"Interfere with or duplicate the employee's regular, professional duties and responsibilities as a faculty or staff member of MSU\"\n- \"Generate responsibility or liability by MSU in any way for the services rendered or results obtained\"\n- \"Utilize university resources including, but not limited to, equipment, facilities, offices, personnel, laboratories and supplies\"\n\n**Renewal and Record-Keeping:**\n\"The request for approval must be renewed annually, and all approvals will expire automatically at the end of each fiscal year. A separate request shall be completed and approved for each external employment activity or engagement. Approved applications shall be maintained in the employee's human resources file.\"\n\n**University's Reserved Rights:**\n\"MSU reserves the right to deny permission, approve a request with limitations, or revoke approval for any request where it appears that it is in the best interest of the University to do so.\"\n\nASSESSMENT: {\"cited_op_numbers\":[\"60.415\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "60.415"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3802,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 452,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/60415"
+    },
+    {
+      "q": "How does MSU handle sabbatical leave for faculty?",
+      "expected_op_numbers": [
+        "13.06"
+      ],
+      "returned_numbers": [
+        "13.06",
+        "60.201",
+        "13.22",
+        "13.23",
+        "95.500"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: MSU's sabbatical leave policy for faculty is outlined in AOP 13.06. Here are the key provisions:\n\n**Purpose:** \"Faculty members shall be eligible for Sabbatical leaves for the purpose of professional improvement. Sabbatical leaves allowed under the Mississippi statute are not granted as rest periods, vacations, earned leave with part pay, or for any other purpose except as explicitly stated in law.\" (AOP 13.06)\n\n**Eligibility:** \"To qualify for one semester (4-1/2 months) of leave, a faculty member must have served full-time on the faculty for six (6) consecutive semesters of regular session work before the effective date of leave; to qualify for two semesters (9 months) of leave, he/she must have served full time on the faculty for twelve (12) consecutive semesters of regular session work before the effective date of leave.\" (AOP 13.06)\n\n**Approval Process:** \"Application for sabbatical leave will be made to the Board of Trustees of State Institutions of Higher Learning through the President... and shall be submitted by a faculty member to his/her department head by December 15 of the year prior to the expected Sabbatical Leave.\" (AOP 13.06). \"Requests are considered based on the plans for professional development and the needs of the home department.\" (AOP 13.06)\n\n**Compensation:** \"Each person granted sabbatical leave may be paid compensation up to the rate of fifty percent of such person's annual salary. A faculty member eligible for two semesters of sabbatical leave may choose to take sabbatical leave for one semester at full pay in lieu of two semesters of leave at half pay.\" (AOP 13.06)\n\n**Additional Compensation:** Faculty on sabbatical may receive grants or stipends, but \"may not...receive compensation that would exceed the salary which such faculty member would have received during the sabbatical period had he/she not been granted the leave.\" (AOP 13.06)\n\nNote that sabbatical leave requests \"will be disapproved when financial or other considerations may make such action necessary.\" (AOP 13.06)\n\nASSESSMENT: {\"cited_op_numbers\":[\"13.06\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "13.06"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3476,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 516,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/1306 — Sabbatical Leave for Faculty Members of State IHL"
+    },
+    {
+      "q": "What's MSU's travel reimbursement policy?",
+      "expected_op_numbers": [
+        "62.01"
+      ],
+      "returned_numbers": [
+        "62.01",
+        "30.06",
+        "11.06",
+        "12.39",
+        "60.121"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: According to OP 62.01, MSU's travel reimbursement policy is as follows:\n\n\"Mississippi State University (MSU), as a State Institution, shall make reimbursement to any officer or employee who is required to travel in the discharge of official duties to the extent of actual, ordinary and necessary costs incurred within those limitations imposed by state law, contractual agreements, or the administrative policies of the University.\"\n\nThis policy applies to \"all University related travel within state, out-of-state, and outside the continental United States.\" The policy also states that \"All Travel shall be in compliance with the procedures and guidelines set forth in the Travel Services website https://www.travel.msstate.edu/\"\n\nFor detailed procedures, guidelines, and forms, OP 62.01 directs users to visit the Travel Services website at https://www.travel.msstate.edu/. The specific reimbursement rates, limits, and procedural details are maintained there rather than within the policy text itself.\n\nASSESSMENT: {\"cited_op_numbers\":[\"62.01\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "62.01"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3496,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 251,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "From /policy/6201 — Travel"
+    },
+    {
+      "q": "Can my RA write me up for lighting a candle in my dorm room?",
+      "expected_op_numbers": [
+        "91.100"
+      ],
+      "returned_numbers": [
+        "60.401",
+        "11.11",
+        "95.502",
+        "80.01",
+        "91.100"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: Yes, your RA could potentially write you up for lighting a candle in your dorm room. While the retrieved policies do not contain a specific standalone candle policy, OP 91.100 (Code of Student Conduct) establishes that students are subject to disciplinary action for violating \"rules and regulations of the university,\" and OP 95.502 addresses fire safety concerns broadly on campus.\n\nMore directly relevant, OP 91.100 lists violations that are \"not all inclusive,\" meaning other university rules and regulations can also result of disciplinary action. Additionally, OP 95.502 specifically addresses fire hazards in residence halls, noting that \"Portable, electric space heaters are prohibited in any unattended area and specifically in the following areas: Residence halls.\" While this specifically mentions space heaters, it reflects the university's broader fire safety concerns in residence halls.\n\nUnder OP 91.100, students are expected \"to obey the law and the rules and regulations of the university,\" and \"those found responsible of violating the law or rules and regulations of the university may receive a maximum sanction of expulsion from the university.\" If candles are prohibited under residence hall rules (which would fall under the university's rules and regulations referenced in OP 91.100), then yes, an RA acting as a university official could document such a violation.\n\nHowever, I must be transparent: the retrieved policies do not contain an explicit, verbatim prohibition on candles in dorm rooms. If you need a definitive answer, I would recommend consulting your residence hall handbook or contacting the Office of Student Affairs directly.\n\nASSESSMENT: {\"cited_op_numbers\":[\"91.100\",\"95.502\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.100",
+          "95.502"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3706,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 387,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Should retrieve Code of Student Conduct (/policy/91100); title contains no candle/dorm/RA keywords."
+    },
+    {
+      "q": "What's the rule on vaping in my dorm room?",
+      "expected_op_numbers": [
+        "91.301"
+      ],
+      "returned_numbers": [
+        "91.301",
+        "91.205",
+        "91.123",
+        "91.353",
+        "12.02"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: Vaping (e-cigarettes) is prohibited in your dorm room. According to OP 91.301, \"Tobacco use in any form, including e-cigarettes, shall not be permitted in any university facility or in vehicles owned or leased by the university, regardless of location.\" Since a dorm room is a university facility, this prohibition applies there.\n\nAdditionally, OP 91.301 states that \"This policy applies to all students, faculty, staff, and visitors.\"\n\nIf you repeatedly violate this policy, you may face consequences: \"Students who are repeatedly in violation of this policy can be referred to the Dean of Students office.\"\n\nASSESSMENT: {\"cited_op_numbers\":[\"91.301\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.301"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3841,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 175,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Smoking and Tobacco Use on Campus covers vaping; title doesn't say 'vape'."
+    },
+    {
+      "q": "Can I keep a hunting rifle locked in my dorm room?",
+      "expected_op_numbers": [
+        "91.120"
+      ],
+      "returned_numbers": [
+        "11.11",
+        "91.120",
+        "31.01",
+        "95.500",
+        "12.20"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: No, you cannot keep a hunting rifle locked in your dorm room. Under OP 91.120, \"Residence Halls\" are explicitly listed as \"Non-Public Locations,\" and the policy states: \"No University student or employee, unless a duly authorized law enforcement official or authorized in accordance with the following procedure, may possess a weapon or firearm on or in University Controlled Property regardless of the possession of any kind of firearms permit.\" Additionally, even \"Authorized Persons\" (those with valid state firearms permits) \"may not possess a firearm in Non-Public Locations,\" which includes Residence Halls. As a student, you would not qualify as an \"Authorized Person\" or an authorized employee under OP 91.120, and therefore keeping a rifle — which falls under the definition of a \"Weapon\" as \"any gun, rifle, pistol or other firearm of any kind\" — in your dorm room is prohibited.\n\nASSESSMENT: {\"cited_op_numbers\":[\"91.120\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.120"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3673,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 238,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Possession of Weapons Including Firearms; conceptual phrasing 'hunting rifle in dorm'."
+    },
+    {
+      "q": "If I have ADHD, what classroom accommodations can I request?",
+      "expected_op_numbers": [
+        "91.122"
+      ],
+      "returned_numbers": [
+        "91.353",
+        "10.08",
+        "91.122",
+        "06.04",
+        "60.123"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER:\n\nThe retrieved policies do not provide a specific list of classroom accommodations available for students with ADHD. However, the policies do outline the process for requesting accommodations as a student with a disability at MSU.\n\n**How to Request Accommodations:**\n\nAccording to OP 91.122, you must register with the Disability Resource Center (DRC): \"Students with disabilities who wish to request an accommodation or modification must identify themselves to DRC by registering and submitting the accommodation requests. Directions are available at www.drc.msstate.edu/students/apply-for-accommodations.\" (OP 91.122)\n\n**Timing of Requests:**\n\n\"Students should make accommodation or modification requests as far in advance as possible of the relevant course, exam, activity, or program to allow appropriate consideration and planning.\" (OP 91.122)\n\n**Documentation:**\n\nAccommodations are \"determined based on appropriate disability documentation,\" which can include \"the student self-report,\" DRC staff impressions, and \"third-party documentation from external sources, including prior school reports, such as Individual Education Program (IEP), 504 Plans, teacher and school psychologist reports, and assessment reports and letters from licensed psychologists, health care providers, and therapists.\" (OP 91.122)\n\n**One Relevant Classroom Example:**\n\nOP 10.08 notes that electronic devices (laptops, tablets, etc.) are otherwise prohibited in classrooms \"unless authorized by the instructor or by a student's accommodation through the Disability Resource Center,\" suggesting that device use is one type of accommodation that can be arranged through the DRC. (AOP 10.08)\n\nThe specific accommodations available to you would be determined on a case-by-case basis through the DRC. The DRC is located in Montgomery Hall, ground floor.\n\nASSESSMENT:\n{\"cited_op_numbers\":[\"91.122\",\"10.08\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.122",
+          "10.08"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3868,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 438,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Students with Disabilities — title doesn't mention ADHD or accommodations."
+    },
+    {
+      "q": "My professor cancelled three weeks of class — am I supposed to keep showing up?",
+      "expected_op_numbers": [
+        "13.03",
+        "12.09"
+      ],
+      "returned_numbers": [
+        "12.09",
+        "12.32",
+        "60.113",
+        "11.11",
+        "13.03"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: This is an important situation that touches on both your responsibilities as a student and your professor's obligations under university policy.\n\n**Your attendance obligation remains, but your professor also has clear duties:**\n\nRegarding student attendance, AOP 12.09 states: \"Upon registration, the student accepts the responsibility of attending all classes and completing all in-class and out-of-class work that the instructor formally assigns.\"\n\nHowever, your professor has corresponding obligations. AOP 13.03 states that instructors of record must \"Meet all assigned classes, unless hindered by reason beyond one's control. When instructors of record cannot meet occasional or individual classes, they, or a departmental representative, will make timely announcements of their absence and will arrange equivalent and/or alternate instruction.\"\n\nThe key phrase here is \"occasional or individual classes\" — three weeks of cancelled classes goes well beyond occasional absences. The policy also states that \"In cases where the instructor is absent and has not been able to notify class ahead of time, students are expected to remain in the classroom ten minutes after the beginning of the period, unless otherwise indicated by the instructor of record.\"\n\n**What you should do:**\n\nSince three weeks of cancellations is a significant and unusual situation not clearly addressed by the policies provided, I would recommend contacting the instructor's **department head**, as AOP 12.09 specifies that \"The instructor's department head will supervise all class attendance policies so as to assure compliance with departmental standards and university policy.\" The department head would be the appropriate authority to clarify your obligations and address the instructor's extended absences.\n\nASSESSMENT: {\"cited_op_numbers\":[\"12.09\",\"13.03\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "12.09",
+          "13.03"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3638,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 380,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Faculty Responsibilities in Instruction (1303) and Class Attendance (1209) both apply; conceptual phrasing."
+    },
+    {
+      "q": "Are fraternity initiation rituals allowed at MSU?",
+      "expected_op_numbers": [
+        "91.208"
+      ],
+      "returned_numbers": [
+        "91.205",
+        "30.06",
+        "91.208",
+        "41.02",
+        "91.200"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: The provided policies do not directly address whether fraternity initiation rituals are \"allowed\" at MSU in general. However, OP 91.208 is highly relevant, as it prohibits hazing, which is defined to include acts committed \"in the course of an initiation into, an affiliation with, or the maintenance of membership in, a student organization\" that \"causes or creates a risk, above the reasonable risk encountered in participation in the organization...of physical or psychological injury.\"\n\nSpecifically, OP 91.208 states: \"Hazing is prohibited. Any organization, student, or other person affiliated with the university found to have engaged in hazing as defined in this policy is subject to disciplinary action under the Student Code of Conduct and other applicable university policies.\"\n\nSo while the policies do not ban initiation rituals outright, any initiation activity that meets the definition of hazing under OP 91.208 is strictly prohibited. The policy notes that hazing can also \"be a violation [of] applicable laws, resulting in a criminal prosecution.\"\n\nThe retrieved policies do not provide any further detail about permissible initiation practices beyond these hazing restrictions.\n\nASSESSMENT: {\"cited_op_numbers\":[\"91.208\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.208"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3830,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 286,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Hazing — title doesn't mention 'fraternity' or 'initiation'."
+    },
+    {
+      "q": "What happens if I get cited for underage drinking at a tailgate?",
+      "expected_op_numbers": [
+        "91.119"
+      ],
+      "returned_numbers": [
+        "60.121",
+        "91.119",
+        "60.401",
+        "11.11",
+        "95.501"
+      ],
+      "retrieval_pass": true,
+      "answer_pass": true,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: Based on the retrieved policies, if you are a student cited for underage drinking at a tailgate (or any alcohol violation), the following consequences may apply under OP 91.119:\n\n1. **First offense (not on probation):** \"A student who is currently found responsible for an alcohol policy infraction, and who is not on probation for previous alcohol or drug-related infractions, will attend a meeting in the Dean of Students' office in which the student will receive a verbal admonishment and a description of the consequences for future infractions. This meeting will be followed by a letter which contains the same information.\" Additionally, the student may be assigned an online education class, an alcohol/drug education course, and/or placed on probation (OP 91.119).\n\n2. **If already on probation:** \"A student who is already on probation for alcohol or drug infractions, and who is currently found responsible for any other policy infraction, may be suspended from the university\" (OP 91.119).\n\n3. **If under 21:** \"If a student is under the age of twenty-one and is found responsible for an alcohol or drug violation, a letter will be sent to the parent/guardian notifying them of the student's violation of Mississippi State University's alcohol or drug policy unless in certain extreme circumstance at the discretion of the Dean of Students Office\" (OP 91.119).\n\n4. **Financial penalty:** \"If a student is found responsible for an alcohol or drug infraction, that student will pay a fee as decided by the university\" (OP 91.119).\n\nNote that the policies retrieved do not specifically address tailgate events, and any additional legal consequences from a criminal citation would fall outside the scope of these university policies.\n\nASSESSMENT: {\"cited_op_numbers\":[\"91.119\"], \"refused\": false, \"quoted_verbatim\": true}",
+      "assessment": {
+        "cited_op_numbers": [
+          "91.119"
+        ],
+        "refused": false,
+        "quoted_verbatim": true
+      },
+      "usage": {
+        "input_tokens": 3766,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 414,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Sanctions for Alcohol and Drug Offenses; 'tailgate' isn't in any title."
+    },
+    {
+      "q": "Are there protocols if a tornado warning hits during my class?",
+      "expected_op_numbers": [
+        "01.04"
+      ],
+      "returned_numbers": [
+        "12.09",
+        "11.11",
+        "03.07",
+        "31.01",
+        "03.06"
+      ],
+      "retrieval_pass": false,
+      "answer_pass": false,
+      "refusal_pass": null,
+      "judge_answer": "ANSWER: The retrieved policies do not address tornado warning protocols or emergency procedures during classes. None of the five provided policies — covering class attendance (AOP 12.09), auditing a class (AOP 11.11), Clery Act compliance (OP 03.07), definition of a student (OP 31.01), or workplace safety (OP 03.06) — contain specific protocols for tornado warnings during class sessions.\n\nI cannot provide an accurate answer to your question based solely on the policy texts provided. I would recommend contacting MSU's Emergency Management office, the MSU Police Department (MSUPD), or consulting MSU's official emergency preparedness resources directly for tornado warning protocols.\n\nASSESSMENT: {\"cited_op_numbers\":[], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3455,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 181,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Emergency Operations — title doesn't mention 'tornado' or 'class'."
+    },
+    {
+      "q": "What's the weather forecast for Starkville next weekend?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "91.175",
+        "12.02",
+        "12.29",
+        "12.32",
+        "95.500"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: The provided Mississippi State University Operating Policies do not contain any information about weather forecasts for Starkville or any other location. This question is outside the scope of the policies provided, and I cannot answer it based on the available policy text.\n\nASSESSMENT: {\"cited_op_numbers\":[], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3937,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 82,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Weather is not in MSU policy scope."
+    },
+    {
+      "q": "What was the score of last night's MSU football game?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "30.06",
+        "30.08",
+        "60.121",
+        "03.04",
+        "10.14"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: The provided policy documents are Mississippi State University Operating Policies covering topics such as ID cards, academic progress, controlled substances testing, sexual misconduct, and textbook adoption. None of these policies contain any information about football game scores. This question is outside the scope of the policy documents provided, and I cannot answer it using only those sources.\n\nASSESSMENT: {\"cited_op_numbers\":[], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3991,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 100,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Game scores are not in MSU OP scope."
+    },
+    {
+      "q": "Where can I find the best coffee shop in downtown Starkville?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "65.03",
+        "79.06",
+        "12.02",
+        "30.06",
+        "91.304"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: The retrieved Mississippi State University Operating Policies do not contain any information about coffee shops in downtown Starkville. This question falls entirely outside the scope of MSU Operating Policies, and I cannot provide an answer based on the provided policy texts.\n\nASSESSMENT: {\"cited_op_numbers\":[], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3943,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 82,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Local business recommendations not in MSU OP scope."
+    },
+    {
+      "q": "Is the Starkville post office open on Saturdays?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "60.320",
+        "03.02",
+        "01.21",
+        "30.06",
+        "60.314"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: The provided Mississippi State University Operating Policies do not contain any information about the Starkville post office or its Saturday hours. None of the retrieved policies address this topic. I cannot answer this question based on the policy documents provided.\n\nASSESSMENT: {\"cited_op_numbers\":[], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3603,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 79,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Off-campus civic services not in MSU OP scope."
+    },
+    {
+      "q": "What's a good recipe for traditional Southern cornbread?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "13.09",
+        "12.20",
+        "60.121",
+        "02.01",
+        "11.11"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: The provided Mississippi State University Operating Policies do not contain any information about cornbread recipes or cooking. This question falls entirely outside the scope of the policy documents provided, and I am unable to answer it using only those materials.\n\nASSESSMENT: {\"cited_op_numbers\":[], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3464,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 78,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Cooking is not in MSU OP scope."
+    },
+    {
+      "q": "Who is the current governor of Mississippi?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "30.05",
+        "70.05",
+        "01.06",
+        "13.16",
+        "02.01"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: The provided Mississippi State University Operating Policies do not contain any information about the current governor of Mississippi. This question falls outside the scope of the policy documents provided, and I cannot answer it based solely on those materials.\n\nASSESSMENT: {\"cited_op_numbers\": [], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3636,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 75,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "State government is not in MSU OP scope."
+    },
+    {
+      "q": "What is the population of Starkville, Mississippi?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "30.05",
+        "31.01",
+        "13.16",
+        "30.06",
+        "10.14"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: The retrieved Mississippi State University Operating Policies do not contain any information about the population of Starkville, Mississippi. This question cannot be answered based on the provided policy texts.\n\nASSESSMENT: {\"cited_op_numbers\":[], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3972,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 68,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Demographic facts are not in MSU OP scope."
+    },
+    {
+      "q": "Can I get a refund on my Netflix subscription?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "12.32",
+        "91.301",
+        "12.20",
+        "12.39",
+        "11.11"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: The Mississippi State University Operating Policies provided do not address Netflix subscriptions or any related refund policy. This question falls entirely outside the scope of the policies available. Please contact Netflix directly for information about their refund policy.\n\nASSESSMENT: {\"cited_op_numbers\": [], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3697,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 77,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Third-party consumer services are not in MSU OP scope."
+    },
+    {
+      "q": "What's the closest international airport to MSU?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "30.06",
+        "11.06",
+        "91.175",
+        "30.01",
+        "91.131"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: The provided MSU Operating Policies do not contain any information about airports near MSU. This question cannot be answered based on the policy documents provided.\n\nASSESSMENT: {\"cited_op_numbers\":[], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3473,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 62,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Travel logistics not addressed by an MSU OP."
+    },
+    {
+      "q": "Does MSU have a policy on Mars colonization?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "12.39",
+        "03.02",
+        "79.11",
+        "30.06",
+        "76.01"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: No, the retrieved MSU Operating Policies do not contain any policy on Mars colonization. None of the provided policy texts (covering scholarship programs, equal opportunity, unmanned aircraft systems, MSU ID cards, or intellectual property) address Mars colonization in any way. I cannot provide an answer on this topic based solely on the provided policy documents.\n\nASSESSMENT: {\"cited_op_numbers\":[], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3675,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 103,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "No applicable MSU OP."
+    },
+    {
+      "q": "What is MSU's official protocol for first contact with extraterrestrial life?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "06.05",
+        "41.01",
+        "60.121",
+        "91.108",
+        "30.06"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: The retrieved MSU Operating Policies contain no information whatsoever about a protocol for first contact with extraterrestrial life. None of the policies provided (OP 06.05, OP 41.01, HRM 60.121, OP 91.108, or OP 30.06) address this topic, and I will not fabricate a citation or answer.\n\nASSESSMENT: {\"cited_op_numbers\":[], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3843,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 115,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "No applicable MSU OP."
+    },
+    {
+      "q": "Can MSU help me find tickets to a Taylor Swift concert?",
+      "expected_op_numbers": null,
+      "returned_numbers": [
+        "30.06",
+        "91.131",
+        "11.11",
+        "03.04",
+        "31.01"
+      ],
+      "retrieval_pass": null,
+      "answer_pass": null,
+      "refusal_pass": true,
+      "judge_answer": "ANSWER: The provided MSU Operating Policies do not address anything related to finding or purchasing concert tickets, including tickets to a Taylor Swift concert. None of the retrieved policies cover entertainment or ticketing services. I cannot answer this question based on the policy documents provided.\n\nASSESSMENT: {\"cited_op_numbers\":[], \"refused\": true, \"quoted_verbatim\": false}",
+      "assessment": {
+        "cited_op_numbers": [],
+        "refused": true,
+        "quoted_verbatim": false
+      },
+      "usage": {
+        "input_tokens": 3548,
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 0,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 0
+        },
+        "output_tokens": 83,
+        "service_tier": "standard",
+        "inference_geo": "global"
+      },
+      "notes": "Concert tickets are not addressed by any MSU OP."
+    }
+  ]
+}
