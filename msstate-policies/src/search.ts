@@ -237,6 +237,22 @@ async function embedSearch(query: string, limit = 50): Promise<EmbedRank[]> {
 
 const RRF_K = 60;
 
+// Retrieval mode gate — controlled by MSSTATE_POLICIES_RETRIEVAL.
+//   "bm25"   -> only BM25; embedding pass is skipped (used for cheap eval).
+//   "embed"  -> only embeddings; BM25 pass is skipped (comparative eval).
+//   "hybrid" -> both signals (default; production behavior).
+// Unrecognized / unset value falls back to "hybrid" so callers don't have to
+// set anything in normal use. embedSearch already returns [] when no
+// OPENAI_API_KEY or no embeddings.json — this gate is the *symmetric* knob
+// for skipping BM25 instead.
+export type RetrievalMode = "bm25" | "embed" | "hybrid";
+
+export function getRetrievalMode(): RetrievalMode {
+  const v = (process.env.MSSTATE_POLICIES_RETRIEVAL ?? "").toLowerCase();
+  if (v === "bm25" || v === "embed") return v;
+  return "hybrid";
+}
+
 export interface FusedHit {
   slug: string;
   score: number;
@@ -256,8 +272,9 @@ export async function hybridSearch(
 ): Promise<FusedHit[]> {
   const topK = options.topK ?? 10;
 
-  const bm25Hits = bm25Search(query, 20);
-  const embedHits = await embedSearch(query, 20);
+  const mode = getRetrievalMode();
+  const bm25Hits = mode === "embed" ? [] : bm25Search(query, 20);
+  const embedHits = mode === "bm25" ? [] : await embedSearch(query, 20);
 
   const byBm25Rank = new Map<string, number>();
   const byBm25Score = new Map<string, number>();
