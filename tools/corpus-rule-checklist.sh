@@ -123,13 +123,16 @@ else
   note "FAIL" "G3 dist/ drift from src — needs npm run build" 5
 fi
 
-# G4: Don't regress the prior mechanical security checklist
+# G4: Don't regress the prior mechanical security checklist.
+# Round-1 floor was 100. Round-2 (autoresearch_security.md, 2026-05-08)
+# extended the script's max to 192 with N1-N10 + DISC checks. Gate
+# numerically (>= 100) so round-2 progress doesn't trip this guard.
 prior=$(bash tools/security-checklist.sh 2>/dev/null | tail -1)
-if [ "$prior" = "100" ]; then
+if [[ "$prior" =~ ^[0-9]+$ ]] && [ "$prior" -ge 100 ]; then
   score=$((score + 8))
-  note "PASS" "G4 tools/security-checklist.sh still scores 100" 8
+  note "PASS" "G4 tools/security-checklist.sh score >= 100 (now $prior)" 8
 else
-  note "FAIL" "G4 tools/security-checklist.sh regressed (now $prior)" 8
+  note "FAIL" "G4 tools/security-checklist.sh regressed below 100 (now $prior)" 8
 fi
 
 # G5: Tool description still emphasizes corpus rule
