@@ -427,7 +427,7 @@ If any of these items become real (DDoS observed, policy-text drift complaint, a
 
 ### Round-2 audit closure (2026-05-08)
 
-A second `$autoresearch security` sweep widened the lens beyond the round-1 checklist and surfaced ten net-new findings (N1–N10) plus an out-of-scope disclaimer (DISC). All eleven landed in a bounded fix loop the same day. The full audit + per-finding resolution table lives in [`autoresearch_security.md`](../autoresearch_security.md); the per-iteration log is `security/260508-1755-fix-loop/results.tsv`.
+A second `$autoresearch security` sweep widened the lens beyond the round-1 checklist and surfaced ten net-new findings (N1–N10) plus an out-of-scope disclaimer (DISC). All eleven landed in a bounded fix loop the same day. The per-iteration log lives at `security/260508-1755-fix-loop/results.tsv`, and the per-finding mitigation commits are searchable via `git log --grep '^experiment: N'` (each commit's body includes the finding label and rationale).
 
 Key downstream changes maintainers should know about:
 

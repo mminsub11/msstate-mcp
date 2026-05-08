@@ -124,7 +124,7 @@ else
 fi
 
 # G4: Don't regress the prior mechanical security checklist.
-# Round-1 floor was 100. Round-2 (autoresearch_security.md, 2026-05-08)
+# Round-1 floor was 100. Round-2 (audit closure 2026-05-08; see docs/BUILD.md)
 # extended the script's max to 192 with N1-N10 + DISC checks. Gate
 # numerically (>= 100) so round-2 progress doesn't trip this guard.
 prior=$(bash tools/security-checklist.sh 2>/dev/null | tail -1)

@@ -20,6 +20,29 @@ You can ask things like:
 - *"What's MSU's travel reimbursement policy?"*
 - *"What's MSU's faculty grievance procedure?"*
 
+## Quick Start
+
+The fastest way to use this — add the MCP server as a custom **connector on claude.ai** (works in your browser and the Claude mobile app).
+
+**Prerequisites:**
+
+- A paid [claude.ai](https://claude.ai) plan (Pro, Team, or Enterprise — free-tier accounts can't add custom connectors). For other paths that work without a paid plan, see [Pick your client](#pick-your-client) below.
+- Any modern browser.
+
+**Three steps:**
+
+1. Sign in to <https://claude.ai>, then open **Settings → Connectors** (or click the connector button in the chat composer) and choose **Add custom connector**.
+2. Fill in:
+   - **Name:** `MSU Policies` (anything is fine)
+   - **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
+
+   Save. The connector should now show **5 tools** available.
+3. Open a new chat, enable the connector, and ask: *"What is MSU's hazing policy?"* — Claude will return a grounded answer that quotes the policy verbatim and cites OP 91.208 with a `policies.msstate.edu` URL.
+
+That's the full setup. The same connector works on Claude mobile under the same account, no separate steps.
+
+For other clients (Claude Code, Cursor, Windsurf, Zed, Claude Desktop, OpenAI API for free-ChatGPT users, or the no-install starter zip for free claude.ai), keep reading.
+
 ## Pick your client
 
 | If you use… | Easiest install | Time |

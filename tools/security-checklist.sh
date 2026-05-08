@@ -8,7 +8,7 @@
 #
 # Sections:
 #   H1-H3b, M3-M5, L1-L4 : original 100-pt checklist (round 1)
-#   N1-N10, DISC         : extended findings from autoresearch_security.md
+#   N1-N10, DISC         : extended findings from the round-2 audit (2026-05-08)
 #                          (2026-05-08 audit), worth +92 pts.
 #   tests + typecheck    : 28 pts of guard coverage already in the score.
 #
@@ -129,7 +129,7 @@ else
 fi
 
 # =============================================================================
-# Extended findings (N1-N10, DISC) from autoresearch_security.md (2026-05-08).
+# Extended findings (N1-N10, DISC) from the round-2 audit (2026-05-08).
 # Each block scores 0 or full points based on a mechanical grep / audit / sanity
 # check tied to one finding's mitigation.
 # =============================================================================

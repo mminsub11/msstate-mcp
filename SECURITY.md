@@ -1,6 +1,6 @@
 # Security Policy
 
-> **For maintainers / Claude sessions touching this repo:** before changing security-shaped code, also read [`CLAUDE.md`](CLAUDE.md) (especially `## Reading order` and `## Security notes`) and [`autoresearch_security.md`](autoresearch_security.md) (round-2 audit + per-finding resolution). The `## Out of scope: client-side circumvention` section below is authoritative for what we do NOT defend against.
+> **For maintainers / Claude sessions touching this repo:** before changing security-shaped code, also read [`CLAUDE.md`](CLAUDE.md) (especially `## Reading order` and `## Security notes`) and the **Round-2 audit closure (2026-05-08)** section in [`docs/BUILD.md`](docs/BUILD.md). The `## Out of scope: client-side circumvention` section below is authoritative for what we do NOT defend against.
 
 ## Reporting a Vulnerability
 

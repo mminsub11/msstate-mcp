@@ -8,8 +8,7 @@ For non-trivial work — and ALWAYS before touching anything security-shaped (Wo
 
 1. **`CLAUDE.md`** (this file) — load-bearing rules: corpus rule, stderr-only logging, security-score contract. The `## Security notes (round-2 closure 2026-05-08)` section near the bottom lists specific patterns that must not regress.
 2. **`SECURITY.md`** — what's in scope, what's NOT, and especially `## Out of scope: client-side circumvention`. That section defines the user-side abuse classes we explicitly *don't* defend against (local edits to the bundle, prompt-level circumvention, fork-the-corpus, LLM hallucination, indirect injection inside published PDFs). Treat anything matching those bullets as `wontfix` by design.
-3. **`autoresearch_security.md`** — round-2 audit + per-finding resolution table with commit SHAs. Useful for "why does the code look like this?" / "is this still load-bearing?" questions.
-4. **`docs/BUILD.md`** — architecture, decision history, deferred items (M1/M2/M6), eval methodology, threat model.
+3. **`docs/BUILD.md`** — architecture, decision history, deferred items (M1/M2/M6), eval methodology, threat model. The **Round-2 audit closure (2026-05-08)** section captures the per-finding history (N1–N10 + DISC) that `tools/security-checklist.sh` now mechanically enforces.
 
 After any change in scope, run `bash tools/security-checklist.sh | tail -1` and confirm the score is still **192**. CI hard-gates on `>= 100`; below 192 means a check regressed.
 
@@ -53,7 +52,7 @@ The whole grounding story of this MCP collapses if its inputs are contaminated b
 
 ## Security notes (round-2 closure 2026-05-08)
 
-The mechanical security checklist (`tools/security-checklist.sh`) was extended from 100 → 192 pts during the round-2 audit. CI now hard-gates pushes/PRs on `score >= 100`. Current head should score **192/192**; if you regress it, fix the failing check before merging — the audit + per-finding rationale is in [`autoresearch_security.md`](./autoresearch_security.md), and the round-2 closure note in [`docs/BUILD.md`](./docs/BUILD.md) covers what changed and why.
+The mechanical security checklist (`tools/security-checklist.sh`) was extended from 100 → 192 pts during the round-2 audit. CI now hard-gates pushes/PRs on `score >= 100`. Current head should score **192/192**; if you regress it, fix the failing check before merging — the round-2 closure note in [`docs/BUILD.md`](./docs/BUILD.md) covers what changed and why, and `git log --grep "N\\(1\\|2\\|3\\|4\\|5\\|6\\|7\\|8\\|9\\|10\\)"` finds the per-finding mitigation commits.
 
 A few patterns to keep in mind so the round-2 score doesn't drift:
 - Worker error paths: never echo `(err as Error).message` to clients; always log structured fields server-side, return generic messages with the JSON-RPC `id` for correlation.
