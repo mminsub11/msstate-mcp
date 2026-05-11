@@ -38,6 +38,21 @@ This is non-negotiable and applies to every Claude session that touches this rep
 
 The whole grounding story of this MCP collapses if its inputs are contaminated by anything other than what MSU publishes. A wrong answer to "what's the policy on amnesty?" is the worst-case failure mode (the design targets 99.99% answer correctness as the north star). The simplest defense is the corpus rule above.
 
+### Corpus extension (2026-05-11) — academic dates
+
+The corpus also includes six named pages on msstate.edu subdomains:
+
+1. `https://www.registrar.msstate.edu/calendars/academic-calendar` (index) + `/calendars/academic-calendar/<year>/<term>` sub-pages
+2. `https://www.registrar.msstate.edu/students/schedules/exam-schedule` (index) + `/students/schedules/exam-schedule/<year>/<term>` sub-pages
+3. `https://www.hrm.msstate.edu/benefits/holidays/`
+4. `https://www.grad.msstate.edu/students/graduate-school-calendar` (index) + per-term PDF files under `/sites/www.grad.msstate.edu/files/<YYYY-MM>/`
+5. `https://www.sfa.msstate.edu/calendars/` (index) + `/calendars/academic-calendar/<year>/<term>` sub-pages
+6. `https://www.housing.msstate.edu/events/` and its event-detail sub-pages
+
+For sources with index + sub-pages, the per-sub-page URLs are extracted from the index at runtime (the index itself is in the allowlist) — they are never constructed from a template against external input.
+
+All other corpus-rule prohibitions apply unchanged: no training-data fallback, no third-party mirrors, no fetches against non-msstate.edu hosts, no `WebSearch` on these topics. Adding a seventh URL requires a new spec and a new addendum entry — this list is exhaustive.
+
 ## Network access notes
 
 - Codespace / dev sandbox: **has** network access to `policies.msstate.edu`.

@@ -44,19 +44,19 @@ fi
 # ---- H3a: msstate-policies npm audit (no high or critical) ------------------
 if (cd msstate-policies && npm audit --audit-level=high --json 2>/dev/null) \
     | python3 -c 'import json,sys; d=json.load(sys.stdin); m=d.get("metadata",{}).get("vulnerabilities",{}); sys.exit(0 if (m.get("high",0)==0 and m.get("critical",0)==0) else 1)' 2>/dev/null; then
-  score=$((score + 10))
-  note "PASS" "H3a msstate-policies npm audit clean (high+critical = 0)" 10
+  score=$((score + 6))
+  note "PASS" "H3a msstate-policies npm audit clean (high+critical = 0)" 6
 else
-  note "FAIL" "H3a msstate-policies npm audit (high or critical present)" 10
+  note "FAIL" "H3a msstate-policies npm audit (high or critical present)" 6
 fi
 
 # ---- H3b: worker npm audit (no high or critical) ----------------------------
 if (cd worker && npm audit --audit-level=high --json 2>/dev/null) \
     | python3 -c 'import json,sys; d=json.load(sys.stdin); m=d.get("metadata",{}).get("vulnerabilities",{}); sys.exit(0 if (m.get("high",0)==0 and m.get("critical",0)==0) else 1)' 2>/dev/null; then
-  score=$((score + 10))
-  note "PASS" "H3b worker npm audit clean (high+critical = 0)" 10
+  score=$((score + 6))
+  note "PASS" "H3b worker npm audit clean (high+critical = 0)" 6
 else
-  note "FAIL" "H3b worker npm audit (high or critical present)" 10
+  note "FAIL" "H3b worker npm audit (high or critical present)" 6
 fi
 
 # ---- M3: SECURITY.md exists with required sections --------------------------
@@ -159,10 +159,10 @@ try:
 except Exception:
     sys.exit(1)
 ' 2>/dev/null; then
-  score=$((score + 12))
-  note "PASS" "N2 worker/corpus.json sanity (>=200 rows, all bodies >=200 chars)" 12
+  score=$((score + 8))
+  note "PASS" "N2 worker/corpus.json sanity (>=200 rows, all bodies >=200 chars)" 8
 else
-  note "FAIL" "N2 worker/corpus.json sanity check failed" 12
+  note "FAIL" "N2 worker/corpus.json sanity check failed" 8
 fi
 
 # ---- N3: msstate-policies npm audit clean at MODERATE+ ----------------------
@@ -172,10 +172,10 @@ if (cd msstate-policies && npm audit --audit-level=moderate --json 2>/dev/null) 
     | python3 -c 'import json,sys
 d=json.load(sys.stdin); m=d.get("metadata",{}).get("vulnerabilities",{})
 sys.exit(0 if (m.get("moderate",0)==0 and m.get("high",0)==0 and m.get("critical",0)==0) else 1)' 2>/dev/null; then
-  score=$((score + 8))
-  note "PASS" "N3 msstate-policies npm audit clean (moderate+high+critical = 0)" 8
+  score=$((score + 4))
+  note "PASS" "N3 msstate-policies npm audit clean (moderate+high+critical = 0)" 4
 else
-  note "FAIL" "N3 msstate-policies npm audit (moderate or higher present)" 8
+  note "FAIL" "N3 msstate-policies npm audit (moderate or higher present)" 4
 fi
 
 # ---- N4: Worker rejects oversize bodies before request.json() ---------------
@@ -205,10 +205,10 @@ fi
 # into a hard gate.
 if grep -qE 'security-checklist\.sh' .github/workflows/ci.yml 2>/dev/null \
     && grep -qE 'npm audit' .github/workflows/ci.yml 2>/dev/null; then
-  score=$((score + 12))
-  note "PASS" "N6 CI runs security-checklist + npm audit" 12
+  score=$((score + 4))
+  note "PASS" "N6 CI runs security-checklist + npm audit" 4
 else
-  note "FAIL" "N6 CI does not gate on security-checklist + npm audit" 12
+  note "FAIL" "N6 CI does not gate on security-checklist + npm audit" 4
 fi
 
 # ---- N7: build-worker-corpus.mjs detects WAF challenge pages ----------------
@@ -267,6 +267,59 @@ if grep -qiE '^#+[[:space:]]*out[-[:space:]]*of[-[:space:]]*scope' \
   note "PASS" "DISC SECURITY.md captures out-of-scope user-side behaviors" 8
 else
   note "FAIL" "DISC SECURITY.md missing Out-of-scope section" 8
+fi
+
+# ---- CAL1: Calendar corpus URLs are hardcoded in types.ts -------------------
+if grep -qF 'CALENDAR_URLS' msstate-policies/src/calendars/types.ts 2>/dev/null \
+   && grep -qE 'https://www\.registrar\.msstate\.edu' msstate-policies/src/calendars/types.ts \
+   && grep -qE 'https://www\.hrm\.msstate\.edu' msstate-policies/src/calendars/types.ts \
+   && grep -qE 'https://www\.grad\.msstate\.edu' msstate-policies/src/calendars/types.ts \
+   && grep -qE 'https://www\.sfa\.msstate\.edu' msstate-policies/src/calendars/types.ts \
+   && grep -qE 'https://www\.housing\.msstate\.edu' msstate-policies/src/calendars/types.ts; then
+  score=$((score + 8))
+  note "PASS" "CAL1 calendar URLs hardcoded in types.ts" 8
+else
+  note "FAIL" "CAL1 calendar URLs hardcoded in types.ts" 8
+fi
+
+# ---- CAL2: Calendar parsers never touch non-msstate.edu hosts ---------------
+# Grep for any literal http(s):// URL inside calendars/ source, excluding the
+# allowed MSU subdomains. Any hit is a regression.
+CAL2_FAIL=0
+for f in $(find msstate-policies/src/calendars -type f -name '*.ts' 2>/dev/null); do
+  while IFS= read -r url; do
+    case "$url" in
+      *registrar.msstate.edu*|*hrm.msstate.edu*|*grad.msstate.edu*|*sfa.msstate.edu*|*housing.msstate.edu*|*policies.msstate.edu*|*www.msstate.edu*)
+        : ;;
+      *)
+        CAL2_FAIL=1
+        echo "  CAL2 unexpected URL in $f: $url" >&2
+        ;;
+    esac
+  done < <(grep -oE 'https?://[^"'"'"' )]+' "$f" 2>/dev/null)
+done
+if [ "$CAL2_FAIL" -eq 0 ]; then
+  score=$((score + 8))
+  note "PASS" "CAL2 calendar code stays on msstate.edu" 8
+else
+  note "FAIL" "CAL2 calendar code touches non-msstate.edu URLs" 8
+fi
+
+# ---- CAL3: Worker calendar handler caps q length before tokenize() ----------
+if grep -qE 'find_msu_date' worker/src/index.ts \
+   && grep -qE 'q\.length\s*>\s*MAX_QUERY_CHARS' worker/src/index.ts; then
+  score=$((score + 4))
+  note "PASS" "CAL3 Worker caps find_msu_date q length" 4
+else
+  note "FAIL" "CAL3 Worker caps find_msu_date q length" 4
+fi
+
+# ---- CAL4: Build aborts on WAF challenge / empty calendar scrape ------------
+if grep -qF "refusing to ship a poisoned calendar corpus" scripts/build-worker-corpus.mjs; then
+  score=$((score + 4))
+  note "PASS" "CAL4 build aborts on calendar WAF/empty" 4
+else
+  note "FAIL" "CAL4 build aborts on calendar WAF/empty" 4
 fi
 
 echo "$score"
