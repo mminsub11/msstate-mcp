@@ -68,8 +68,8 @@ export const TERM_INDEX_CONFIG: Record<TermPageSource, TermIndexConfig> = {
   },
   sfa_financial_aid: {
     origin: "https://www.sfa.msstate.edu",
-    // SFA URL pattern to be confirmed when Task 4 fixtures are captured.
-    pathPattern: /^\/calendars\/(?:academic-calendar|financial-aid-calendar)\/(\d{4})\/([\w-]+)$/,
+    // Confirmed 2026-05-11: SFA index uses /calendars/academic-calendar/<year>/<slug>.
+    pathPattern: /^\/calendars\/academic-calendar\/(\d{4})\/([\w-]+)$/,
   },
 };
 
@@ -240,9 +240,8 @@ type RowExtractor = (html: string) => RawRow[];
 const EXTRACTORS: Record<TermPageSource, RowExtractor> = {
   academic_calendar: extractAcademicCalendarRows,
   exam_schedule: extractExamScheduleRows,
-  // SFA shares the academic_calendar layout (Bootstrap grid rows).
-  // Confirmed when Task 4 fixtures are captured; if the layout differs,
-  // add a dedicated extractor in Task 4 without modifying this file.
+  // SFA shares the academic_calendar layout (Bootstrap grid rows with col-md-4/col-md-8).
+  // Confirmed 2026-05-11: live SFA term pages use the same structure; no new extractor needed.
   sfa_financial_aid: extractAcademicCalendarRows,
 };
 

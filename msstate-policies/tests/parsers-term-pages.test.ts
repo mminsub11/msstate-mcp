@@ -105,3 +105,39 @@ test("parseTermPage: exam_schedule Spring 2026 sub-page returns >= 3 dated rows"
     assert.equal(r.term, "Spring 2026");
   }
 });
+
+// ---- SFA financial aid tests -----------------------------------------------
+
+test("parseTermIndex: sfa_financial_aid index returns >= 10 term entries", () => {
+  const entries = parseTermIndex(
+    fixture("sfa_index.html"),
+    TERM_INDEX_CONFIG.sfa_financial_aid,
+  );
+  assert.ok(entries.length >= 10, `expected >= 10 SFA term entries; got ${entries.length}`);
+  for (const e of entries) {
+    assert.match(
+      e.url,
+      /^https:\/\/www\.sfa\.msstate\.edu\//,
+      `SFA URL must be on sfa.msstate.edu: ${e.url}`,
+    );
+    assert.match(String(e.year), /^\d{4}$/);
+  }
+});
+
+test("parseTermPage: sfa_financial_aid Fall 2026 returns >= 3 dated rows", () => {
+  const rows = parseTermPage(
+    fixture("sfa_term_2026_fall.html"),
+    "sfa_financial_aid",
+    {
+      url: "https://www.sfa.msstate.edu/calendars/academic-calendar/2026/fall",
+      year: 2026,
+      term: "Fall",
+    },
+  );
+  assert.ok(rows.length >= 3, `expected >= 3 SFA rows; got ${rows.length}`);
+  for (const r of rows) {
+    assert.equal(r.source, "sfa_financial_aid");
+    assert.match(r.start, /^\d{4}-\d{2}-\d{2}$/);
+    assert.equal(r.term, "Fall 2026");
+  }
+});
