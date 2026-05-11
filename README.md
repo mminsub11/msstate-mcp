@@ -41,7 +41,7 @@ The fastest way to use this — add the MCP server as a custom **connector on cl
 
 That's the full setup. The same connector works on Claude mobile under the same account, no separate steps.
 
-For other clients (Claude Code, Cursor, Windsurf, Zed, Claude Desktop, OpenAI API for free-ChatGPT users, or the no-install starter zip for free claude.ai), keep reading.
+For other clients (Claude Code, Cursor, Windsurf, Zed, Claude Desktop, ChatGPT Plus/Pro, OpenAI API for free-ChatGPT users, or the no-install starter zip for free claude.ai), keep reading.
 
 ## Pick your client
 
@@ -50,6 +50,7 @@ For other clients (Claude Code, Cursor, Windsurf, Zed, Claude Desktop, OpenAI AP
 | **claude.ai** in a browser, or **Claude mobile** on iOS/Android | [Add a connector with a URL](#claudeai-web--claude-mobile) | 30 sec |
 | **Claude Code** (CLI) | [Two slash commands](#claude-code) | 30 sec |
 | **Claude Desktop**, **Cursor**, **Windsurf**, **Zed** | [Paste a JSON snippet](#claude-desktop-cursor-windsurf-zed) | 1 min |
+| **ChatGPT** (Plus / Pro) | [Add a connector with a URL](#chatgpt-plus--pro) | 30 sec |
 | **OpenAI API** (any ChatGPT plan, including free) | [Python sample](#openai-api) | 1 min |
 | **Free claude.ai** (no MCP support) | [Drag-and-drop a Project starter zip](#free-claudeai-no-install) | 1 min |
 
@@ -119,9 +120,25 @@ The first call takes ~5 seconds (the server fetches MSU's index and the relevant
 
 A reference snippet is at [`examples/claude_desktop_config.json`](examples/claude_desktop_config.json).
 
+## ChatGPT (Plus / Pro)
+
+ChatGPT Plus and Pro support custom MCP Connectors. **Requires a paid ChatGPT plan** — free-tier users can't add Connectors; if you're on free ChatGPT, see the [OpenAI API](#openai-api) path below instead.
+
+1. Sign in to <https://chatgpt.com>.
+2. Open **Settings → Connectors → Add custom connector**.
+3. Fill in:
+   - **Name:** `MSU Policies` (anything is fine)
+   - **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
+4. Save. The connector should now show **5 tools** available.
+5. Open a new chat, enable the connector, and ask a policy question.
+
+The same connector is usable from the ChatGPT iOS / Android apps under the same account — no separate setup.
+
+> **Note on freshness:** Same as the claude.ai path — this hosted version reads from a snapshot of MSU's policies refreshed periodically (the response includes a `corpus_built_at` timestamp). For *always-fresh* data, install one of the local paths above.
+
 ## OpenAI API
 
-ChatGPT Connectors are gated to Pro/Business/Enterprise plans. If you're on **free ChatGPT** — or you just prefer code — you can use this MCP server directly via OpenAI's Responses API and an OpenAI API key. The API is independent of your ChatGPT subscription tier; sign up at <https://platform.openai.com> and add a few dollars of credit (queries are typically a few cents each).
+ChatGPT Connectors require a paid ChatGPT plan (Plus, Pro, Business, or Enterprise). If you're on **free ChatGPT** — or you just prefer code — you can use this MCP server directly via OpenAI's Responses API and an OpenAI API key. The API is independent of your ChatGPT subscription tier; sign up at <https://platform.openai.com> and add a few dollars of credit (queries are typically a few cents each).
 
 **Setup:**
 
@@ -219,6 +236,7 @@ In default mode, your queries never leave your machine. The only outbound traffi
 - **Claude Code / Desktop / Cursor / Windsurf / Zed** (local install): truly local. The MCP server runs on your machine.
 - **claude.ai web / mobile via the connector**: your query goes to Anthropic (as it always does on claude.ai) and to the hosted Cloudflare Worker, which only fetches from the snapshot — never sends your query elsewhere.
 - **OpenAI API**: your query goes to OpenAI's models and to the hosted Cloudflare Worker. No traffic to Anthropic in this mode. The Worker still only fetches from MSU and stores no logs of your queries beyond Cloudflare's standard request metadata.
+- **ChatGPT (Plus / Pro) via the connector**: your query goes to OpenAI's models and to the hosted Cloudflare Worker. No traffic to Anthropic in this mode. The Worker still only fetches from MSU and stores no logs of your queries beyond Cloudflare's standard request metadata.
 - **Sensitive topics** (Title IX, harassment, FERPA): the local install is the most private option. The connector is fine for general policy questions; for sensitive ones, the local path keeps everything on your machine.
 
 If you opt in to semantic retrieval (set `MSSTATE_POLICIES_RETRIEVAL=embed` or `=hybrid`), your natural-language query is sent to OpenAI for embedding. **The default `bm25` mode does not require this and is recommended for most users.**
