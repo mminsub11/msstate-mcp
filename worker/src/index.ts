@@ -44,6 +44,8 @@ interface CalendarRow {
   description?: string;
   source_url: string;
   retrieved_at: string;
+  citation: string;
+  fallback?: boolean;
 }
 
 interface CalendarBlock {
@@ -60,7 +62,7 @@ interface Corpus {
   academic_calendar?: CalendarBlock;
 }
 
-const corpus = corpusData as Corpus;
+const corpus = corpusData as unknown as Corpus;
 const POLICIES: Policy[] = corpus.policies;
 
 const CAL_ROWS: CalendarRow[] = corpus.academic_calendar?.rows ?? [];
@@ -242,6 +244,35 @@ function bm25SearchCalendars(query: string, limit = 10): { row: CalendarRow; sco
   return out.slice(0, limit);
 }
 
+const TERM_RX = /\b(Spring|Fall|Summer|Winter|Maymester)\s+(\d{4})\b/i;
+
+function matchTerm(q: string): string | null {
+  const m = q.match(TERM_RX);
+  if (!m) return null;
+  const season = m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase();
+  return `${season} ${m[2]}`;
+}
+
+const FALLBACK_PRIORITY: RegExp[] = [
+  /classes\s+begin/i,
+  /last\s+day\s+of\s+classes?/i,
+  /final\s+exam/i,
+  /spring\s+break|thanksgiving|fall\s+break|winter\s+break/i,
+  /commencement|graduation/i,
+  /classes?\s+end/i,
+];
+
+function sortByEventPriority(rows: CalendarRow[]): CalendarRow[] {
+  return [...rows].sort((a, b) => {
+    const aIdx = FALLBACK_PRIORITY.findIndex((rx) => rx.test(a.event));
+    const bIdx = FALLBACK_PRIORITY.findIndex((rx) => rx.test(b.event));
+    const aRank = aIdx === -1 ? FALLBACK_PRIORITY.length : aIdx;
+    const bRank = bIdx === -1 ? FALLBACK_PRIORITY.length : bIdx;
+    if (aRank !== bRank) return aRank - bRank;
+    return a.start.localeCompare(b.start);
+  });
+}
+
 // ---- Helpers ----------------------------------------------------------------
 
 function findPolicy(numberOrSlug?: string, url?: string): Policy | undefined {
@@ -344,7 +375,7 @@ const TOOLS = [
   {
     name: "find_msu_date",
     description:
-      "Answer natural-language questions about Mississippi State University academic dates, financial-aid deadlines, university holidays, residence-life milestones, and graduate-school deadlines. Returns up to 10 matching calendar rows ranked by relevance, each with start/end dates, the source calendar, and the canonical msstate.edu URL. RULES for answering: (1) Use ONLY the returned rows — do not draw on outside knowledge. (2) Quote the date verbatim and cite the `source_url`. (3) If `matches` is empty or no row clearly answers the question, say so plainly and recommend the source URL or contacting the responsible MSU office. (4) Surface the row's `retrieved_at` and `corpus_built_at` so users can verify freshness. (5) IMPORTANT MULTI-YEAR HANDLING: if the user's question does NOT specify a year/term and multiple year-versions of an event exist (e.g., Spring Break 2026 and Spring Break 2027), present ALL of them year-by-year — do not pick one arbitrarily.",
+      "Answer natural-language questions about Mississippi State University academic dates, financial-aid deadlines, university holidays, residence-life milestones, and graduate-school deadlines. Returns up to 10 matching calendar rows ranked by relevance, plus up to 3 academic-calendar fallback rows when a term is mentioned and the primary source has limited coverage.\n\nEach row has:\n- `start`, `end` — ISO dates (YYYY-MM-DD).\n- `event`, `term`, `description` — what happened and when.\n- `source`, `source_url` — which calendar and the canonical msstate.edu URL.\n- `citation` — a pre-formatted markdown link. You MUST include this verbatim in your final answer for every row you reference. Do not paraphrase or omit it. Format: `[Event, Term](url)`.\n- `fallback` (optional) — if true, this row came from the academic-calendar fallback because the user's primary source didn't have data for the mentioned term. Surface this explicitly: \"Your primary source doesn't list this date for that term, but the academic calendar shows…\"\n\nRULES:\n1. Use ONLY the returned rows. Do not invent dates or draw on outside knowledge.\n2. Quote the date verbatim. Always include the `citation` field as a clickable link.\n3. If the user's question does NOT specify a year/term and multiple year-versions of an event exist (e.g., Spring Break 2026 and Spring Break 2027), present ALL of them year-by-year with each one's citation.\n4. If matches is empty or no row clearly answers the question, say so plainly; do not extrapolate.\n5. Surface the row's `retrieved_at` and `corpus_built_at` when accuracy is at stake.",
     inputSchema: {
       type: "object",
       properties: {
@@ -356,7 +387,7 @@ const TOOLS = [
   {
     name: "get_msu_calendar",
     description:
-      "Return the raw rows for one MSU calendar source. `source` is one of: academic_calendar, exam_schedule, university_holidays, grad_school_calendar, sfa_financial_aid, housing. Optional `term` filter matches via case-insensitive substring (e.g. 'Fall 2026', '2026', 'fall').",
+      "Return the raw rows for one MSU calendar source. `source` is one of: academic_calendar, exam_schedule, university_holidays, grad_school_calendar, sfa_financial_aid, housing. Optional `term` filter matches via case-insensitive substring (e.g. 'Fall 2026', '2026', 'fall'). Each row has a pre-formatted `citation` markdown link — include it verbatim when surfacing any specific date to the user.",
     inputSchema: {
       type: "object",
       properties: {
@@ -418,9 +449,14 @@ function tooLong(name: string, value: string): McpToolResponse {
 
 function buildCalendarNotes(
   matches: Array<{ event: string; term?: string }>,
+  fallbackTriggered: boolean,
+  term: string | null,
 ): string {
   if (matches.length === 0) {
     return "No MSU calendar row matched this query. Try a more specific phrasing or check the source calendar directly.";
+  }
+  if (fallbackTriggered && term) {
+    return `Surfaced academic_calendar rows for ${term} as fallback — if your primary source didn't have this term, the academic calendar is authoritative for term-boundary dates.`;
   }
   const byStem = new Map<string, Set<string>>();
   for (const m of matches) {
@@ -521,19 +557,49 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<Mc
       if (q.length === 0) return errorContent("q is required.");
       if (q.length > MAX_QUERY_CHARS) return tooLong("q", q);
       const hits = bm25SearchCalendars(q, 10);
-      const matches = hits.map((h) => ({
-        source: h.row.source,
-        event: h.row.event,
-        start: h.row.start,
-        end: h.row.end,
-        time: h.row.time,
-        term: h.row.term,
-        description: h.row.description,
-        source_url: h.row.source_url,
-        retrieved_at: h.row.retrieved_at,
+      const matches: Array<CalendarRow & { score?: number }> = hits.map((h) => ({
+        ...h.row,
         score: Number(h.score.toFixed(6)),
       }));
-      const notes = buildCalendarNotes(matches);
+
+      // Smart fallback path (parity with stdio server).
+      const term = matchTerm(q);
+      let fallbackTriggered = false;
+      if (term) {
+        const nonAcademicForTerm = matches.filter(
+          (m) => m.source !== "academic_calendar" && m.term === term,
+        ).length;
+        const hasNonAcademicResults = matches.some(
+          (m) => m.source !== "academic_calendar",
+        );
+        if (nonAcademicForTerm === 0 && hasNonAcademicResults) {
+          // Tag existing academic rows for this term as fallback.
+          const academicForTerm = matches.filter(
+            (m) => m.source === "academic_calendar" && m.term === term,
+          );
+          for (const m of academicForTerm) {
+            m.fallback = true;
+            fallbackTriggered = true;
+          }
+          // Append additional academic_calendar rows not already in matches.
+          const matchedUrls = new Set(academicForTerm.map((m) => m.source_url));
+          const extras = CAL_ROWS.filter(
+            (r) => r.source === "academic_calendar"
+              && r.term === term
+              && !matchedUrls.has(r.source_url),
+          );
+          const sorted = sortByEventPriority(extras as CalendarRow[]).slice(
+            0,
+            Math.max(0, 3 - academicForTerm.length),
+          );
+          for (const e of sorted) {
+            matches.push({ ...e, fallback: true });
+            fallbackTriggered = true;
+          }
+        }
+      }
+
+      const notes = buildCalendarNotes(matches, fallbackTriggered, term);
       return jsonContent({
         q,
         matches,
