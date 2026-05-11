@@ -20,7 +20,7 @@
  * Continuation lines (wrapped event text) have no date prefix — they are skipped.
  */
 import { load as cheerioLoad } from "cheerio";
-import { CALENDAR_URLS, type CalendarRow } from "../types.js";
+import { CALENDAR_URLS, formatCitation, type CalendarRow } from "../types.js";
 import { parseDateRange } from "./date_table.js";
 
 const GRAD_PDF_HREF_RE =
@@ -183,18 +183,20 @@ export function parseGradPdfText(
     // Skip rows whose "event" text is really a header or page decoration.
     if (isJunkLine(eventRaw)) continue;
 
-    const key = `${range[0]}|${range[1]}|${eventRaw.slice(0, 40)}`;
+    const event = eventRaw.slice(0, 200);
+    const key = `${event}|${range[0]}`;
     if (seenKey.has(key)) continue;
     seenKey.add(key);
 
     rows.push({
       source: "grad_school_calendar",
-      event: eventRaw.slice(0, 200),
+      event,
       start: range[0],
       end: range[1],
       term: termLabel,
       source_url: entry.url,
       retrieved_at: retrievedAt,
+      citation: formatCitation(event, termLabel, entry.url),
     });
   }
 

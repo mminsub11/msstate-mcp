@@ -173,10 +173,20 @@ async function scrapeTermB(source: TermPageSource): Promise<ScrapeResult> {
     );
     for (const r of results) rows.push(...r);
   }
+  // Aggregate-level dedup: same event/start in DIFFERENT terms is legitimate
+  // (e.g., "Classes begin" in Spring 2027 vs Fall 2027). Same event/start in
+  // the SAME term is a duplicate from overlapping sub-pages.
+  const aggregateSeen = new Set<string>();
+  const dedupedRows = rows.filter((r) => {
+    const k = `${r.source}|${r.event}|${r.start}|${r.term ?? ""}`;
+    if (aggregateSeen.has(k)) return false;
+    aggregateSeen.add(k);
+    return true;
+  });
   return {
     source,
-    rows,
-    error: rows.length === 0 ? lastError ?? "no rows extracted" : null,
+    rows: dedupedRows,
+    error: dedupedRows.length === 0 ? lastError ?? "no rows extracted" : null,
   };
 }
 
@@ -227,9 +237,16 @@ async function scrapeGradD(): Promise<ScrapeResult> {
     );
     for (const r of results) rows.push(...r);
   }
+  const aggregateSeen = new Set<string>();
+  const dedupedRows = rows.filter((r) => {
+    const k = `${r.event}|${r.start}|${r.term ?? ""}`;
+    if (aggregateSeen.has(k)) return false;
+    aggregateSeen.add(k);
+    return true;
+  });
   return {
     source: "grad_school_calendar",
-    rows,
-    error: rows.length === 0 ? lastError ?? "no rows extracted" : null,
+    rows: dedupedRows,
+    error: dedupedRows.length === 0 ? lastError ?? "no rows extracted" : null,
   };
 }

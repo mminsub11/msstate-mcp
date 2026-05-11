@@ -78,3 +78,32 @@ test("parseGradPdfText: at least one row mentions a grad-relevant deadline", asy
   const found = recognizable.some((k) => text.includes(k));
   assert.ok(found, `expected a grad-relevant keyword in: ${text.slice(0, 400)}`);
 });
+
+test("parseGradPdfText: deduplicates identical event-date rows within a single PDF", async () => {
+  const buf = fixtureBuf("grad_2026_spring.pdf");
+  const pdfParse = (await import("pdf-parse/lib/pdf-parse.js")).default;
+  const parsed = await pdfParse(buf);
+  const rows = parseGradPdfText(parsed.text, {
+    url: "https://www.grad.msstate.edu/sites/www.grad.msstate.edu/files/2026-01/Spring%202026.pdf",
+    year: 2026,
+    term: "Spring",
+  });
+  const keys = rows.map((r) => `${r.event}|${r.start}`);
+  const unique = new Set(keys);
+  assert.equal(keys.length, unique.size, "expected no duplicates within a single PDF");
+});
+
+test("parseGradPdfText: every row has a non-empty citation", async () => {
+  const buf = fixtureBuf("grad_2026_spring.pdf");
+  const pdfParse = (await import("pdf-parse/lib/pdf-parse.js")).default;
+  const parsed = await pdfParse(buf);
+  const rows = parseGradPdfText(parsed.text, {
+    url: "https://www.grad.msstate.edu/sites/www.grad.msstate.edu/files/2026-01/Spring%202026.pdf",
+    year: 2026,
+    term: "Spring",
+  });
+  for (const r of rows) {
+    assert.ok(r.citation.length > 0, `empty citation on row: ${r.event}`);
+    assert.match(r.citation, /^\[.+\]\(https:\/\/www\.grad\.msstate\.edu.+\.pdf\)$/);
+  }
+});

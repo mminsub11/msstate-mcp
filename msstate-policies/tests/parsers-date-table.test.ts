@@ -59,3 +59,36 @@ test("parseDateTable: university_holidays correctly parses multi-day Christmas/W
     );
   }
 });
+
+test("parseDateTable: deduplicates identical event-date rows from the same source", () => {
+  const rows = parseDateTable(
+    fixture("hrm_holidays.html"),
+    "university_holidays",
+  );
+  const keys = rows.map((r) => `${r.event}|${r.start}`);
+  const unique = new Set(keys);
+  assert.equal(
+    keys.length,
+    unique.size,
+    `expected no duplicate event-date pairs; found ${keys.length - unique.size} duplicates`,
+  );
+});
+
+test("parseDateTable: every row has a non-empty citation field", () => {
+  const rows = parseDateTable(
+    fixture("hrm_holidays.html"),
+    "university_holidays",
+  );
+  for (const r of rows) {
+    assert.ok(r.citation.length > 0, `empty citation on row: ${r.event}`);
+    assert.match(
+      r.citation,
+      /^\[.+\]\(https:\/\/.+\.msstate\.edu.+\)$/,
+      `malformed citation: ${r.citation}`,
+    );
+    assert.ok(
+      r.citation.includes(r.source_url),
+      `citation must contain source_url: ${r.citation}`,
+    );
+  }
+});

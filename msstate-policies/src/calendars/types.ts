@@ -32,6 +32,18 @@ export const CALENDAR_URLS: Record<CalendarSource, string> = {
   housing: "https://www.housing.msstate.edu/events/",
 };
 
+/** Term-boundary inheritance: per-audience calendars inherit term definitions
+ *  from the registrar's academic calendar. Holidays are orthogonal (no parent).
+ *  Used by find_msu_date's smart-fallback path. */
+export const CALENDAR_PARENT: Record<CalendarSource, CalendarSource | null> = {
+  academic_calendar:    null,
+  university_holidays:  null,
+  exam_schedule:        "academic_calendar",
+  grad_school_calendar: "academic_calendar",
+  sfa_financial_aid:    "academic_calendar",
+  housing:              "academic_calendar",
+};
+
 export interface CalendarRow {
   source: CalendarSource;
   /** Event/deadline name, e.g. "Spring Break", "Halls Close for Spring 2026". */
@@ -50,6 +62,13 @@ export interface CalendarRow {
   source_url: string;
   /** ISO-8601 UTC timestamp when the row was extracted. */
   retrieved_at: string;
+  /** Pre-formatted markdown link for the LLM to include verbatim in its answer.
+   *  Format: `[Event, Term](url)` or `[Event](url)` when term is absent.
+   *  Computed at scrape time; serialized into worker/corpus.json. */
+  citation: string;
+  /** Set to true by `find_msu_date` when this row was appended via the smart-fallback
+   *  path. Never set at parse/scrape time; never serialized into worker/corpus.json. */
+  fallback?: boolean;
 }
 
 /** Result of scraping a single source. */
@@ -65,4 +84,17 @@ export class CalendarWafError extends Error {
     super(`WAF challenge detected for ${source} at ${url}`);
     this.name = "CalendarWafError";
   }
+}
+
+/** Build the pre-formatted markdown citation link for a CalendarRow.
+ *  Label is `Event, Term` (or just `Event` when term is absent),
+ *  truncated to 80 chars with an ellipsis if longer. */
+export function formatCitation(
+  event: string,
+  term: string | undefined,
+  source_url: string,
+): string {
+  const label = term ? `${event}, ${term}` : event;
+  const safe = label.length > 80 ? `${label.slice(0, 77)}…` : label;
+  return `[${safe}](${source_url})`;
 }

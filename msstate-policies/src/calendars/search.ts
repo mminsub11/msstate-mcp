@@ -105,3 +105,10 @@ export function searchCalendarRows(query: string, limit = 10): CalendarHit[] {
   out.sort((a, b) => b.score - a.score);
   return out.slice(0, limit);
 }
+
+/** Returns the currently-indexed corpus rows. Used by the find_msu_date
+ *  fallback path to look up academic_calendar rows by term without
+ *  re-running BM25 across the whole corpus. */
+export function getAllCalendarRows(): readonly CalendarRow[] {
+  return docs.map((d) => d.row);
+}

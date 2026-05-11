@@ -40,3 +40,18 @@ test("parseHousingEvents handles date ranges (start !== end) when present", () =
   }
   assert.ok(ranged.start <= ranged.end, "range must be chronologically ordered");
 });
+
+test("parseHousingEvents: deduplicates identical event-date rows", () => {
+  const rows = parseHousingEvents(fixture("housing_events.html"));
+  const keys = rows.map((r) => `${r.event}|${r.start}`);
+  const unique = new Set(keys);
+  assert.equal(keys.length, unique.size, "expected no duplicates");
+});
+
+test("parseHousingEvents: every row has a non-empty citation", () => {
+  const rows = parseHousingEvents(fixture("housing_events.html"));
+  for (const r of rows) {
+    assert.ok(r.citation.length > 0);
+    assert.match(r.citation, /^\[.+\]\(https:\/\/www\.housing\.msstate\.edu.+\)$/);
+  }
+});

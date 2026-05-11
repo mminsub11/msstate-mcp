@@ -141,3 +141,39 @@ test("parseTermPage: sfa_financial_aid Fall 2026 returns >= 3 dated rows", () =>
     assert.equal(r.term, "Fall 2026");
   }
 });
+
+test("parseTermPage: deduplicates within a single sub-page parse", () => {
+  const rows = parseTermPage(
+    fixture("registrar_academic_2026_spring.html"),
+    "academic_calendar",
+    {
+      url: "https://www.registrar.msstate.edu/calendars/academic-calendar/2026/spring",
+      year: 2026,
+      term: "Spring",
+    },
+  );
+  const keys = rows.map((r) => `${r.event}|${r.start}`);
+  const unique = new Set(keys);
+  assert.equal(
+    keys.length,
+    unique.size,
+    `expected no duplicates within a sub-page; found ${keys.length - unique.size}`,
+  );
+});
+
+test("parseTermPage: every row has a non-empty citation", () => {
+  const rows = parseTermPage(
+    fixture("registrar_exams_2026_spring.html"),
+    "exam_schedule",
+    {
+      url: "https://www.registrar.msstate.edu/students/schedules/exam-schedule/2026/spring",
+      year: 2026,
+      term: "Spring",
+    },
+  );
+  for (const r of rows) {
+    assert.ok(r.citation.length > 0, `empty citation on row: ${r.event}`);
+    assert.match(r.citation, /^\[.+\]\(https:\/\/.+\.msstate\.edu.+\)$/);
+    assert.ok(r.citation.includes(r.source_url));
+  }
+});

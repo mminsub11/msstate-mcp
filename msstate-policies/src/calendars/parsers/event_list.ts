@@ -15,13 +15,14 @@
  * We parse page 1 only; pagination is deferred to a future round.
  */
 import { load as cheerioLoad } from "cheerio";
-import { CALENDAR_URLS, type CalendarRow } from "../types.js";
+import { CALENDAR_URLS, formatCitation, type CalendarRow } from "../types.js";
 import { parseDateRange } from "./date_table.js";
 
 export function parseHousingEvents(html: string): CalendarRow[] {
   const $ = cheerioLoad(html);
   const retrievedAt = new Date().toISOString();
   const rows: CalendarRow[] = [];
+  const seenKey = new Set<string>();
 
   $("div.news-card").each((_i, el) => {
     // Title
@@ -66,15 +67,20 @@ export function parseHousingEvents(html: string): CalendarRow[] {
       .trim()
       .slice(0, 500);
 
+    const event = title.slice(0, 200);
+    const key = `${event}|${range[0]}`;
+    if (seenKey.has(key)) return;
+    seenKey.add(key);
     rows.push({
       source: "housing",
-      event: title.slice(0, 200),
+      event,
       start: range[0],
       end: range[1],
       time: timeOfDay && timeOfDay.length > 0 ? timeOfDay : undefined,
       description: description.length > 0 ? description : undefined,
       source_url: CALENDAR_URLS.housing,
       retrieved_at: retrievedAt,
+      citation: formatCitation(event, undefined, CALENDAR_URLS.housing),
     });
   });
 

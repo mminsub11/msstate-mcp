@@ -258,6 +258,7 @@ Every calendar response includes:
 - The **canonical URL** of the specific MSU page or PDF
 - A **`retrieved_at`** timestamp + a **`corpus_built_at`** stamp on the hosted (connector) path so you can detect staleness
 - All matching year-versions when the question doesn't pin a specific year
+- A pre-formatted **`citation`** markdown link (e.g., `[Spring Break, Spring 2026](url)`) — the LLM is instructed to include it verbatim so you always have a one-click verification path.
 
 ## Tips for getting good answers
 

@@ -21,7 +21,7 @@ export function indexCalendarRowsForGetter(rows: CalendarRow[]): void {
 export const get_msu_calendar = {
   name: "get_msu_calendar",
   description:
-    "Return the raw rows for one MSU calendar source. Useful for power-user lookups when you want the full date table rather than a ranked match. `source` is one of: academic_calendar, exam_schedule, university_holidays, grad_school_calendar, sfa_financial_aid, housing. Optional `term` filter matches the row's `term` field via case-insensitive substring (e.g. 'Fall 2026', '2026', 'fall'). Without a term filter, all rows for that source are returned — useful when the user wants to compare multiple years of the same event.",
+    "Return the raw rows for one MSU calendar source. `source` is one of: academic_calendar, exam_schedule, university_holidays, grad_school_calendar, sfa_financial_aid, housing. Optional `term` filter matches via case-insensitive substring (e.g. 'Fall 2026', '2026', 'fall'). Each row has a pre-formatted `citation` markdown link — include it verbatim when surfacing any specific date to the user.",
   inputSchema: zodToJsonSchema(GetMsuCalendarInput, { target: "openApi3" }),
   zodSchema: GetMsuCalendarInput,
   async handler(rawInput: unknown) {

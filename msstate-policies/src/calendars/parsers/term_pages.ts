@@ -43,7 +43,7 @@
  *   TERM_INDEX_CONFIG: Record<TermPageSource, TermIndexConfig>
  */
 import { load as cheerioLoad } from "cheerio";
-import type { CalendarRow, CalendarSource } from "../types.js";
+import { formatCitation, type CalendarRow, type CalendarSource } from "../types.js";
 
 export type TermPageSource = Extract<
   CalendarSource,
@@ -255,21 +255,27 @@ export function parseTermPage(
   const extractor = EXTRACTORS[source];
   const raw = extractor(html);
   const retrievedAt = new Date().toISOString();
-  const termLabel = `${capitalizeTerm(entry.term)} ${entry.year}`;
+  const fullTerm = `${capitalizeTerm(entry.term)} ${entry.year}`;
 
+  const seenKey = new Set<string>();
   const rows: CalendarRow[] = [];
   for (const r of raw) {
     // isoDate is already YYYY-MM-DD from the <time datetime> attribute.
     if (!/^\d{4}-\d{2}-\d{2}$/.test(r.isoDate)) continue;
+    const event = r.event.slice(0, 200);
+    const key = `${event}|${r.isoDate}`;
+    if (seenKey.has(key)) continue;
+    seenKey.add(key);
     rows.push({
       source,
-      event: r.event.slice(0, 200),
+      event,
       start: r.isoDate,
       end: r.isoDate,
       time: r.time,
-      term: termLabel,
+      term: fullTerm,
       source_url: entry.url,
       retrieved_at: retrievedAt,
+      citation: formatCitation(event, fullTerm, entry.url),
     });
   }
   return rows;

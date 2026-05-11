@@ -52,3 +52,15 @@ test("detectCalendarWaf flags Cloudflare interstitial body", () => {
   assert.equal(detectCalendarWaf("<html>cf-chl-bypass</html>"), true);
   assert.equal(detectCalendarWaf("<html><body>real content</body></html>"), false);
 });
+
+test("scrapeCalendarFromHtml: passes citation through for housing rows", () => {
+  const result = scrapeCalendarFromHtml(
+    "housing",
+    fixture("housing_events.html"),
+  );
+  assert.equal(result.error, null);
+  assert.ok(result.rows.length > 0);
+  for (const r of result.rows) {
+    assert.ok(r.citation.length > 0, `citation missing on housing row: ${r.event}`);
+  }
+});
