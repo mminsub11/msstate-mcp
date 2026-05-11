@@ -9,7 +9,7 @@
  * calendars/) before adjusting selectors.
  */
 import { load as cheerioLoad } from "cheerio";
-import { CALENDAR_URLS, type CalendarRow, type CalendarSource } from "../types.js";
+import { CALENDAR_URLS, formatCitation, type CalendarRow, type CalendarSource } from "../types.js";
 
 export type DateTableSourceId = Extract<
   CalendarSource,
@@ -164,12 +164,17 @@ export function parseDateTable(html: string, source: DateTableSourceId): Calenda
     return m ? Number(m[1]) : undefined;
   })();
   const rows: CalendarRow[] = [];
+  const seenKey = new Set<string>();
   for (const r of raw) {
     const range = parseDateRange(r.rawDate, yearGuess);
     if (!range) continue;
+    const event = r.event.slice(0, 200);
+    const key = `${event}|${range[0]}`;
+    if (seenKey.has(key)) continue;
+    seenKey.add(key);
     rows.push({
       source,
-      event: r.event.slice(0, 200),
+      event,
       start: range[0],
       end: range[1],
       time: r.time,
@@ -177,6 +182,7 @@ export function parseDateTable(html: string, source: DateTableSourceId): Calenda
       description: r.description?.slice(0, 500),
       source_url: CALENDAR_URLS[source],
       retrieved_at: retrievedAt,
+      citation: formatCitation(event, r.term, CALENDAR_URLS[source]),
     });
   }
   return rows;
