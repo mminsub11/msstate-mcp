@@ -3,6 +3,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { fetchIndex, getScraperHealth } from "../scraper.js";
 import { getSearchHealth } from "../search.js";
 import { getCorpusHealth } from "../corpus.js";
+import { getCalendarsCorpusHealth } from "../calendars/corpus.js";
 import { HealthState } from "../types.js";
 
 const HealthInput = z.object({}).strict();
@@ -42,6 +43,14 @@ export const health_check = {
     const sh = getScraperHealth();
     const sr = getSearchHealth();
     const co = getCorpusHealth();
+    const cal = getCalendarsCorpusHealth();
+    const calendarsRowCount = Object.values(cal.per_source).reduce(
+      (acc, x) => acc + x.row_count,
+      0,
+    );
+    const calendarsLastError = Object.fromEntries(
+      Object.entries(cal.per_source).map(([k, v]) => [k, v.error]),
+    );
 
     const total = sh.cacheHits + sh.cacheMisses;
     const hitRate = total > 0 ? Number((sh.cacheHits / total).toFixed(3)) : 0;
@@ -63,6 +72,9 @@ export const health_check = {
       embeddings_loaded: sr.embeddingsLoaded,
       embedding_chunks: sr.embeddingChunks,
       disk_cache_enabled: co.diskCacheEnabled,
+      calendars_row_count: calendarsRowCount,
+      calendars_per_source: cal.per_source,
+      calendars_last_error: calendarsLastError,
     };
     return {
       content: [{ type: "text", text: JSON.stringify(state, null, 2) }],

@@ -109,4 +109,7 @@ export interface HealthState {
   pdf_parse_fallback_count: number;
   version: string;
   git_sha: string;
+  calendars_row_count?: number;
+  calendars_per_source?: Record<string, { row_count: number; error: string | null }>;
+  calendars_last_error?: Record<string, string | null>;
 }

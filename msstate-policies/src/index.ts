@@ -22,6 +22,10 @@ import { search_policies } from "./tools/search_policies.js";
 import { get_policy } from "./tools/get_policy.js";
 import { chain_find_relevant_policies } from "./tools/chain_find_relevant.js";
 import { cite_policy } from "./tools/cite_policy.js";
+import { find_msu_date } from "./tools/find_msu_date.js";
+import { get_msu_calendar, indexCalendarRowsForGetter } from "./tools/get_msu_calendar.js";
+import { loadAllCalendarRows } from "./calendars/corpus.js";
+import { indexCalendarRows } from "./calendars/search.js";
 import { health_check } from "./tools/health_check.js";
 
 // Deterministic order — referenced in the README and CI smoke test.
@@ -30,6 +34,8 @@ const TOOLS = [
   get_policy,
   chain_find_relevant_policies,
   cite_policy,
+  find_msu_date,
+  get_msu_calendar,
   health_check,
 ] as const;
 
@@ -119,6 +125,18 @@ async function main(): Promise<void> {
     })
     .catch((err) => {
       log("warn", "background warm failed; will retry on first request", {
+        err: err instanceof Error ? err.message : String(err),
+      });
+    });
+
+  loadAllCalendarRows()
+    .then((rows) => {
+      indexCalendarRows(rows);
+      indexCalendarRowsForGetter(rows);
+      log("info", "calendar background warm done", { rows: rows.length });
+    })
+    .catch((err) => {
+      log("warn", "calendar background warm failed; will retry on first request", {
         err: err instanceof Error ? err.message : String(err),
       });
     });
