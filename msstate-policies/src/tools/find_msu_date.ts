@@ -124,7 +124,7 @@ function buildNotes(
     return "No MSU calendar row matched this query. If the question is about an MSU date or deadline, try a more specific phrasing or check the source calendar directly.";
   }
   if (fallbackTriggered && term) {
-    return `Added academic_calendar rows for ${term} — if your primary source didn't have this term, the academic calendar is authoritative for term-boundary dates.`;
+    return `Surfaced academic_calendar rows for ${term} as fallback — if your primary source didn't have this term, the academic calendar is authoritative for term-boundary dates.`;
   }
   // Detect multi-year coverage: same event-stem appearing across distinct terms
   const byStem = new Map<string, Set<string>>();

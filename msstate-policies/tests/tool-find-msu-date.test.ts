@@ -145,6 +145,8 @@ test("find_msu_date: skips fallback when query has no term reference", async () 
 });
 
 test("find_msu_date: skips fallback when academic_calendar already dominates results", async () => {
+  // Corpus has both a non-academic Spring 2026 row AND 3 academic Spring 2026 rows.
+  // Fallback should skip because nonAcademicForTerm > 0 (the housing row covers Spring 2026).
   const acRows: CalendarRow[] = ["Classes begin", "Last day to drop", "Spring Break"].map((event, i) => ({
     source: "academic_calendar" as const,
     event,
@@ -155,9 +157,19 @@ test("find_msu_date: skips fallback when academic_calendar already dominates res
     retrieved_at: "2026-05-11T00:00:00Z",
     citation: `[${event}, Spring 2026](https://www.registrar.msstate.edu/calendars/academic-calendar/2026/spring)`,
   }));
-  indexCalendarRows(acRows);
+  const housingRow: CalendarRow = {
+    source: "housing",
+    event: "Halls Close for Spring 2026",
+    start: "2026-05-15",
+    end: "2026-05-15",
+    term: "Spring 2026",
+    source_url: "https://www.housing.msstate.edu/events/",
+    retrieved_at: "2026-05-11T00:00:00Z",
+    citation: "[Halls Close for Spring 2026, Spring 2026](https://www.housing.msstate.edu/events/)",
+  };
+  indexCalendarRows([...acRows, housingRow]);
   const res = await find_msu_date.handler({ q: "spring 2026 academic dates" });
   const payload = JSON.parse(res.content[0].text);
   const fallbackRows = payload.matches.filter((m: { fallback?: boolean }) => m.fallback);
-  assert.equal(fallbackRows.length, 0, "no fallback when academic already covers the term");
+  assert.equal(fallbackRows.length, 0, "no fallback when non-academic source already covers the term");
 });
