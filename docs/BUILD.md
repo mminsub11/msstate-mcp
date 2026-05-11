@@ -204,6 +204,16 @@ Corpus rule addendum in [`CLAUDE.md`](../CLAUDE.md#corpus-extension-2026-05-11--
 
 Tool count: 5 â 7. Eval set at [`msstate-policies/eval/eval-calendars-2026-05-11.json`](../msstate-policies/eval/eval-calendars-2026-05-11.json) (16 questions, mixed across the 6 sources + 1 refusal case).
 
+### Calendar quality improvements (v0.4.1, 2026-05-11)
+
+Three quality-of-life fixes on top of v0.4.0:
+
+- **Within-source dedup at the parser + scraper-aggregation boundaries.** Each parser dedupes by `event|start` within a single page-parse; `scrapeTermB` and `scrapeGradD` dedupe by `source|event|start|term` across sub-page merges. The spec-key includes `term` deliberately so cross-term variants survive (a "Classes begin" entry that legitimately appears under both `Spring 2026` and `Spring Mini-Term One 2026` is two different facts, not a duplicate). On the v0.4.1 rebuild against live MSU: 0 duplicates by the spec key; ~921 rows total (varies by MSU's sub-page availability on rebuild day). The dedup catches pathological cases (same event listed twice on the same sub-page) without collapsing legitimate cross-term variants.
+- **`citation` field on every `CalendarRow`.** Pre-formatted markdown link `[event, term](url)` computed at scrape time so the LLM can include the source URL verbatim in answers. 100% coverage in the corpus. Reduces the rate at which the LLM drops URLs when summarizing tool output. The `formatCitation` helper lives in `src/calendars/types.ts`.
+- **Smart fallback in `find_msu_date`.** When a query mentions a term (e.g., "Spring 2027") and the primary BM25 results have no non-academic rows for that term while having other non-academic results, the chain tool (a) tags existing BM25-found academic rows for that term with `fallback: true`, and (b) appends up to 3 additional academic-calendar rows from the corpus that BM25 missed — also tagged. Logic mirrored in the Worker (`worker/src/index.ts`). Driven by the `CALENDAR_PARENT` constant in `src/calendars/types.ts` (currently documentation-only; the live filter hardcodes `academic_calendar` since it's the only non-null parent value). Lets the LLM answer "grad student, when does Spring 2027 start?" honestly: "Your grad calendar doesn't list this for 2027 yet, but the academic calendar shows January 13."
+
+Semantic embedding for calendars is **deferred to v0.5.0** — the BM25 semantic gap on natural-language queries like *"when does the semester start"* vs the event title *"Classes begin"* remains until then. v0.4.1's smart-fallback path mitigates the most painful cases (queries that name a specific term) but doesn't solve the broader semantic-match problem.
+
 ## Decision log (chronological)
 
 ### Plan revisions (v1 → v7, all in git history)
