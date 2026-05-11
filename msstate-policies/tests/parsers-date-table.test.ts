@@ -35,3 +35,27 @@ test("parseDateTable: at least one row mentions a recognizable holiday", () => {
   const found = recognizable.some((h) => text.includes(h));
   assert.ok(found, `none of ${recognizable.join(",")} appeared in ${text}`);
 });
+
+test("parseDateTable: university_holidays correctly parses multi-day Christmas/Winter holiday range", () => {
+  const rows = parseDateTable(
+    fixture("hrm_holidays.html"),
+    "university_holidays",
+  );
+  // The MSU fixture contains at least one multi-day Christmas/New Year/Winter block.
+  // It must parse as a date range (start !== end) — earlier versions of the regex
+  // misparsed "December 23, YYYY, through January D, YYYY+1" as a single-day event.
+  const winterBlock = rows.find(
+    (r) => /christmas|winter|new\s*year/i.test(r.event) && r.start !== r.end,
+  );
+  assert.ok(
+    winterBlock,
+    "expected a multi-day Christmas/Winter/New Year holiday block with start !== end",
+  );
+  // Sanity: end must be chronologically >= start.
+  if (winterBlock) {
+    assert.ok(
+      winterBlock.start <= winterBlock.end,
+      `range out of order: ${winterBlock.start}..${winterBlock.end}`,
+    );
+  }
+});

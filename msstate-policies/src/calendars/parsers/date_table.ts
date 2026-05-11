@@ -59,7 +59,7 @@ export function parseDateRange(
 
   // Two-month range: "Month D, YYYY - Month D, YYYY" or "Month D, YYYY, through Month D, YYYY"
   const twoMonth = clean.match(
-    /([A-Za-z]+)\s+(\d{1,2})(?:,)?\s*(\d{4})?\s*(?:-|through)\s*([A-Za-z]+)\s+(\d{1,2})(?:,)?\s*(\d{4})?/,
+    /([A-Za-z]+)\s+(\d{1,2})(?:,)?\s*(\d{4})?(?:,)?\s*(?:-|through)\s*([A-Za-z]+)\s+(\d{1,2})(?:,)?\s*(\d{4})?/,
   );
   if (twoMonth) {
     const m1 = MONTHS[twoMonth[1].toLowerCase()];
