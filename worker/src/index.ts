@@ -46,6 +46,9 @@ interface CalendarRow {
   retrieved_at: string;
   citation: string;
   fallback?: boolean;
+  // v0.5.0:
+  contentHash?: string;
+  synonyms?: string[];
 }
 
 interface CalendarBlock {
@@ -177,6 +180,7 @@ function bm25Search(query: string, limit = 10): ScoredHit[] {
 interface CalDoc {
   row: CalendarRow;
   eventTokens: string[];
+  synonymsTokens: string[];
   descriptionTokens: string[];
   termTokens: string[];
   dl: number;
@@ -184,14 +188,20 @@ interface CalDoc {
 
 const calDocs: CalDoc[] = CAL_ROWS.map((r) => {
   const eventTokens = tokenize(r.event);
+  const synonymsTokens = tokenize((r.synonyms ?? []).join(" "));
   const descriptionTokens = tokenize(r.description ?? "");
   const termTokens = tokenize(r.term ?? "");
   return {
     row: r,
     eventTokens,
+    synonymsTokens,
     descriptionTokens,
     termTokens,
-    dl: eventTokens.length + descriptionTokens.length + termTokens.length,
+    dl:
+      eventTokens.length +
+      synonymsTokens.length +
+      descriptionTokens.length +
+      termTokens.length,
   };
 });
 const calDf = new Map<string, number>();
@@ -199,7 +209,7 @@ let calTotalLen = 0;
 for (const d of calDocs) {
   calTotalLen += d.dl;
   const seen = new Set<string>();
-  for (const t of [...d.eventTokens, ...d.descriptionTokens, ...d.termTokens]) {
+  for (const t of [...d.eventTokens, ...d.synonymsTokens, ...d.descriptionTokens, ...d.termTokens]) {
     if (seen.has(t)) continue;
     seen.add(t);
     calDf.set(t, (calDf.get(t) ?? 0) + 1);
@@ -214,7 +224,7 @@ function calIdf(token: string): number {
   return Math.log(1 + (n - dfi + 0.5) / (dfi + 0.5));
 }
 
-const CAL_FIELD_WEIGHTS = { event: 3, description: 1, term: 1 } as const;
+const CAL_FIELD_WEIGHTS = { event: 3, synonyms: 2, description: 1, term: 1 } as const;
 
 function bm25TermScoreCal(tf: number, dl: number, idfV: number): number {
   if (tf <= 0) return 0;
@@ -232,9 +242,11 @@ function bm25SearchCalendars(query: string, limit = 10): { row: CalendarRow; sco
       const idfQ = calIdf(q);
       if (idfQ === 0) continue;
       const tfE = countOf(q, d.eventTokens);
+      const tfS = countOf(q, d.synonymsTokens);
       const tfD = countOf(q, d.descriptionTokens);
       const tfT = countOf(q, d.termTokens);
       s += CAL_FIELD_WEIGHTS.event * bm25TermScoreCal(tfE, d.dl, idfQ);
+      s += CAL_FIELD_WEIGHTS.synonyms * bm25TermScoreCal(tfS, d.dl, idfQ);
       s += CAL_FIELD_WEIGHTS.description * bm25TermScoreCal(tfD, d.dl, idfQ);
       s += CAL_FIELD_WEIGHTS.term * bm25TermScoreCal(tfT, d.dl, idfQ);
     }
@@ -452,11 +464,12 @@ function buildCalendarNotes(
   fallbackTriggered: boolean,
   term: string | null,
 ): string {
+  const modeNote = "BM25 with synonyms";
   if (matches.length === 0) {
-    return "No MSU calendar row matched this query. Try a more specific phrasing or check the source calendar directly.";
+    return `No MSU calendar row matched this query. ${modeNote}. Try a more specific phrasing or check the source calendar directly.`;
   }
   if (fallbackTriggered && term) {
-    return `Surfaced academic_calendar rows for ${term} as fallback — if your primary source didn't have this term, the academic calendar is authoritative for term-boundary dates.`;
+    return `Surfaced academic_calendar rows for ${term} as fallback — if your primary source didn't have this term, the academic calendar is authoritative for term-boundary dates. ${modeNote}.`;
   }
   const byStem = new Map<string, Set<string>>();
   for (const m of matches) {
@@ -468,9 +481,9 @@ function buildCalendarNotes(
   const multiYearStems = [...byStem.entries()].filter(([, terms]) => terms.size >= 2);
   if (multiYearStems.length > 0) {
     const [stem, terms] = multiYearStems[0];
-    return `Multi-year matches: '${stem}' appears in ${terms.size} distinct terms (${[...terms].join(", ")}). Present each year-version separately.`;
+    return `Multi-year matches: '${stem}' appears in ${terms.size} distinct terms (${[...terms].join(", ")}). Present each year-version separately. ${modeNote}.`;
   }
-  return "";
+  return modeNote;
 }
 
 async function callTool(name: string, args: Record<string, unknown>): Promise<McpToolResponse> {
@@ -599,11 +612,14 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<Mc
         }
       }
 
-      const notes = buildCalendarNotes(matches, fallbackTriggered, term);
+      // Strip contentHash from the wire response: it's a build-time
+      // dedup/cache key, never useful to clients, and not worth the bytes.
+      const wireMatches = matches.map(({ contentHash: _omit, ...rest }) => rest);
+
       return jsonContent({
         q,
-        matches,
-        notes,
+        matches: wireMatches,
+        notes: buildCalendarNotes(wireMatches, fallbackTriggered, term),
         corpus_built_at: CAL_BUILT_AT,
       });
     }
