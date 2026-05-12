@@ -123,7 +123,9 @@ interface RawRow {
  * Extract rows from an academic_calendar (or sfa_financial_aid) term page.
  *
  * Structure: div.row.g-0.border-bottom (one per event)
- *   - col-md-4: <time datetime="YYYY-MM-DDTHH:MM:SSZ"> — the date
+ *   - col-md-4: one <time datetime="YYYY-MM-DDTHH:MM:SSZ"> for single-day
+ *     events, OR two <time> elements (start + end, separated by " to") for
+ *     multi-day ranges like Spring Break and advising windows.
  *   - col-md-8: plain text — the event description
  */
 function extractAcademicCalendarRows(html: string): RawRow[] {
@@ -149,6 +151,7 @@ function extractAcademicCalendarRows(html: string): RawRow[] {
       const lastMatch = lastDatetime.match(/^(\d{4}-\d{2}-\d{2})/);
       if (lastMatch) {
         const candidate = lastMatch[1];
+        // Lexicographic ISO compare; allow equal so degenerate "<time>X</time> to <time>X</time>" is preserved.
         if (candidate >= isoDate) {
           isoDateEnd = candidate;
         } else {
