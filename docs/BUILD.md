@@ -225,7 +225,36 @@ Adds LLM-generated paraphrases on each calendar row to close the BM25 semantic g
 - **Security envelope.** Round-2 checklist 192 → 220 via SYN1-SYN6 + CAL5 regression guard. **SYN4 is load-bearing**: `api.anthropic.com` must never appear in `msstate-policies/src/` or `worker/src/` — only in the build script.
 - **Robust JSON extraction.** Build script strips markdown code fences from Haiku responses and uses an assistant-prefill `[` to force JSON-array continuation. Honors `retry-after` on 429s with concurrency tuned to 2 for tier-1 rate limits.
 
-Pivot history: an earlier v0.5.0 design used query-time Voyage embeddings; that was rejected on the zero-runtime-cost constraint. See `.dev/specs/2026-05-12-v0.5.0-calendar-embeddings-design.md` for the current design and pivot rationale.
+Pivot history: an earlier v0.5.0 design used query-time Voyage embeddings; that was rejected on the zero-runtime-cost constraint (see the **Design summary (v0.5.0 / v0.6.0)** subsection below for the load-bearing decisions preserved from the brainstorm specs).
+
+### Course catalog (v0.6.0, 2026-05-12)
+
+Adds three tools (`search_msu_courses`, `get_msu_course`, `get_msu_course_graph`) sourced from `catalog.msstate.edu`. Same baked-corpus model as policies and calendars — zero runtime fetch surface.
+
+- **Two-pass prereq parser.** Inside the parenthesized prereq sentence: Pass 1 is a high-recall regex `\b[A-Z]{2,4}\s\d{4}\b` that populates `required_courses` losslessly (this is the field the DAG walker depends on). Pass 2 is best-effort — `logic` (or/and/mixed), `min_grade`, and `non_course` strings ("consent of instructor", "junior standing"). When pass 2 is uncertain, `logic` is set to `"mixed"` and `raw_prose` serves as the human/LLM escape valve. Tool descriptions document the split so clients know which fields to trust unconditionally.
+- **DAG built at scrape time.** `forward_dag` (course → prereqs) and `reverse_dag` (prereq → unlockers) are computed once from `required_courses` arrays and baked into `corpus.json.courses`. Query-time graph walks are pure BFS with visited-set cycle detection; depth clamped to `[1, 10]`, default 5, `truncated:true` whenever the walk hit the cap or a cycle.
+- **URL discipline.** `CATALOG_ROOTS` frozen allowlist + per-course URLs constructed only after the course code passes `/^[A-Z]{2,4}\s\d{4}$/` validation, with `encodeURIComponent` on the dept prefix. `isAllowedCatalogUrl()` re-validates host + prefix before every fetch.
+- **Live-scrape robustness.** Concurrency 2, jitter 200–600 ms, 3 retries with exponential backoff (500ms / 1.5s / 4s) on transient errors. WAF challenges (CatalogWafError) and HTTP 4xx are non-transient and fail immediately. The earlier v0.6.0 first-attempt scrape (concurrency 4, no retries) hit the CAT3 5% parse-exception guard at 10.68%; the retry+conc=2 fix landed in commit `6773bb8`.
+- **CAT3 guard is load-bearing.** Build aborts with the canonical string `"refusing to ship a poisoned course corpus"` on any of: subprocess failure, unparseable JSON, missing `records`, `< 500` records, empty `reverse_dag` with non-empty `forward_dag`, prereq parse-exception rate `> 5%`.
+- **Security envelope.** Round-3 checklist 220 → **230** via CAT1–CAT4. Per-check intent documented in the Round-3 audit closure subsection of `## Security` below.
+- **Eval shape.** 52 rows split across 3 buckets: `course_explain` (23 — paraphrase → expected_codes), `prereq_chain` (14 — root → forward-DAG subset), `unlocks` (15 — root → reverse-DAG subset). Every expected_code value derived from the live scrape in the same session per the corpus rule. Ship thresholds: ≥90% / ≥95% / ≥95%. v0.6.0 ships at 100% / 100% / 100%.
+
+### Design summary (v0.5.0 / v0.6.0)
+
+The brainstorm specs that drove v0.5.0 and v0.6.0 are not preserved in-tree (post-ship cleanup per `.dev/README.md`). The load-bearing decisions are captured here so the rationale survives `git log` rot:
+
+**v0.5.0 calendar synonyms — why build-time, not runtime:**
+- The first spec proposed query-time embeddings (Voyage / OpenAI / Workers AI). Rejected on the "zero ongoing operational cost" hard requirement — `find_msu_date` is the lowest-cost-per-query tool we have, and any runtime egress contradicts the project's no-recurring-cost premise.
+- The shipped design generates synonyms once per build via Anthropic Haiku, bakes them into `worker/corpus.json`, and runs pure 4-field BM25 at query time. `api.anthropic.com` mechanically banned from `src/` by SYN4. Build cost is small and one-shot per release.
+
+**v0.6.0 course tools — why all three:**
+- Brainstorm identified 3 user pains: prereq chain ("what do I need before X?"), course explainer ("what's MSU's networking class?"), reverse unlock ("what does X enable?"). All three fit one corpus + one DAG, so they shipped together rather than over multiple minor releases.
+- Degree-program structure (`get_msu_program`), archived catalog editions, and course-offerings/professor data are explicitly **out of scope** for v0.6.0 (deferred items D2/D3/D6 in the brainstorm).
+- Search is BM25-only — embeddings deferred (D1). Three upgrade paths if a future eval flags a semantic gap on the course corpus: (a) reuse v0.5.0's build-time Anthropic Haiku synonym pattern with a `synonyms` field per `Course`; (b) Cloudflare Workers AI (`@cf/baai/bge-small-en-v1.5`, 10k neurons/day free tier); (c) dept-alias dictionary. No decision needed pre-eval.
+- Cross-listed courses stored as both records with `cross_listed: ["<other>"]` arrays (D4 — best-effort canonicalization deferred). Co-reqs parsed into a separate `Coreq` block but excluded from graph walks by default (D5).
+- Refresh cadence: catalog editions ship ~yearly; a v0.6.x release pinned to each edition is the expected operating model (D7). No cron, no scheduled re-scrape.
+
+**Corpus-rule continuity across versions:** v0.4.0 added `*.msstate.edu` subdomain sources, v0.6.0 adds `catalog.msstate.edu`. All other corpus-rule prohibitions are unchanged — no training-data fallback, no third-party mirrors, no non-msstate.edu fetches, no `WebSearch` on these topics. The frozen URL allowlists (calendar URLs in `src/calendars/types.ts`; `CATALOG_ROOTS` in `src/courses/types.ts`) are the trust anchors mechanical CAL1 / CAT1 grep checks defend.
 
 ## Decision log (chronological)
 

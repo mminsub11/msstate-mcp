@@ -1,114 +1,69 @@
 # msstate-mcp
 
-**Ask Claude or ChatGPT about Mississippi State University — Operating Policies *and* academic dates. Answers are grounded in the official MSU pages and PDFs, with verbatim quotes and citations.**
+**Ask Claude or ChatGPT about Mississippi State University. Get answers grounded in MSU's own pages and PDFs — with verbatim quotes and clickable citations.**
 
-> ⚠️ **Unofficial.** This project is not affiliated with, endorsed by, or sponsored by Mississippi State University. It retrieves content from public MSU pages — <https://www.policies.msstate.edu/current> plus six named calendar sources on `*.msstate.edu` subdomains — for use by an LLM. **Always verify against the official source before acting on the result.**
+Covers three domains, all sourced exclusively from `*.msstate.edu`:
 
----
+- **Operating Policies** — 217 current OPs (the full `policies.msstate.edu/current` index)
+- **Academic dates & deadlines** — 897 rows across six calendars (registrar, exams, holidays, grad school, financial aid, housing)
+- **Course catalog** — 3,723 undergraduate + graduate courses with prereqs, descriptions, and a walkable prerequisite graph
 
-## Table of contents
-
-- [What it does](#what-it-does)
-- [Quick start (30 seconds)](#quick-start-30-seconds)
-- [Install paths by client](#install-paths-by-client)
-  - [Claude.ai web / mobile](#claudeai-web--claude-mobile)
-  - [ChatGPT Plus / Pro](#chatgpt-plus--pro)
-  - [Claude Code](#claude-code)
-  - [Claude Desktop, Cursor, Windsurf, Zed](#claude-desktop-cursor-windsurf-zed)
-  - [OpenAI API (any plan)](#openai-api-any-plan)
-  - [Free claude.ai — no install](#free-claudeai--no-install)
-- [Tools](#tools)
-- [What a response looks like](#what-a-response-looks-like)
-- [v0.5.0 highlights — natural-language calendar queries, zero runtime cost](#v050-highlights--natural-language-calendar-queries-zero-runtime-cost)
-- [Privacy](#privacy)
-- [Configuration](#configuration)
-- [Eval](#eval)
-- [Troubleshooting](#troubleshooting)
-- [Contributing & maintainers](#contributing--maintainers)
-- [License](#license)
+> ⚠️ **Unofficial.** Not affiliated with, endorsed by, or sponsored by Mississippi State University. Always verify against the official source before acting on any answer.
 
 ---
 
-## What it does
+## What you can ask
 
-You ask a plain-English question; the server returns a grounded answer from MSU's official site, with a verbatim quote and a clickable citation. Two coverage areas behind one connector:
-
-- **Policies** — *"What is MSU's hazing policy?"* The server fetches the official policy PDF and Claude/GPT answers using only that text, citing the OP number and canonical `policies.msstate.edu` URL.
-- **Dates & deadlines** — *"When does spring break start?"* The server scrapes six MSU calendars (registrar academic + exam, university holidays, graduate school PDFs, financial aid, housing) and returns the verbatim date plus the source page URL. v0.5.0 adds LLM-generated synonyms baked into the BM25 index so paraphrased queries like *"when does the semester start"* or *"turkey day"* find the right row — with **no runtime API cost**.
-
-If neither a policy nor a calendar entry applies (*"what's the weather forecast?"*, *"what's the latest football score?"*), the model refuses cleanly rather than fabricating an answer.
-
-Things to ask:
-
+**Policies:**
 - *"What is MSU's hazing policy?"*
-- *"How does the grade appeal process work?"*
-- *"What's MSU's faculty grievance procedure?"*
-- *"What sanctions apply to alcohol and drug offenses for MSU students?"*
-- *"What is MSU's policy on student education records (FERPA)?"*
-- *"When does spring break start in spring 2026?"*
-- *"When is fall move-in?"*
-- *"Memorial Day holiday closed?"* (v0.5.0 synonyms find this from `"Memorial Day Holiday – no classes scheduled"`)
+- *"What sanctions apply to alcohol offenses for MSU students?"*
+- *"What's the grade-appeal process?"*
+
+**Academic dates:**
+- *"When does spring break start?"*
+- *"When are finals in fall 2026?"*
+- *"What day is MSU closed for Thanksgiving?"*
+
+**Courses (v0.6.0):**
+- *"What's MSU's networking course?"* → finds CSE 4153
+- *"What do I need to take before CSE 4733 (Operating Systems)?"* → walks the prereq chain
+- *"What does Calc I unlock?"* → reverse-walks the DAG to show downstream courses
+
+The model **refuses** when no MSU source covers the question (*"What's the weather?"*, *"Football scores?"*) rather than guessing.
 
 ---
 
-## Quick start (30 seconds)
+## Install — pick your client
 
-**The same hosted MCP endpoint works for both Claude.ai and ChatGPT Plus/Pro.** No code, no install, no API key. Just paste a URL into a settings panel.
-
-| | **Claude.ai** | **ChatGPT** |
+| Client | Path | Time |
 |---|---|---|
-| **You need** | Paid Claude plan (Pro / Team / Enterprise) | Paid ChatGPT plan (Plus / Pro) |
-| **1.** | Sign in at <https://claude.ai> | Sign in at <https://chatgpt.com> |
-| **2.** | **Settings → Connectors → Add custom connector** | **Settings → Connectors → Add custom connector** |
-| **3.** | **Name:** `MSU` &nbsp;&nbsp;**URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp` | **Name:** `MSU` &nbsp;&nbsp;**URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp` |
-| **4.** | Save. Connector should show **7 tools** | Save. Connector should show **7 tools** |
-| **5.** | New chat, enable the connector, ask a question | New chat, enable the connector, ask a question |
+| **claude.ai** (paid) | [Custom connector](#claudeai-web--mobile) | 30 sec |
+| **ChatGPT** (Plus/Pro) | [Custom connector](#chatgpt-plus--pro) | 30 sec |
+| **Claude Code** | [Plugin command](#claude-code) | 30 sec |
+| **Claude Desktop, Cursor, Windsurf, Zed** | [JSON snippet](#claude-desktop-cursor-windsurf-zed) | 1 min |
+| **OpenAI API** (any plan) | [Python sample](#openai-api) | 1 min |
+| **Free claude.ai** | [Starter zip](#free-claudeai) | 1 min |
 
-Verify with either:
-- *"What is MSU's hazing policy?"* → verbatim quote citing OP 91.208 with the `policies.msstate.edu` URL.
-- *"When does spring break start?"* → multi-year answer (both 2026 and 2027) so the LLM doesn't have to guess which you meant.
+### claude.ai web + mobile
 
-Mobile apps (Claude iOS/Android, ChatGPT iOS/Android) use the same connector under the same account — set it up once on web, mobile sees it automatically.
+Fastest path. Works in the browser and the Claude iOS/Android apps. Requires a paid Claude plan to add custom connectors.
 
-> **Freshness note:** the hosted Worker reads from a snapshot rebuilt periodically. The response includes a `corpus_built_at` field so the model surfaces staleness honestly. For *always-fresh* (live-scrape per call), use a local install below.
+1. Sign in at <https://claude.ai>
+2. **Settings → Connectors → Add custom connector**
+3. **Name:** `MSU` &nbsp;&nbsp; **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
+4. Save. You should see **10 tools** appear
+5. New chat, enable the connector, ask a question
 
----
-
-## Install paths by client
-
-| If you use… | Easiest install | Time |
-|---|---|---|
-| **claude.ai** web / mobile | [Custom connector](#claudeai-web--claude-mobile) | 30 sec |
-| **ChatGPT Plus / Pro** web / mobile | [Custom connector](#chatgpt-plus--pro) | 30 sec |
-| **Claude Code** (CLI) | [Two slash commands](#claude-code) | 30 sec |
-| **Claude Desktop**, **Cursor**, **Windsurf**, **Zed** | [Paste a JSON snippet](#claude-desktop-cursor-windsurf-zed) | 1 min |
-| **OpenAI API** (free or paid ChatGPT) | [Python sample](#openai-api-any-plan) | 1 min |
-| **Free claude.ai** (no MCP support) | [Drag-and-drop starter zip](#free-claudeai--no-install) | 1 min |
-
-### claude.ai web + Claude mobile
-
-The fastest path. Works in your browser at <https://claude.ai> and the Claude iOS / Android apps. **Requires a paid claude.ai plan** to add custom connectors.
-
-1. Sign in to <https://claude.ai>.
-2. Open **Settings → Connectors** (or the connector button in the chat composer).
-3. Click **Add custom connector**.
-4. Fill in:
-   - **Name:** `MSU`
-   - **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
-5. Save. The connector should show **7 tools** available.
-6. Open a new chat, enable the connector, ask a policy question (*"What is MSU's hazing policy?"*) or a date question (*"When does fall semester start?"*).
+Mobile apps pick up the connector automatically once you set it up on web.
 
 ### ChatGPT Plus / Pro
 
-ChatGPT Plus and Pro support custom MCP Connectors. Free-tier ChatGPT can't add Connectors — use the [OpenAI API](#openai-api-any-plan) path instead.
+Same flow as claude.ai. Free-tier ChatGPT can't add connectors — use the [OpenAI API path](#openai-api) instead.
 
-1. Sign in to <https://chatgpt.com>.
-2. Open **Settings → Connectors → Add custom connector**.
-3. Fill in:
-   - **Name:** `MSU`
-   - **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
-4. Save. The connector should show **7 tools** available.
-5. Open a new chat, enable the connector, ask a question.
+1. Sign in at <https://chatgpt.com>
+2. **Settings → Connectors → Add custom connector**
+3. **Name:** `MSU` &nbsp;&nbsp; **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
+4. Save → 10 tools available
 
 ### Claude Code
 
@@ -117,13 +72,13 @@ ChatGPT Plus and Pro support custom MCP Connectors. Free-tier ChatGPT can't add 
 /plugin install msstate-policies@msstate-mcp
 ```
 
-Two commands, no JSON editing. Restart Claude Code if the tools don't show up automatically.
+Two commands, no JSON. Restart Claude Code if tools don't appear.
 
 ### Claude Desktop, Cursor, Windsurf, Zed
 
-You need [Node.js 18+](https://nodejs.org) (`npx` comes with it).
+You need [Node.js 18+](https://nodejs.org).
 
-**1. Locate your client's MCP config file:**
+**1. Find your client's MCP config:**
 
 | Client | Path |
 |---|---|
@@ -134,9 +89,7 @@ You need [Node.js 18+](https://nodejs.org) (`npx` comes with it).
 | Windsurf | Settings → MCP servers |
 | Zed | `~/.config/zed/settings.json` under `context_servers` |
 
-In Claude Desktop: **Settings → Developer → Edit Config** opens the file in your editor.
-
-**2. Add this entry.** If `"mcpServers"` already has other servers, just add `msstate-policies` inside it:
+**2. Add this entry** (inside `"mcpServers"` if other servers already live there):
 
 ```json
 {
@@ -149,35 +102,36 @@ In Claude Desktop: **Settings → Developer → Edit Config** opens the file in 
 }
 ```
 
-**3. Fully quit the client** (Cmd+Q on macOS, right-click tray → Quit on Windows). Reopen.
+**3.** Fully quit the client (Cmd+Q / right-click tray → Quit) and reopen.
 
-**4. Verify.** Look for the tools indicator near the chat input — you should see `msstate-policies` with **7 tools**. Try *"What is MSU's hazing policy?"* — the first call takes ~5 seconds (server fetches MSU's index + the relevant PDF); later calls reuse cached data.
+**4.** Verify the `msstate-policies` server shows **10 tools**. First call takes ~5 seconds (cold fetch); later calls reuse cached data.
 
-A ready-to-paste snippet is at [`examples/claude_desktop_config.json`](examples/claude_desktop_config.json).
+Ready-to-paste snippet at [`examples/claude_desktop_config.json`](examples/claude_desktop_config.json).
 
-### OpenAI API (any plan)
+### OpenAI API
 
-ChatGPT Connectors require a paid ChatGPT plan. If you're on **free ChatGPT** — or you just prefer code — use the OpenAI API directly. The API is independent of your ChatGPT subscription tier; sign up at <https://platform.openai.com> and add a few dollars of credit (queries are typically a few cents each).
+Independent of your ChatGPT subscription tier. Add credit at <https://platform.openai.com>; queries cost a few cents each.
 
 ```bash
 pip install openai
 export OPENAI_API_KEY=sk-...
 ```
 
-Minimum example:
-
 ```python
 from openai import OpenAI
 
-INSTRUCTIONS = """You answer questions about Mississippi State University using the msstate-policies MCP server, which covers:
-  - MSU Operating Policies (via chain_find_relevant_policies / search_policies / get_policy / cite_policy)
-  - MSU academic dates from six calendars (via find_msu_date / get_msu_calendar)
+INSTRUCTIONS = """You answer questions about Mississippi State University using the
+msstate-policies MCP server, which covers Operating Policies, six academic
+calendars, and the course catalog.
 
 Rules:
 1. For policy questions, call chain_find_relevant_policies with k=5.
-2. For date questions, call find_msu_date. If the user does NOT specify a year, present ALL year-versions returned.
-3. If the question isn't about MSU policies or dates, refuse plainly and suggest an alternative source. Do not invent.
-4. Quote dates and policy text verbatim. Cite source_url for dates, OP number + canonical URL for policies."""
+2. For date questions, call find_msu_date. If the user does NOT specify a year,
+   present ALL year-versions returned.
+3. For course questions, call search_msu_courses, get_msu_course, or
+   get_msu_course_graph as appropriate.
+4. If the question isn't about MSU, refuse plainly. Do not invent.
+5. Quote dates and policy text verbatim. Cite the canonical msstate.edu URL."""
 
 client = OpenAI()
 resp = client.responses.create(
@@ -189,7 +143,7 @@ resp = client.responses.create(
         "server_url": "https://msstate-policies-mcp.mminsub90.workers.dev/mcp",
         "require_approval": "never",
     }],
-    input="What is MSU's hazing policy?",
+    input="What do I need to take before CSE 4733?",
 )
 
 for item in resp.output:
@@ -199,178 +153,150 @@ for item in resp.output:
                 print(c.text)
 ```
 
-A runnable version is at [`examples/openai_api_sample.py`](examples/openai_api_sample.py). Pass a custom question:
+Runnable version at [`examples/openai_api_sample.py`](examples/openai_api_sample.py).
 
-```bash
-python examples/openai_api_sample.py "What's MSU's policy on academic amnesty?"
-```
+### Free claude.ai
 
-### Free claude.ai — no install
+Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 high-traffic policy PDFs with a system-prompt template. Policies only (calendars + courses change too often for a static drop).
 
-If you're on free claude.ai (which can't add MCP connectors), there's still a path: a curated **starter zip** with 22 high-traffic policy PDFs and a system-prompt template that pushes Claude toward verbatim quoting. (Policies only — calendar coverage requires MCP because dates move too often for a static drop.)
-
-1. Download `msstate-policies-starter.zip` from the [latest GitHub release](https://github.com/mminsub11/msstate-mcp/releases/latest).
-2. Sign in to <https://claude.ai>.
-3. Create a new **Project** (or open an existing one).
-4. Unzip the file and drag the PDFs + `SYSTEM_PROMPT.txt` into the Project's knowledge area.
-5. Ask policy questions inside that Project's chats.
-
-Smaller corpus than the live MCP (22 of ~218 policies), but works on **free** claude.ai plans and on mobile once the Project is set up.
+1. Download `msstate-policies-starter.zip` from the [latest release](https://github.com/mminsub11/msstate-mcp/releases/latest)
+2. Sign in at <https://claude.ai>, create a **Project**
+3. Unzip and drag the PDFs + `SYSTEM_PROMPT.txt` into the Project's knowledge area
+4. Ask policy questions inside that Project
 
 ---
 
-## Tools
+## The 10 tools
 
-The hosted MCP server exposes **10 tools** any MCP-capable client can call:
-
-| Tool | What it does |
+| Tool | Use it for |
 |---|---|
-| `search_policies` | Keyword search across MSU Operating Policies; returns OP numbers + titles + snippets ranked by relevance. |
-| `get_policy` | Fetch the full text + metadata of one policy by OP number or URL. |
-| `chain_find_relevant_policies` | One-call natural-language workflow: take a question, find top-k relevant policies, return their full text for the LLM to ground its answer. |
-| `cite_policy` | Format a clean citation for an OP by number (`"OP 91.208 (Hazing)"` short, or full APA-style). |
-| `find_msu_date` | One-call natural-language date lookup across six MSU calendars. **v0.5.0:** synonym-aware BM25 (4-field weighted) handles paraphrased queries without any runtime API. Returns up to 10 matches + ≤3 academic-calendar fallback rows when a term is named. Multi-year-aware. |
-| `get_msu_calendar` | Raw dump of one calendar source (`academic_calendar`, `exam_schedule`, `university_holidays`, `grad_school_calendar`, `sfa_financial_aid`, `housing`) with optional term filter. |
-| `search_msu_courses` | **v0.6.0:** Fuzzy-search the MSU course catalog by code, title, or description (BM25 with code=4/title=3/description=1 field weights). |
-| `get_msu_course` | **v0.6.0:** Fetch one course's full record — title, hours, level, description, semester offered, prereqs (structured + raw prose), coreqs, cross-listed equivalents, source URL. |
-| `get_msu_course_graph` | **v0.6.0:** Walk the prereq DAG forward (`prereqs` — "what do I need before X?") or reverse (`unlocks` — "what does X enable?"). Default depth 5, max 10, cycle detection, `truncated:true` when the walk hits the cap. |
-| `health_check` | Diagnostic: per-source row counts, last build timestamp, last errors. Useful when answers feel stale or empty. |
-
-**v0.6.0** adds course-catalog tools sourced from `catalog.msstate.edu`. Zero ongoing operational cost — same baked-corpus model as policies and calendars.
+| **Policies (4 tools)** | |
+| `chain_find_relevant_policies` | One-call workflow: question → top-k policies → grounded answer |
+| `search_policies` | Keyword search, returns OP numbers + snippets |
+| `get_policy` | Full text of one OP by number or URL |
+| `cite_policy` | Format a short or full citation |
+| **Calendars (2 tools, v0.4.0+)** | |
+| `find_msu_date` | Natural-language date lookup across 6 calendars (BM25 + LLM-paraphrased synonyms baked at build time — no runtime API) |
+| `get_msu_calendar` | Raw dump of one calendar source with optional term filter |
+| **Courses (3 tools, v0.6.0)** | |
+| `search_msu_courses` | Fuzzy search by code, title, or description (BM25 with code×4 / title×3 / description×1) |
+| `get_msu_course` | One course's full record — title, hours, prereqs (structured + raw prose), cross-listings, source URL |
+| `get_msu_course_graph` | Walk the prereq DAG forward (`prereqs`) or reverse (`unlocks`). Depth 1–10, cycle detection, partial results when truncated |
+| **Diagnostic (1 tool)** | |
+| `health_check` | Per-source counts, last build timestamp, last errors |
 
 ---
 
-## What a response looks like
+## Sample responses
 
-Ask *"What is MSU's hazing policy?"* and you'll see something like:
+### Policy question
 
-> MSU's hazing policy, in **OP 91.208**, prohibits hazing across all university-affiliated organizations:
+*"What is MSU's hazing policy?"*
+
+> MSU's hazing policy, **OP 91.208**, prohibits hazing across all university-affiliated organizations:
 >
 > *"Hazing is prohibited. Any organization, student, or other person affiliated with the university found to have engaged in hazing as defined in this policy is subject to disciplinary action under the Student Code of Conduct and other applicable university policies."* (OP 91.208)
 >
-> The policy defines hazing as *"any intentional, knowing, or reckless act committed by a person…"* [definition continues, then reporting channels]
+> **Source:** OP 91.208 at <https://www.policies.msstate.edu/policy/91208> (retrieved 2026-05-12).
+
+### Date question
+
+*"When does spring break start?"*
+
+> MSU has spring break on the books for two terms:
 >
-> **Source:** OP 91.208 at <https://www.policies.msstate.edu/policy/91208> (retrieved 2026-05-08).
-
-Every policy response includes:
-
-- The **OP number** for citation (e.g. `91.208`)
-- The **canonical URL** on `policies.msstate.edu` — click through to verify
-- An ISO **`retrievedAt`** timestamp
-- Direct quotes for binding language; no paraphrasing of normative text
-- Refusal + redirect when no MSU policy applies
-
-For *"When does spring break start?"*:
-
-> MSU has a few terms with a spring break on file:
+> - **Spring 2026 — Spring Break:** 2026-03-09 to 2026-03-13
+> - **Spring 2027 — Spring Break:** 2027-03-08 to 2027-03-12
 >
-> - **Spring 2026 — Spring Break** runs **2026-03-09** through **2026-03-13**.
-> - **Spring 2027 — Spring Break** runs **2027-03-08** through **2027-03-12**.
+> **Source:** [Spring Break, Spring 2026](https://www.registrar.msstate.edu/calendars/academic-calendar/2026/spring) (snapshot built 2026-05-12).
+
+### Course question (v0.6.0)
+
+*"What do I need to take before CSE 4733?"*
+
+> CSE 4733 (Operating Systems I) requires (with a C or better):
 >
-> **Source:** Academic Calendar at <https://www.registrar.msstate.edu/calendars/academic-calendar/2026/spring> (snapshot built 2026-05-11).
-
-Every calendar response includes:
-
-- **Event name** and **start/end** ISO dates (YYYY-MM-DD)
-- **Term** label when applicable
-- **Source calendar** id and the **canonical URL** of the specific page/PDF
-- **`retrieved_at`** + **`corpus_built_at`** timestamps so the model can surface staleness
-- All matching year-versions when the question doesn't pin a year
-- A pre-formatted **`citation`** markdown link the LLM includes verbatim
-- A **`notes`** field describing the retrieval mode (e.g. `"BM25 with synonyms"`)
+> - CSE 3183 — Systems Programming
+> - CSE 3724 — Computer Organization, **or** ECE 3714 — Digital Devices and Logic Design
+>
+> Walking back one more hop, CSE 3183 itself requires CSE 1384 (Intermediate Computer Programming). The full chain stops there.
+>
+> **Source:** [CSE 4733](https://catalog.msstate.edu/search/?P=CSE%204733) (catalog scraped 2026-05-12).
 
 ---
 
-## v0.5.0 highlights — natural-language calendar queries, zero runtime cost
+## What this WON'T do (limitations)
 
-v0.5.0 closes the BM25 semantic gap on natural-language calendar queries without adding a runtime dependency:
+**1. Snapshots, not live data.** The hosted Cloudflare Worker reads a pre-built corpus rebuilt on each release. Responses include a `corpus_built_at` field so the model can flag staleness. For *always-live* (fetch-on-request) policy text, use a local install — the npm/plugin path live-scrapes `policies.msstate.edu`.
 
-- **Build-time synonyms.** `scripts/build-worker-corpus.mjs` generates 5 paraphrases per calendar row using Anthropic Claude Haiku (~$0.50 per full rebuild, cached by content hash so incrementals are pennies). Synonyms ship inside `worker/corpus.json` and a sidecar `msstate-policies/dist/calendar-synonyms.json`.
-- **Query-time stays pure BM25.** 4-field weighted index: `event`×3 + `synonyms`×2 + `term`×1 + `description`×1. Plus the v0.4.1 smart-fallback layer. No `fetch`, no API key needed at runtime. **Zero ongoing operational cost.**
-- **Eval gates met.** +13.3pp top-3 recall on the 15-query semantic-gap bucket, 0pp regression on the 10-query BM25-favorable bucket (ship-blockers: ≥+10pp, ≤5pp regression).
-- **Security envelope.** Round-2 checklist 192 → **220**. SYN4 mechanically enforces *no* `api.anthropic.com` references anywhere in `msstate-policies/src/` or `worker/src/` — runtime egress to Anthropic is impossible by construction.
+**2. No coverage of:**
+- Specific course offerings (which semester, which professor, seats available — that's MSU's BANNER system, not the catalog)
+- Archived catalog editions (current undergrad + grad only)
+- Anything outside the OP set, the six listed calendar pages, or the course catalog
 
-Self-hosters rebuilding the corpus need an `ANTHROPIC_API_KEY` for the build step. **Runtime users (Worker, npm consumers) need nothing extra.**
+**3. LLM behavior is the model's responsibility.** The tools return grounded data with citations. The LLM is *instructed* to quote verbatim and refuse outside-corpus questions — but enforcement lives in the model, not the server. If you see a paraphrased policy or a fabricated citation, that's a model failure, not a corpus failure.
+
+**4. The hosted Worker is unauthenticated.** Anyone on the internet can call it. There's no rate limit beyond Cloudflare's free-tier defaults, no per-user logging. If your use case needs auth, run a local install.
+
+**5. Course prereqs: lossless codes, best-effort logic.** The prereq parser captures every course code in the prereq prose verbatim (`required_courses` is authoritative) and the full prose (`raw_prose` is authoritative). The `logic` field (or/and/mixed) and `min_grade` field are best-effort — the LLM is told to fall back to `raw_prose` when the structured field looks ambiguous.
+
+**6. Unofficial.** Always verify with the official MSU source before acting. Read [SECURITY.md § "Out of scope: client-side circumvention"](SECURITY.md) for the abuse classes this server explicitly does not defend against.
 
 ---
 
-## Privacy
+## Privacy & data flow
 
-In default mode, your queries don't leave your machine. The only outbound traffic is to `policies.msstate.edu` to fetch policy PDFs. No analytics, no telemetry, no third-party APIs.
+- **Local install** (Claude Code / Desktop / Cursor / Windsurf / Zed via npx): truly local. The MCP server runs on your machine. Outbound traffic only to `*.msstate.edu` to fetch policy PDFs. No analytics, no telemetry, no third-party APIs.
+- **Hosted Worker** (claude.ai + ChatGPT connectors): your query goes to Anthropic/OpenAI and to the Cloudflare Worker. The Worker reads its baked snapshot — never forwards your query elsewhere. No logs beyond Cloudflare's standard request metadata.
+- **OpenAI API**: same as ChatGPT — query goes to OpenAI + Worker only.
 
-- **Claude Code / Desktop / Cursor / Windsurf / Zed** (local install): truly local. The MCP server runs on your machine.
-- **claude.ai web/mobile via the connector**: your query goes to Anthropic (as on any claude.ai chat) and to the hosted Cloudflare Worker, which only fetches from the snapshot — never sends your query elsewhere.
-- **OpenAI API**: your query goes to OpenAI and to the hosted Worker. No traffic to Anthropic in this mode. Worker only fetches from MSU; no logs beyond Cloudflare's standard request metadata.
-- **ChatGPT (Plus/Pro) via the connector**: same as OpenAI API — query goes to OpenAI and the hosted Worker.
-- **Sensitive topics** (Title IX, harassment, FERPA): the local install is the most private option. The connector is fine for general policy questions; for sensitive ones, the local path keeps everything on your machine.
-
-If you opt in to semantic retrieval on the **policy** side (`MSSTATE_POLICIES_RETRIEVAL=embed` or `=hybrid`), your query is sent to OpenAI for embedding. The default `bm25` mode does not require this. **Calendar retrieval is always BM25-with-synonyms — no runtime API.**
+If you opt in to semantic policy retrieval (`MSSTATE_POLICIES_RETRIEVAL=embed` or `=hybrid`), your query is sent to OpenAI for embedding. The default `bm25` mode does not require this. **Calendar and course retrieval are always BM25 — no runtime API.**
 
 ---
 
 ## Configuration
 
-Most users set nothing. For local installs you can tune:
+Most users set nothing. Local installs can tune:
 
-| Environment variable | Default | What it does |
+| Variable | Default | Effect |
 |---|---|---|
-| `MSSTATE_POLICIES_RETRIEVAL` | `bm25` | Set to `embed` or `hybrid` to use OpenAI embeddings for **policy** search. Default ties or beats those on the eval. |
-| `OPENAI_API_KEY` | unset | Only needed if you change the retrieval mode above. |
-| `MSSTATE_POLICIES_CACHE` | unset | Set to `disk` to cache policy PDFs across process restarts (cross-platform via `env-paths`). Default: in-memory only. |
+| `MSSTATE_POLICIES_RETRIEVAL` | `bm25` | Set to `embed` or `hybrid` for OpenAI embeddings on **policy** search |
+| `OPENAI_API_KEY` | unset | Only needed if you change the retrieval mode above |
+| `MSSTATE_POLICIES_CACHE` | unset | Set to `disk` to cache policy PDFs across restarts |
 
-**Self-hosters / corpus rebuilders** additionally need:
-
-| Variable | Required when | Effect |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | Running `node scripts/build-worker-corpus.mjs` | Used for v0.5.0 build-time synonym generation. **Never read at runtime.** |
+Self-hosters rebuilding the corpus additionally need `ANTHROPIC_API_KEY` for the v0.5.0 build-time synonym generation. **Never read at runtime.**
 
 ---
 
-## Eval
+## Quality bar
 
-**Policies** are validated against a 50-question hand-written eval set:
+| Domain | Eval | Pass rate |
+|---|---|---|
+| Policies | 50 hand-written questions, Claude Sonnet judge, k=5 | 86 / 88 composite |
+| Calendar synonyms | 30 ground-truth queries, semantic-gap + BM25-favorable + smart-fallback | +13.3pp lift on semantic-gap bucket, 0pp regression elsewhere |
+| Courses (v0.6.0) | 52 catalog-grounded questions across 3 buckets | 100% / 100% / 100% on the v0.6.0 acceptance run |
 
-| | |
-|---|---:|
-| Retrieval correctness (expected OP in returned set) | 37 / 38 |
-| Answer correctness (judge: prose answer matches policy text) | 37 / 38 |
-| Refusal correctness (out-of-scope questions correctly refused) | 12 / 12 |
-
-Judge: Claude Sonnet 4.6, k=5, BM25-only retrieval. The single missing case is *"tornado warning during my class"* — the relevant OP points at MSU's external Campus Emergency Management Plan, outside this server's corpus. Treat 86/88 as the realistic ceiling for the OP-only corpus.
-
-Full policies eval: [`msstate-policies/eval/eval-2026-05-08-k5-sonnet-4-6.json`](msstate-policies/eval/eval-2026-05-08-k5-sonnet-4-6.json).
-
-**Calendars (hand-written, 16 questions)** span all 6 sources plus one refusal case. Full: [`msstate-policies/eval/eval-calendars-2026-05-11.json`](msstate-policies/eval/eval-calendars-2026-05-11.json).
-
-**v0.5.0 synonym retrieval eval (30-query held-out):**
-
-| Bucket | Baseline | v0.5.0 | Δ | Ship-blocker |
-|---|---|---|---|---|
-| semantic-gap (15 queries) | 4/15 | 6/15 | **+13.3pp** | ≥+10pp ✓ |
-| BM25-favorable (10 queries) | 9/10 | 9/10 | 0.0pp | ≤5pp regression ✓ |
-| smart-fallback (5 queries) | 1/5 | 1/5 | 0.0pp | preserved |
-
-Run locally: `cd msstate-policies && npm run eval:synonyms` (zero API cost — pure BM25 against the local corpus).
+Full eval artifacts live in [`msstate-policies/eval/`](msstate-policies/eval/). Run locally with `cd msstate-policies && npm run eval` (policies) or `npm run eval:synonyms` (calendars) or `node ../scripts/run-eval.mjs --suite courses` (courses).
 
 ---
 
 ## Troubleshooting
 
-- **"All policies have empty text" / suspiciously empty answers** — ask Claude/GPT to call `health_check`. If `index_row_count` is 0 or `last_index_error` is populated, MSU likely changed their site layout. File an issue on GitHub.
-- **`tools/list` returns 0 tools** — in a local install, the bundle is stale. Run `cd msstate-policies && npm run build` from a checkout, or reinstall the plugin / re-run `npx`. For the connector, refresh the entry on claude.ai or chatgpt.com.
-- **Calendar queries miss obvious paraphrases** — confirm `dist/calendar-synonyms.json` exists. If you're running from a fresh git checkout without `npm run bundle`, the sidecar may be missing; the tool falls back to BM25 without synonyms and logs a one-time warning at startup.
-- **Embed/hybrid policy retrieval seems off** — confirm `MSSTATE_POLICIES_RETRIEVAL` is set to `embed` or `hybrid` (default is `bm25`) and `OPENAI_API_KEY` is set in your client's MCP env.
-- **Connector won't connect** — sanity-check the URL is exactly `https://msstate-policies-mcp.mminsub90.workers.dev/mcp` (note the `/mcp` suffix). Hit the bare URL in a browser; you should see a JSON info page.
+- **Empty answers / "no policies found"** — ask the LLM to call `health_check`. If counts are 0 or `last_index_error` is populated, MSU likely changed their site. File a GitHub issue.
+- **Course not found** — `get_msu_course` returns `{found: false, suggestions: [...]}` with the top 3 BM25 matches. The catalog scrape has ~95%+ parse success — a small minority of pages don't yield structured records.
+- **Connector won't connect** — URL must be exactly `https://msstate-policies-mcp.mminsub90.workers.dev/mcp` (note the `/mcp`). Hit the bare URL in a browser; you should see a JSON info page.
+- **Stale answers** — check `corpus_built_at` in the response. The hosted Worker rebuilds on each release. For always-live policy text, use the local npm/plugin path.
 
 ---
 
 ## Contributing & maintainers
 
-Architecture, decision history, threat model, eval methodology, and deferred-work backlog are in [`docs/BUILD.md`](docs/BUILD.md).
+- **Architecture, decision history, threat model, eval methodology** — [`docs/BUILD.md`](docs/BUILD.md)
+- **Load-bearing rules for contributors** (corpus rule, stderr-only logging, security-score contract) — [`CLAUDE.md`](CLAUDE.md)
+- **Security disclosure + out-of-scope abuse classes** — [`SECURITY.md`](SECURITY.md)
+- **In-progress design specs and plans** live under `.dev/` (visible in the repo, de-emphasized via the leading-dot convention). See `.dev/README.md`.
 
-The `CLAUDE.md` at the repo root captures load-bearing rules (corpus rule, stderr-only logging, security-score contract) that any contributor — human or AI — must read before touching security-shaped code.
-
-In-progress design specs and implementation plans live under `.dev/` (visible in the repo, de-emphasized via the leading-dot convention). See `.dev/README.md` for the convention.
+Issues and PRs welcome at <https://github.com/mminsub11/msstate-mcp>.
 
 ---
 
