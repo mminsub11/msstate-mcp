@@ -19,11 +19,115 @@
  * Corpus rule: text comes only from policies.msstate.edu PDFs.
  * Same constraint as build-embeddings.mjs.
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { load as cheerioLoad } from "cheerio";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
+import { createHash } from "node:crypto";
+
+// ---- v0.5.0: Anthropic Haiku synonym generation -------------------------
+const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
+const ANTHROPIC_MODEL = "claude-haiku-4-5";
+const PARAPHRASE_CONCURRENCY = 8;
+const PARAPHRASES_PER_ROW = 5;
+const PARAPHRASE_MAX_CHARS = 80;
+const MAX_RETRIES = 3;
+
+const SYSTEM_PROMPT =
+  "You generate 5 short paraphrases of MSU calendar event titles for keyword-based search. " +
+  "Each paraphrase must preserve the semantic meaning, use 1-6 common English words, contain NO " +
+  "dates/years/numbers, and be ≤80 characters. Output ONLY a JSON array of strings, no preamble, no explanation.";
+
+/** SHA-256 hex of canonical event identity. Must match src/calendars/hash.ts. */
+function contentHash(row) {
+  const canon = `${row.event}|${row.term ?? ""}|${row.description ?? ""}`;
+  return createHash("sha256").update(canon, "utf8").digest("hex");
+}
+
+function validateParaphrases(arr) {
+  if (!Array.isArray(arr)) return null;
+  if (arr.length !== PARAPHRASES_PER_ROW) return null;
+  const out = [];
+  for (const item of arr) {
+    if (typeof item !== "string") return null;
+    const s = item.trim();
+    if (!s) return null;
+    if (s.length > PARAPHRASE_MAX_CHARS) return null;
+    if (/\d/.test(s)) return null;
+    out.push(s);
+  }
+  return out;
+}
+
+async function paraphraseOneRowWithRetry(row, apiKey, attempt = 1) {
+  const userMsg = `Event: "${row.event}"${row.term ? ` (term: ${row.term})` : ""}. Return 5 paraphrases as a JSON array.`;
+  try {
+    const res = await fetch(ANTHROPIC_URL, {
+      method: "POST",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 200,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: "user", content: userMsg }],
+      }),
+      signal: AbortSignal.timeout(30_000),
+    });
+    if (!res.ok) throw new Error(`status=${res.status}`);
+    const json = await res.json();
+    const text = json.content?.[0]?.text ?? "";
+    let parsed;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      throw new Error("not valid JSON");
+    }
+    const validated = validateParaphrases(parsed);
+    if (!validated) throw new Error("validation failed");
+    return validated;
+  } catch (err) {
+    if (attempt >= MAX_RETRIES) {
+      console.error(`[paraphrase] row "${row.event.slice(0, 40)}" failed permanently after ${attempt} attempts: ${err.message}`);
+      return null;
+    }
+    const backoff = [1000, 3000, 10000][attempt - 1] ?? 10000;
+    await new Promise((r) => setTimeout(r, backoff));
+    return paraphraseOneRowWithRetry(row, apiKey, attempt + 1);
+  }
+}
+
+async function paraphraseRows(rows, existingSynMap, apiKey) {
+  for (const r of rows) r.contentHash = contentHash(r);
+  const newRows = rows.filter((r) => !existingSynMap[r.contentHash]);
+  console.error(`[paraphrase] ${rows.length} rows total; ${newRows.length} need fresh synonyms; ${rows.length - newRows.length} reuse existing`);
+
+  const newSynMap = {};
+  let failedCount = 0;
+  for (let i = 0; i < newRows.length; i += PARAPHRASE_CONCURRENCY) {
+    const chunk = newRows.slice(i, i + PARAPHRASE_CONCURRENCY);
+    const results = await Promise.all(chunk.map((r) => paraphraseOneRowWithRetry(r, apiKey)));
+    for (let j = 0; j < chunk.length; j++) {
+      if (results[j] === null) {
+        failedCount++;
+      } else {
+        newSynMap[chunk[j].contentHash] = results[j];
+      }
+    }
+    console.error(`[paraphrase] progress ${Math.min(i + chunk.length, newRows.length)}/${newRows.length}`);
+  }
+
+  const failureRate = newRows.length > 0 ? failedCount / newRows.length : 0;
+  if (failureRate > 0.1) {
+    throw new Error(`refusing to ship a poisoned calendar corpus — paraphrase failure rate ${(failureRate * 100).toFixed(1)}% exceeds 10%`);
+  }
+
+  return { ...existingSynMap, ...newSynMap };
+}
 
 const BASE = "https://www.policies.msstate.edu";
 const UA = "msstate-policies-mcp/0.2.0 (build-worker-corpus)";
@@ -233,6 +337,50 @@ async function main() {
     per_source: calendarPayload.per_source,
     built_at: builtAt,
   };
+
+  // ---- v0.5.0: bake synonyms ---------------------------------------------
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (!anthropicKey) {
+    throw new Error("ANTHROPIC_API_KEY is required for the build step. Export it and re-run.");
+  }
+
+  let existingSynMap = {};
+  try {
+    const existing = JSON.parse(readFileSync(outPath, "utf8"));
+    for (const r of existing.academic_calendar?.rows ?? []) {
+      if (r.contentHash && Array.isArray(r.synonyms) && r.synonyms.length > 0) {
+        existingSynMap[r.contentHash] = r.synonyms;
+      }
+    }
+  } catch (err) {
+    if (err.code !== "ENOENT") console.error(`[paraphrase] existing corpus unreadable: ${err.message}`);
+  }
+
+  const synMap = await paraphraseRows(calendarPayload.rows, existingSynMap, anthropicKey);
+
+  for (const r of calendarPayload.rows) {
+    r.synonyms = synMap[r.contentHash] ?? [];
+  }
+
+  const missing = calendarPayload.rows.filter((r) => !Array.isArray(r.synonyms));
+  if (missing.length > 0) {
+    throw new Error(`refusing to ship a poisoned calendar corpus — ${missing.length} rows missing synonyms field`);
+  }
+
+  const sidecarPath = resolve(
+    dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "msstate-policies",
+    "dist",
+    "calendar-synonyms.json",
+  );
+  const sidecar = {
+    model: ANTHROPIC_MODEL,
+    built_at: new Date().toISOString(),
+    synonyms: synMap,
+  };
+  writeFileSync(sidecarPath, JSON.stringify(sidecar, null, 2));
+  console.error(`[paraphrase] wrote ${sidecarPath} (${Object.keys(synMap).length} entries)`);
 
   writeFileSync(outPath, JSON.stringify(out));
   const bytes = JSON.stringify(out).length;
