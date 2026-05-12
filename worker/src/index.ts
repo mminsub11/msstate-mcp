@@ -57,12 +57,42 @@ interface CalendarBlock {
   built_at: string;
 }
 
+interface Prereq {
+  required_courses: string[];
+  logic: "or" | "and" | "mixed" | null;
+  min_grade: "A" | "B" | "C" | "D" | null;
+  non_course: string[];
+  raw_prose: string;
+}
+
+interface Course {
+  code: string;
+  title: string;
+  hours: number | string;
+  level: "undergraduate" | "graduate";
+  description: string;
+  semester_offered: string | null;
+  prereqs: Prereq | null;
+  coreqs: Prereq | null;
+  cross_listed: string[];
+  source_url: string;
+}
+
+interface CourseCorpus {
+  version: string;
+  scraped_at: string;
+  records: Record<string, Course>;
+  forward_dag: Record<string, string[]>;
+  reverse_dag: Record<string, string[]>;
+}
+
 interface Corpus {
   builtAt: string;
   source: string;
   indexRowCount: number;
   policies: Policy[];
   academic_calendar?: CalendarBlock;
+  courses?: CourseCorpus;
 }
 
 const corpus = corpusData as unknown as Corpus;
@@ -71,6 +101,8 @@ const POLICIES: Policy[] = corpus.policies;
 const CAL_ROWS: CalendarRow[] = corpus.academic_calendar?.rows ?? [];
 const CAL_BUILT_AT = corpus.academic_calendar?.built_at ?? corpus.builtAt;
 const CAL_PER_SOURCE = corpus.academic_calendar?.per_source ?? {};
+
+const COURSES: CourseCorpus | null = corpus.courses ?? null;
 
 const CAL_SOURCES = [
   "academic_calendar",
@@ -285,6 +317,217 @@ function sortByEventPriority(rows: CalendarRow[]): CalendarRow[] {
   });
 }
 
+// ---- Course BM25 + DAG walker (mirrors msstate-policies/src/courses/*) ------
+
+const COURSE_CODE_RE = /^[A-Z]{2,4}\s\d{4}$/;
+const COURSE_MIN_DEPTH = 1;
+const COURSE_MAX_DEPTH = 10;
+const COURSE_DEFAULT_DEPTH = 5;
+const COURSE_FIELD_WEIGHTS = { code: 4, title: 3, description: 1 } as const;
+
+interface CourseDoc {
+  course: Course;
+  codeTokens: string[];
+  titleTokens: string[];
+  descTokens: string[];
+  dl: number;
+}
+
+const courseDocs: CourseDoc[] = COURSES
+  ? Object.values(COURSES.records).map((c) => {
+      const codeTokens = tokenize(c.code);
+      const titleTokens = tokenize(c.title);
+      const descTokens = tokenize(c.description);
+      return {
+        course: c,
+        codeTokens,
+        titleTokens,
+        descTokens,
+        dl: codeTokens.length + titleTokens.length + descTokens.length,
+      };
+    })
+  : [];
+
+const courseDf = new Map<string, number>();
+let courseTotalLen = 0;
+for (const d of courseDocs) {
+  courseTotalLen += d.dl;
+  const seen = new Set<string>();
+  for (const t of [...d.codeTokens, ...d.titleTokens, ...d.descTokens]) {
+    if (seen.has(t)) continue;
+    seen.add(t);
+    courseDf.set(t, (courseDf.get(t) ?? 0) + 1);
+  }
+}
+const courseAvgLen = courseDocs.length > 0 ? courseTotalLen / courseDocs.length : 0;
+
+function courseIdf(token: string): number {
+  const n = courseDocs.length;
+  const dfi = courseDf.get(token) ?? 0;
+  if (dfi === 0 || n === 0) return 0;
+  return Math.log(1 + (n - dfi + 0.5) / (dfi + 0.5));
+}
+
+function bm25TermCourse(tf: number, dl: number, idfV: number): number {
+  if (tf <= 0) return 0;
+  const denom = tf + BM25_K1 * (1 - BM25_B + (BM25_B * dl) / (courseAvgLen || 1));
+  return idfV * ((tf * (BM25_K1 + 1)) / denom);
+}
+
+interface CourseHit {
+  course: Course;
+  score: number;
+}
+
+function searchCourses(query: string, limit = 10): CourseHit[] {
+  const qTokens = tokenize(query);
+  if (qTokens.length === 0) return [];
+  const out: CourseHit[] = [];
+  for (const d of courseDocs) {
+    let s = 0;
+    for (const q of qTokens) {
+      const idfQ = courseIdf(q);
+      if (idfQ === 0) continue;
+      s += COURSE_FIELD_WEIGHTS.code * bm25TermCourse(countOf(q, d.codeTokens), d.dl, idfQ);
+      s += COURSE_FIELD_WEIGHTS.title * bm25TermCourse(countOf(q, d.titleTokens), d.dl, idfQ);
+      s += COURSE_FIELD_WEIGHTS.description * bm25TermCourse(countOf(q, d.descTokens), d.dl, idfQ);
+    }
+    if (s > 0) out.push({ course: d.course, score: s });
+  }
+  out.sort((a, b) => b.score - a.score);
+  return out.slice(0, Math.max(0, limit));
+}
+
+function isCourseCodeValid(raw: string): string | null {
+  const norm = (raw ?? "").toUpperCase().trim().replace(/\s+/g, " ");
+  return COURSE_CODE_RE.test(norm) ? norm : null;
+}
+
+function getCourse(code: string): Course | null {
+  if (!COURSES) return null;
+  return COURSES.records[code] ?? null;
+}
+
+interface GraphNode {
+  code: string;
+  title: string;
+  depth: number;
+}
+
+interface GraphEdge {
+  from: string;
+  to: string;
+  logic: "or" | "and" | "mixed" | null;
+  min_grade: "A" | "B" | "C" | "D" | null;
+}
+
+interface GraphResult {
+  root: string;
+  direction: "prereqs" | "unlocks";
+  depth_requested: number;
+  depth_used: number;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  truncated: boolean;
+  notes: string[];
+}
+
+function clampCourseDepth(d: number | undefined): { value: number; clamped: boolean } {
+  const want = typeof d === "number" && Number.isFinite(d) ? Math.floor(d) : COURSE_DEFAULT_DEPTH;
+  const value = Math.min(COURSE_MAX_DEPTH, Math.max(COURSE_MIN_DEPTH, want));
+  return { value, clamped: value !== want };
+}
+
+function walkGraph(
+  rootCode: string,
+  direction: "prereqs" | "unlocks",
+  depthRequested?: number,
+): GraphResult {
+  const { value: depth_used_max, clamped } = clampCourseDepth(depthRequested);
+  const notes: string[] = [];
+  if (clamped) notes.push(`depth clamped from ${depthRequested} to ${depth_used_max}`);
+
+  if (!COURSES) {
+    return {
+      root: rootCode,
+      direction,
+      depth_requested: depthRequested ?? COURSE_DEFAULT_DEPTH,
+      depth_used: 0,
+      nodes: [],
+      edges: [],
+      truncated: false,
+      notes: notes.concat(["course corpus not loaded"]),
+    };
+  }
+
+  const root = COURSES.records[rootCode];
+  if (!root) {
+    return {
+      root: rootCode,
+      direction,
+      depth_requested: depthRequested ?? COURSE_DEFAULT_DEPTH,
+      depth_used: 0,
+      nodes: [],
+      edges: [],
+      truncated: false,
+      notes: notes.concat([`course not in corpus: ${rootCode}`]),
+    };
+  }
+
+  const adj = direction === "prereqs" ? COURSES.forward_dag : COURSES.reverse_dag;
+  const nodes: GraphNode[] = [{ code: rootCode, title: root.title, depth: 0 }];
+  const edges: GraphEdge[] = [];
+  const visited = new Set<string>([rootCode]);
+  let truncated = false;
+  let depth_used = 0;
+
+  let frontier: Array<{ code: string; depth: number }> = [{ code: rootCode, depth: 0 }];
+  while (frontier.length > 0) {
+    const next: Array<{ code: string; depth: number }> = [];
+    for (const { code, depth } of frontier) {
+      if (depth >= depth_used_max) {
+        if ((adj[code] ?? []).length > 0) truncated = true;
+        continue;
+      }
+      const neighbors = adj[code] ?? [];
+      for (const n of neighbors) {
+        if (visited.has(n)) {
+          notes.push(`cycle detected at ${n}`);
+          truncated = true;
+          continue;
+        }
+        visited.add(n);
+        const c = COURSES.records[n];
+        const title = c?.title ?? "(unknown)";
+        nodes.push({ code: n, title, depth: depth + 1 });
+        const sourceCode = direction === "prereqs" ? code : n;
+        const sc = COURSES.records[sourceCode];
+        const p = sc?.prereqs;
+        edges.push({
+          from: code,
+          to: n,
+          logic: p?.logic ?? null,
+          min_grade: p?.min_grade ?? null,
+        });
+        next.push({ code: n, depth: depth + 1 });
+        depth_used = Math.max(depth_used, depth + 1);
+      }
+    }
+    frontier = next;
+  }
+
+  return {
+    root: rootCode,
+    direction,
+    depth_requested: depthRequested ?? COURSE_DEFAULT_DEPTH,
+    depth_used,
+    nodes,
+    edges,
+    truncated,
+    notes,
+  };
+}
+
 // ---- Helpers ----------------------------------------------------------------
 
 function findPolicy(numberOrSlug?: string, url?: string): Policy | undefined {
@@ -417,6 +660,55 @@ const TOOLS = [
         term: { type: "string", description: "Optional term filter." },
       },
       required: ["source"],
+    },
+  },
+  {
+    name: "search_msu_courses",
+    description:
+      "Fuzzy-search the MSU course catalog by code, title, or description (BM25). Returns a ranked list of `{ code, title, hours, dept, level, score }`. Use this when the student doesn't know the exact course code (e.g., 'what's MSU's networking class?'). All content sourced from catalog.msstate.edu.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        q: { type: "string", description: "Natural-language query." },
+        limit: { type: "integer", description: "Maximum results (default 10).", default: 10 },
+      },
+      required: ["q"],
+    },
+  },
+  {
+    name: "get_msu_course",
+    description:
+      "Fetch one course's full record from the MSU catalog: title, hours, level, description, semester offered, prereqs (with structured course-codes + raw prose), coreqs, cross-listed equivalents, source URL. `code` is normalized to uppercase with single space (e.g. 'cse 4153' → 'CSE 4153'). Returns `{found:false, suggestions}` if unknown. Prereq fields `required_courses` and `raw_prose` are authoritative; `logic`, `min_grade`, `non_course` are best-effort parses of MSU's prose.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        code: { type: "string", description: "Course code, e.g. 'CSE 4153'." },
+      },
+      required: ["code"],
+    },
+  },
+  {
+    name: "get_msu_course_graph",
+    description:
+      "Walk the MSU course prereq DAG forward (`prereqs` — 'what do I need before X?') or reverse (`unlocks` — 'what does X unlock?'). Returns nodes + edges with depth, plus `truncated:true` if the walk hit the depth cap (default 5, max 10) or a cycle. Edge `logic`/`min_grade` come from the source course's prereq parse and are best-effort; `required_courses` (in the upstream nodes' raw records) is authoritative.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        code: { type: "string", description: "Root course code, e.g. 'CSE 4733'." },
+        direction: {
+          type: "string",
+          enum: ["prereqs", "unlocks"],
+          description: "'prereqs' walks forward (what's needed); 'unlocks' walks reverse (what this enables).",
+        },
+        depth: {
+          type: "integer",
+          description: "How many hops to traverse. Default 5; clamped to [1, 10].",
+          minimum: 1,
+          maximum: 10,
+          default: 5,
+        },
+      },
+      required: ["code", "direction"],
     },
   },
   {
@@ -646,6 +938,52 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<Mc
       });
     }
 
+    case "search_msu_courses": {
+      const q = String(args.q ?? "");
+      if (q.length === 0) return errorContent("q is required.");
+      if (q.length > MAX_QUERY_CHARS) return tooLong("q", q);
+      const limit = Math.min(Math.max(1, Number(args.limit ?? 10)), 50);
+      const hits = searchCourses(q, limit);
+      const matches = hits.map((h) => ({
+        code: h.course.code,
+        title: h.course.title,
+        hours: h.course.hours,
+        dept: h.course.code.split(/\s+/)[0],
+        level: h.course.level,
+        score: h.score,
+      }));
+      return jsonContent({ matches, notes: [] as string[] });
+    }
+
+    case "get_msu_course": {
+      const raw = String(args.code ?? "");
+      if (raw.length === 0) return errorContent("code is required.");
+      if (raw.length > MAX_QUERY_CHARS) return tooLong("code", raw);
+      const normalized = isCourseCodeValid(raw);
+      if (!normalized) return errorContent("invalid_course_code");
+      const course = getCourse(normalized);
+      if (course) return jsonContent({ found: true, course });
+      const suggestions = searchCourses(normalized, 3).map((h) => ({
+        code: h.course.code,
+        title: h.course.title,
+      }));
+      return jsonContent({ found: false, code: normalized, suggestions });
+    }
+
+    case "get_msu_course_graph": {
+      const raw = String(args.code ?? "");
+      if (raw.length === 0) return errorContent("code is required.");
+      if (raw.length > MAX_QUERY_CHARS) return tooLong("code", raw);
+      const normalized = isCourseCodeValid(raw);
+      if (!normalized) return errorContent("invalid_course_code");
+      const direction = args.direction === "unlocks" ? "unlocks" : "prereqs";
+      const depthRaw = args.depth;
+      const depth = depthRaw === undefined || depthRaw === null ? undefined : Number(depthRaw);
+      if (!COURSES) return errorContent("course_corpus_not_loaded");
+      const g = walkGraph(normalized, direction, depth);
+      return jsonContent(g);
+    }
+
     case "health_check": {
       return jsonContent({
         runtime: "cloudflare-workers",
@@ -658,6 +996,8 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<Mc
         calendars_row_count: CAL_ROWS.length,
         calendars_built_at: CAL_BUILT_AT,
         calendars_per_source: CAL_PER_SOURCE,
+        courses_in_corpus: COURSES ? Object.keys(COURSES.records).length : 0,
+        courses_scraped_at: COURSES?.scraped_at ?? null,
         note: "This is the Cloudflare Workers variant. Corpus is a pre-extracted snapshot; rebuild via scripts/build-worker-corpus.mjs to refresh.",
       });
     }
