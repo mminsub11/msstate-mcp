@@ -90,3 +90,20 @@ test("parseTermPage: out-of-order end date falls back to single-day", () => {
   assert.equal(rows[0].start, "2026-03-09");
   assert.equal(rows[0].end, "2026-03-09", "out-of-order end must be dropped, not used");
 });
+
+test("parseTermPage: exam_schedule extractor unaffected by date-range change", () => {
+  const rows = parseTermPage(
+    fixture("registrar_exams_2026_spring.html"),
+    "exam_schedule",
+    {
+      url: "https://www.registrar.msstate.edu/students/schedules/exam-schedule/2026/spring",
+      year: 2026,
+      term: "Spring",
+    },
+  );
+  // Exam rows are always single-day; the time-range lives in the time field, not start/end.
+  assert.ok(rows.length > 0, "expected at least one exam row");
+  for (const r of rows) {
+    assert.equal(r.start, r.end, `exam row should be single-day: ${r.event}`);
+  }
+});
