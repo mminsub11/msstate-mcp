@@ -19,6 +19,7 @@
     "embeddings": "node ../scripts/build-embeddings.mjs",
     "bundle": "node ../scripts/build-project-bundle.mjs",
     "eval": "node ../scripts/run-eval.mjs",
+    "eval:synonyms": "tsx evals/calendar-synonyms-eval.ts",
     "prepublishOnly": "npm run build"
   },
   "engines": {
