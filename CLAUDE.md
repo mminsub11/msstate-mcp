@@ -14,7 +14,7 @@ After any change in scope, run `bash tools/security-checklist.sh | tail -1` and 
 
 ## What this repo is
 
-`msstate-mcp` is a Model Context Protocol server that exposes **Mississippi State University Operating Policies** (the `/current` index at <https://www.policies.msstate.edu/current>) **and**, as of v0.4.0 (2026-05-11), **six MSU academic-date sources** (registrar academic + exam calendars on `registrar.msstate.edu`, university holidays on `hrm.msstate.edu`, the graduate-school PDFs on `grad.msstate.edu`, financial aid on `sfa.msstate.edu`, and housing events on `housing.msstate.edu`) to MCP-capable clients (Claude Code, Claude Desktop, Cursor, Windsurf, Zed, claude.ai connector, ChatGPT Plus/Pro connector). Tool count: **7** (4 policy + 2 calendar + 1 health). Current version: **v0.5.0** (2026-05-12) — calendar search now uses a 4-field BM25 (`event`×3 + `synonyms`×2 + `term`×1 + `description`×1) where the `synonyms` field is populated at build time by Anthropic Claude Haiku. **Zero runtime API calls** — synonyms are baked into `worker/corpus.json` + the `dist/calendar-synonyms.json` sidecar at build time. For project overview, architecture, decision history, eval methodology, and open issues, see [`docs/BUILD.md`](./docs/BUILD.md). Read it once before non-trivial work.
+`msstate-mcp` is a Model Context Protocol server that exposes **Mississippi State University Operating Policies** (the `/current` index at <https://www.policies.msstate.edu/current>), **six MSU academic-date sources** (registrar academic + exam calendars on `registrar.msstate.edu`, university holidays on `hrm.msstate.edu`, the graduate-school PDFs on `grad.msstate.edu`, financial aid on `sfa.msstate.edu`, and housing events on `housing.msstate.edu`) added in v0.4.0 (2026-05-11), and **the MSU course catalog** on `catalog.msstate.edu` added in v0.6.0 (2026-05-12), to MCP-capable clients (Claude Code, Claude Desktop, Cursor, Windsurf, Zed, claude.ai connector, ChatGPT Plus/Pro connector). Tool count: **10** (4 policy + 2 calendar + 3 course + 1 health). Current version: **v0.6.0** (2026-05-12) — adds `search_msu_courses`, `get_msu_course`, `get_msu_course_graph` (BM25 search + prereq DAG walker). All three serve a pre-baked corpus snapshot — zero runtime fetches to MSU at request time. For project overview, architecture, decision history, eval methodology, and open issues, see [`docs/BUILD.md`](./docs/BUILD.md). Read it once before non-trivial work.
 
 The server ships in two surfaces from one bundle:
 - **Claude Code plugin** (`/plugin install msstate-policies@msstate-mcp`)
@@ -54,6 +54,19 @@ The corpus also includes six named pages on msstate.edu subdomains:
 For sources with index + sub-pages, the per-sub-page URLs are extracted from the index at runtime (the index itself is in the allowlist) — they are never constructed from a template against external input.
 
 All other corpus-rule prohibitions apply unchanged: no training-data fallback, no third-party mirrors, no fetches against non-msstate.edu hosts, no `WebSearch` on these topics. Adding a seventh URL requires a new spec and a new addendum entry — this list is exhaustive.
+
+### Corpus extension (2026-05-12) — course catalog
+
+The corpus also includes the MSU course catalog on `catalog.msstate.edu`. Roots are pinned by the frozen `CATALOG_ROOTS` allowlist in `msstate-policies/src/courses/types.ts`:
+
+1. `https://catalog.msstate.edu/azindex/` (index of all dept pages)
+2. `https://catalog.msstate.edu/undergraduate/` (per-dept undergrad pages)
+3. `https://catalog.msstate.edu/graduate/` (per-dept grad pages)
+4. `https://catalog.msstate.edu/search/?P=<DEPT>%20<NUM>` (per-course detail)
+
+Per-dept and per-course URLs are extracted from the live A-Z index and per-dept pages at scrape time. They are never constructed from external input — the search-style URL is built from a validated course code (`^[A-Z]{2,4}\s\d{4}$`) using `encodeURIComponent` on the department prefix.
+
+All corpus-rule prohibitions apply: no training-data fallback, no third-party mirrors, no fetches against non-msstate.edu hosts, no `WebSearch` on this topic.
 
 ## Network access notes
 

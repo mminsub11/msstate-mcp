@@ -502,6 +502,17 @@ The G4 cross-gate in `tools/corpus-rule-checklist.sh` was widened from literal `
 
 The two M-tier deferred items relevant to security (M1 rate limiting, M2 branch protection, M6 auto-rebuild) are unchanged — see the table above. The only outstanding manual actions sit out-of-band: rotate the npm publish token used for `0.2.0`, and revoke the Cloudflare API token used to deploy the Worker.
 
+### Round-3 audit closure (v0.6.0 courses) — 2026-05-12
+
+`tools/security-checklist.sh` grew from 220 → 230 pts (v0.5.0 had previously taken it from 192 → 220 via SYN1–SYN6 + CAL5). The four new checks are CAT1–CAT4 (see `## Security notes` in `CLAUDE.md`). Per-check intent:
+
+- **CAT1 (4 pts)** — pins the courses module to `msstate.edu` hosts (no third-party URLs anywhere under `msstate-policies/src/courses/`). Mirrors CAL1.
+- **CAT2 (2 pts)** — `MAX_QUERY_CHARS = 4096` input-length cap in the Worker for all three course tools (`search_msu_courses`, `get_msu_course`, `get_msu_course_graph`) before tokenize/parse.
+- **CAT3 (2 pts)** — the build script aborts with the canonical marker `"refusing to ship a poisoned course corpus"` on any of: subprocess failure, unparseable JSON, missing `records`, `< 500` records, empty `reverse_dag` with non-empty `forward_dag`, or prereq parse-exception rate `> 5%` (the latter enforced inside `scrapeAllCourses`).
+- **CAT4 (2 pts)** — `CATALOG_ROOTS` frozen allowlist in `msstate-policies/src/courses/types.ts`; per-course URLs are extracted from live HTML, not constructed from external input. The scrape-time helper `isAllowedCatalogUrl(url)` re-validates `https://` + host == `catalog.msstate.edu` + prefix in `CATALOG_ROOTS` before every fetch.
+
+The corpus rule's third source (`catalog.msstate.edu`) now joins `policies.msstate.edu` and the six calendar URLs as a permitted egress target. `SECURITY.md`'s "Out of scope" and "Trust model" sections were broadened accordingly. The script `scripts/_scrape-catalog.ts` mirrors `_scrape-calendars.ts` (one-shot subprocess, stdout=JSON, stderr=logs, `console.log → stderr` early to keep the pipe clean).
+
 ## Conventions
 
 - Single-responsibility files. `chain_find_relevant.ts` orchestrates; index/scoring lives in `search.ts`/`corpus.ts`; gating in pure `gateRetrieval`; evidence assembly in `buildEvidenceResult`.

@@ -221,7 +221,7 @@ Smaller corpus than the live MCP (22 of ~218 policies), but works on **free** cl
 
 ## Tools
 
-The hosted MCP server exposes **7 tools** any MCP-capable client can call:
+The hosted MCP server exposes **10 tools** any MCP-capable client can call:
 
 | Tool | What it does |
 |---|---|
@@ -231,7 +231,12 @@ The hosted MCP server exposes **7 tools** any MCP-capable client can call:
 | `cite_policy` | Format a clean citation for an OP by number (`"OP 91.208 (Hazing)"` short, or full APA-style). |
 | `find_msu_date` | One-call natural-language date lookup across six MSU calendars. **v0.5.0:** synonym-aware BM25 (4-field weighted) handles paraphrased queries without any runtime API. Returns up to 10 matches + ≤3 academic-calendar fallback rows when a term is named. Multi-year-aware. |
 | `get_msu_calendar` | Raw dump of one calendar source (`academic_calendar`, `exam_schedule`, `university_holidays`, `grad_school_calendar`, `sfa_financial_aid`, `housing`) with optional term filter. |
+| `search_msu_courses` | **v0.6.0:** Fuzzy-search the MSU course catalog by code, title, or description (BM25 with code=4/title=3/description=1 field weights). |
+| `get_msu_course` | **v0.6.0:** Fetch one course's full record — title, hours, level, description, semester offered, prereqs (structured + raw prose), coreqs, cross-listed equivalents, source URL. |
+| `get_msu_course_graph` | **v0.6.0:** Walk the prereq DAG forward (`prereqs` — "what do I need before X?") or reverse (`unlocks` — "what does X enable?"). Default depth 5, max 10, cycle detection, `truncated:true` when the walk hits the cap. |
 | `health_check` | Diagnostic: per-source row counts, last build timestamp, last errors. Useful when answers feel stale or empty. |
+
+**v0.6.0** adds course-catalog tools sourced from `catalog.msstate.edu`. Zero ongoing operational cost — same baked-corpus model as policies and calendars.
 
 ---
 

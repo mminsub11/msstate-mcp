@@ -44,7 +44,7 @@ Reportable issues include:
 - Authentication/authorization bypass on the deployed Worker (currently no auth — abuse of the open endpoint is a known limitation, not a vulnerability).
 - Denial of service against the Worker that exceeds Cloudflare's standard DDoS protection.
 - Prompt injection via planted content in `worker/corpus.json` (policies or `academic_calendar` block) if the build pipeline can be subverted.
-- Misuse of the corpus rule — claims that the server returns content NOT from `policies.msstate.edu` or one of the six MSU calendar URLs hardcoded in `msstate-policies/src/calendars/types.ts`.
+- Misuse of the corpus rule — claims that the server returns content NOT from `policies.msstate.edu`, one of the six MSU calendar URLs hardcoded in `msstate-policies/src/calendars/types.ts`, or `catalog.msstate.edu` (anchored by the frozen `CATALOG_ROOTS` allowlist in `msstate-policies/src/courses/types.ts`).
 
 ## What's NOT in scope
 
@@ -74,8 +74,8 @@ Several abuse classes that come up in MCP threat-modelling are **explicitly outs
 - The LLM hallucinates an answer despite the tool returning empty results, refusing on a low-confidence gate, or surfacing the in-payload `disclaimer`. Those signals are best-effort hints to the model, not enforcement; an LLM that ignores them is not within our control.
 - Indirect prompt injection embedded inside MSU policy PDFs or calendar pages themselves (e.g. an attacker who got something published into an OP or a registrar sub-page). The defense lives upstream at MSU's publishing/review process — we faithfully relay the published text.
 
-If you find a way to violate the server-side corpus rule (i.e. make the *server itself* return content that does NOT come from `policies.msstate.edu` or one of the six MSU calendar URLs listed in [CLAUDE.md](CLAUDE.md#corpus-extension-2026-05-11--academic-dates)), that is in scope and falls under the reporting flow above.
+If you find a way to violate the server-side corpus rule (i.e. make the *server itself* return content that does NOT come from `policies.msstate.edu`, one of the six MSU calendar URLs listed in [CLAUDE.md](CLAUDE.md#corpus-extension-2026-05-11--academic-dates), or `catalog.msstate.edu` under the frozen `CATALOG_ROOTS` allowlist), that is in scope and falls under the reporting flow above.
 
 ## Trust model
 
-The corpus rule (see [`CLAUDE.md`](CLAUDE.md) and [`docs/BUILD.md`](docs/BUILD.md)) is the load-bearing security claim: every fact this server returns must trace back to an HTTP fetch of `policies.msstate.edu` or one of the six MSU calendar URLs in the corpus extension. If you find a way to make the server return content that does NOT come from one of those sources, that is a critical vulnerability and falls under the reporting flow above.
+The corpus rule (see [`CLAUDE.md`](CLAUDE.md) and [`docs/BUILD.md`](docs/BUILD.md)) is the load-bearing security claim: every fact this server returns must trace back to an HTTP fetch of `policies.msstate.edu`, one of the six MSU calendar URLs in the corpus extension, or `catalog.msstate.edu` under the frozen `CATALOG_ROOTS` allowlist. If you find a way to make the server return content that does NOT come from one of those sources, that is a critical vulnerability and falls under the reporting flow above.
