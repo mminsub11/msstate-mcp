@@ -29,10 +29,11 @@ import { createHash } from "node:crypto";
 // ---- v0.5.0: Anthropic Haiku synonym generation -------------------------
 const ANTHROPIC_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_MODEL = "claude-haiku-4-5";
-const PARAPHRASE_CONCURRENCY = 8;
+const PARAPHRASE_CONCURRENCY = 2;
 const PARAPHRASES_PER_ROW = 5;
 const PARAPHRASE_MAX_CHARS = 80;
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 5;
+const RETRY_AFTER_FALLBACK_MS = [1000, 3000, 10000, 20000, 40000];
 
 const SYSTEM_PROMPT =
   "You generate 5 short paraphrases of MSU calendar event titles for keyword-based search. " +
@@ -95,7 +96,15 @@ async function paraphraseOneRowWithRetry(row, apiKey, attempt = 1) {
       }),
       signal: AbortSignal.timeout(30_000),
     });
-    if (!res.ok) throw new Error(`status=${res.status}`);
+    if (!res.ok) {
+      // On 429, prefer the server-provided retry-after over our exponential backoff.
+      const retryAfterHeader = res.headers.get("retry-after");
+      const retryAfterMs = retryAfterHeader ? Math.max(1000, parseInt(retryAfterHeader, 10) * 1000) : 0;
+      const err = new Error(`status=${res.status}`);
+      // @ts-ignore - attach for the catch block
+      err.retryAfterMs = retryAfterMs;
+      throw err;
+    }
     const json = await res.json();
     // Assistant prefill is "[" — prepend it so the full JSON array text starts with [.
     const text = "[" + (json.content?.[0]?.text ?? "");
@@ -113,7 +122,9 @@ async function paraphraseOneRowWithRetry(row, apiKey, attempt = 1) {
       console.error(`[paraphrase] row "${row.event.slice(0, 40)}" failed permanently after ${attempt} attempts: ${err.message}`);
       return null;
     }
-    const backoff = [1000, 3000, 10000][attempt - 1] ?? 10000;
+    // Use server-provided retry-after on 429, else exponential fallback.
+    const retryAfter = err && typeof err.retryAfterMs === "number" && err.retryAfterMs > 0 ? err.retryAfterMs : 0;
+    const backoff = retryAfter || (RETRY_AFTER_FALLBACK_MS[attempt - 1] ?? 40000);
     await new Promise((r) => setTimeout(r, backoff));
     return paraphraseOneRowWithRetry(row, apiKey, attempt + 1);
   }
