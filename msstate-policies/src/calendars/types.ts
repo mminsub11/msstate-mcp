@@ -44,28 +44,6 @@ export const CALENDAR_PARENT: Record<CalendarSource, CalendarSource | null> = {
   housing:              "academic_calendar",
 };
 
-/** Quantized 512-dim embedding. `data` is base64-encoded Int8Array.
- *  Stored in worker/corpus.json and dist/calendar-vectors.json. */
-export interface EmbeddingSerialized {
-  scale: number;
-  data: string; // base64 of Int8Array
-}
-
-/** Decoded form held in memory after deserialization. */
-export interface Embedding {
-  scale: number;
-  data: Int8Array;
-}
-
-/** hash → embedding lookup. Both serialized and in-memory variants exist. */
-export type EmbeddingMapSerialized = Record<string, EmbeddingSerialized>;
-export type EmbeddingMap = Map<string, Embedding>;
-
-/** The embedding model in use. Single-source-of-truth constant; any drift
- *  between corpus.json and runtime triggers an EMB6 security-checklist fail. */
-export const EMBED_MODEL = "voyage-3-lite" as const;
-export const EMBED_DIM = 512 as const;
-
 export interface CalendarRow {
   source: CalendarSource;
   /** Event/deadline name, e.g. "Spring Break", "Halls Close for Spring 2026". */
@@ -96,6 +74,12 @@ export interface CalendarRow {
    *  and used to look up the row's embedding vector. Stripped from
    *  find_msu_date JSON-RPC responses to keep the wire shape stable. */
   contentHash?: string;
+  /** ~5 LLM-generated paraphrases of the event title. Baked at build time
+   *  via Anthropic Haiku for keyword-based semantic expansion. Empty array
+   *  for rows that haven't been paraphrased yet (e.g., live-scraped rows
+   *  on the stdio plugin whose hash isn't in the sidecar). Stripped from
+   *  find_msu_date JSON-RPC responses — see SYN6 security check. */
+  synonyms?: string[];
 }
 
 /** Result of scraping a single source. */
