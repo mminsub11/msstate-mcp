@@ -45,6 +45,20 @@ function contentHash(row) {
   return createHash("sha256").update(canon, "utf8").digest("hex");
 }
 
+/** Extract a JSON array substring from a chatty LLM response.
+ *  Strips ```json ... ``` and ``` ... ``` fences and any preamble.
+ *  Returns the first balanced [...] substring, or the raw input if no
+ *  fence is found (lets JSON.parse fail naturally on truly malformed input). */
+function extractJsonArray(text) {
+  let s = String(text ?? "").trim();
+  const fence = s.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```\s*$/);
+  if (fence) s = fence[1].trim();
+  const start = s.indexOf("[");
+  const end = s.lastIndexOf("]");
+  if (start === -1 || end === -1 || end < start) return s;
+  return s.slice(start, end + 1);
+}
+
 function validateParaphrases(arr) {
   if (!Array.isArray(arr)) return null;
   if (arr.length !== PARAPHRASES_PER_ROW) return null;
@@ -74,18 +88,22 @@ async function paraphraseOneRowWithRetry(row, apiKey, attempt = 1) {
         model: ANTHROPIC_MODEL,
         max_tokens: 200,
         system: SYSTEM_PROMPT,
-        messages: [{ role: "user", content: userMsg }],
+        messages: [
+          { role: "user", content: userMsg },
+          { role: "assistant", content: "[" },
+        ],
       }),
       signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) throw new Error(`status=${res.status}`);
     const json = await res.json();
-    const text = json.content?.[0]?.text ?? "";
+    // Assistant prefill is "[" — prepend it so the full JSON array text starts with [.
+    const text = "[" + (json.content?.[0]?.text ?? "");
     let parsed;
     try {
-      parsed = JSON.parse(text);
+      parsed = JSON.parse(extractJsonArray(text));
     } catch {
-      throw new Error("not valid JSON");
+      throw new Error(`not valid JSON: ${text.slice(0, 120).replace(/\n/g, "\\n")}`);
     }
     const validated = validateParaphrases(parsed);
     if (!validated) throw new Error("validation failed");
