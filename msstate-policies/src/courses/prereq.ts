@@ -57,48 +57,62 @@ export function walkGraph(
   const adj = direction === "prereqs" ? corpus.forward_dag : corpus.reverse_dag;
   const nodes: GraphNode[] = [{ code: rootCode, title: root.title, depth: 0 }];
   const edges: GraphEdge[] = [];
-  const visited = new Set<string>([rootCode]);
+  const emittedNode = new Set<string>([rootCode]);
+  const emittedEdge = new Set<string>();
   let truncated = false;
   let depth_used = 0;
 
-  let frontier: Array<{ code: string; depth: number }> = [{ code: rootCode, depth: 0 }];
-  while (frontier.length > 0) {
-    const next: Array<{ code: string; depth: number }> = [];
-    for (const { code, depth } of frontier) {
-      if (depth >= depth_used_max) {
-        if ((adj[code] ?? []).length > 0) truncated = true;
-        continue;
-      }
-      const neighbors = adj[code] ?? [];
-      for (const n of neighbors) {
-        if (visited.has(n)) {
-          notes.push(`cycle detected at ${n}`);
-          truncated = true;
+  // Path-based cycle detection: we only need to flag re-entry into a node
+  // that's an ancestor on the current root→here path. For an acyclic graph
+  // (course prereqs in practice are acyclic) this set never repeats.
+  function bfs(start: string): void {
+    let frontier: Array<{ code: string; depth: number; path: ReadonlySet<string> }> = [
+      { code: start, depth: 0, path: new Set([start]) },
+    ];
+    while (frontier.length > 0) {
+      const next: typeof frontier = [];
+      for (const { code, depth, path } of frontier) {
+        if (depth >= depth_used_max) {
+          if ((adj[code] ?? []).length > 0) truncated = true;
           continue;
         }
-        visited.add(n);
-        const c = corpus.records[n];
-        const title = c?.title ?? "(unknown)";
-        nodes.push({ code: n, title, depth: depth + 1 });
-        // Edge metadata: in forward direction, the edge represents
-        // "code requires n", carrying the logic/grade from code's prereqs.
-        // In reverse, the edge "n is unlocked by code" — surface the same
-        // metadata, just looked up via the source course.
-        const sourceCode = direction === "prereqs" ? code : n;
-        const sc = corpus.records[sourceCode];
-        const p = sc?.prereqs;
-        edges.push({
-          from: code,
-          to: n,
-          logic: p?.logic ?? null,
-          min_grade: p?.min_grade ?? null,
-        });
-        next.push({ code: n, depth: depth + 1 });
-        depth_used = Math.max(depth_used, depth + 1);
+        const neighbors = adj[code] ?? [];
+        for (const n of neighbors) {
+          if (path.has(n)) {
+            notes.push(`cycle detected at ${n}`);
+            truncated = true;
+            continue;
+          }
+          // Always emit the edge — convergent edges in a DAG are real data.
+          const edgeKey = `${code}->${n}`;
+          if (!emittedEdge.has(edgeKey)) {
+            const sourceCode = direction === "prereqs" ? code : n;
+            const p = corpus.records[sourceCode]?.prereqs;
+            edges.push({
+              from: code,
+              to: n,
+              logic: p?.logic ?? null,
+              min_grade: p?.min_grade ?? null,
+            });
+            emittedEdge.add(edgeKey);
+          }
+          // Emit node + expand only the first time we see it.
+          if (!emittedNode.has(n)) {
+            emittedNode.add(n);
+            const title = corpus.records[n]?.title ?? "(unknown)";
+            nodes.push({ code: n, title, depth: depth + 1 });
+            const nextPath = new Set(path);
+            nextPath.add(n);
+            next.push({ code: n, depth: depth + 1, path: nextPath });
+            depth_used = Math.max(depth_used, depth + 1);
+          }
+        }
       }
+      frontier = next;
     }
-    frontier = next;
   }
+
+  bfs(rootCode);
 
   return {
     root: rootCode,
