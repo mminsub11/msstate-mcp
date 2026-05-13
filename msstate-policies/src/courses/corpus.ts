@@ -17,10 +17,22 @@ import {
 } from "./types.js";
 
 let CORPUS: CourseCorpus | null = null;
+let loaded = false;
 
 export function setCourseCorpus(c: CourseCorpus): void {
   CORPUS = c;
   indexCourses(Object.values(c.records));
+  loaded = true;
+}
+
+export function isCourseCorpusLoaded(): boolean {
+  return loaded;
+}
+
+export function __resetCourseCorpusForTests(): void {
+  CORPUS = null;
+  loaded = false;
+  indexCourses([]);
 }
 
 export function getCourseCorpus(): CourseCorpus | null {

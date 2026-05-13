@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { searchCourses } from "../courses/search.js";
-import { getCourse, isCourseCodeValid } from "../courses/corpus.js";
+import { getCourse, isCourseCodeValid, isCourseCorpusLoaded } from "../courses/corpus.js";
 import { MAX_QUERY_CHARS } from "../courses/types.js";
 
 const Input = z
@@ -15,6 +15,12 @@ export const get_msu_course = {
   inputSchema: zodToJsonSchema(Input, { target: "openApi3" }),
   zodSchema: Input,
   async handler(rawInput: unknown) {
+    if (!isCourseCorpusLoaded()) {
+      return {
+        isError: true,
+        content: [{ type: "text" as const, text: "course corpus not loaded — server starting up or build skipped course bake" }],
+      };
+    }
     const input = Input.parse(rawInput);
     const normalized = isCourseCodeValid(input.code);
     if (!normalized) {

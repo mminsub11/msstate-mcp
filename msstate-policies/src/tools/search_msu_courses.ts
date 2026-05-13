@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { searchCourses } from "../courses/search.js";
+import { isCourseCorpusLoaded } from "../courses/corpus.js";
 import { MAX_QUERY_CHARS } from "../courses/types.js";
 
 const Input = z
@@ -17,6 +18,12 @@ export const search_msu_courses = {
   inputSchema: zodToJsonSchema(Input, { target: "openApi3" }),
   zodSchema: Input,
   async handler(rawInput: unknown) {
+    if (!isCourseCorpusLoaded()) {
+      return {
+        isError: true,
+        content: [{ type: "text" as const, text: "course corpus not loaded — server starting up or build skipped course bake" }],
+      };
+    }
     const input = Input.parse(rawInput);
     const limit = input.limit ?? 10;
     const hits = searchCourses(input.q, limit);
