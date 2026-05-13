@@ -139,6 +139,21 @@ WAF detection: site is normally fronted by F5 (its `id="f5_cspm"` script is *alw
 
 PDF text extraction: `pdf-parse` inner-module import → NFKC normalize → strip excessive whitespace. If extracted text < `MIN_USABLE_POLICY_TEXT_CHARS = 200`, fall back to landing page; if both fail, throw — do not cache empty success.
 
+### Corpus extension (2026-05-13) — emergency guidelines
+
+`v0.7.0` adds 4 tools over a new `emergency` block in `worker/corpus.json`:
+
+- `get_msu_emergency_guideline(emergency_type)` — slug | alias | free-text fuzzy lookup, returns body verbatim + 911 reminder + contacts_quick (911 + MSU PD).
+- `list_msu_emergency_types()` — enumeration of the 12 guidelines (slug + title + url).
+- `find_msu_severe_weather_refuge(building_name)` — severe-weather-only refuge lookup from `/refuge`. Returns interior-room fallback guidance when the building isn't listed.
+- `get_msu_emergency_contacts(category)` — 911, MSU PD, Counseling, etc. Categories: 'all' | 'emergency' | 'campus' | 'off_campus'.
+
+All four tools prefix every response with `MANDATORY_DISCLAIMER` (constant in `src/emergency/types.ts`): *"If this is a life-threatening emergency, call 911 now (or MSU PD at 662-325-2121)."* The disclaimer is injected by the tool handler before any user-controlled string is rendered — it's present on every code path including `matched: null` responses.
+
+Build pipeline: `scripts/_scrape-emergency.ts` runs as a subprocess from `build-worker-corpus.mjs` (same pattern as `_scrape-calendars.ts` and `_scrape-catalog.ts`). Aborts on: subprocess failure, guideline count ≠ 12, any body < 200 chars, refuge count < 5, contact count < 3, or missing 911 entry. Canonical abort string: `"refusing to ship a poisoned emergency corpus"`.
+
+Security: EMG1–EMG4 in `tools/security-checklist.sh` (+10 pts, 235 → 245).
+
 ## Cloudflare Worker variant — claude.ai web + mobile
 
 `worker/` ships a remote HTTP/JSON-RPC variant of the same 5 tools so that Anthropic's claude.ai web connector and Claude mobile can use this server (the local stdio path doesn't work there — connectors are HTTP/SSE only).

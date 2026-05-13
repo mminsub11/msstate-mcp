@@ -51,7 +51,7 @@ Fastest path. Works in the browser and the Claude iOS/Android apps. Requires a p
 1. Sign in at <https://claude.ai>
 2. **Settings → Connectors → Add custom connector**
 3. **Name:** `MSU` &nbsp;&nbsp; **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
-4. Save. You should see **10 tools** appear
+4. Save. You should see **14 tools** appear
 5. New chat, enable the connector, ask a question
 
 Mobile apps pick up the connector automatically once you set it up on web.
@@ -63,7 +63,7 @@ Same flow as claude.ai. Free-tier ChatGPT can't add connectors — use the [Open
 1. Sign in at <https://chatgpt.com>
 2. **Settings → Connectors → Add custom connector**
 3. **Name:** `MSU` &nbsp;&nbsp; **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
-4. Save → 10 tools available
+4. Save → 14 tools available
 
 ### Claude Code
 
@@ -104,7 +104,7 @@ You need [Node.js 18+](https://nodejs.org).
 
 **3.** Fully quit the client (Cmd+Q / right-click tray → Quit) and reopen.
 
-**4.** Verify the `msstate-policies` server shows **10 tools**. First call takes ~5 seconds (cold fetch); later calls reuse cached data.
+**4.** Verify the `msstate-policies` server shows **14 tools**. First call takes ~5 seconds (cold fetch); later calls reuse cached data.
 
 Ready-to-paste snippet at [`examples/claude_desktop_config.json`](examples/claude_desktop_config.json).
 
@@ -166,7 +166,7 @@ Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 
 
 ---
 
-## The 10 tools
+## The 14 tools
 
 | Tool | Use it for |
 |---|---|
@@ -182,6 +182,11 @@ Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 
 | `search_msu_courses` | Fuzzy search by code, title, or description (BM25 with code×4 / title×3 / description×1) |
 | `get_msu_course` | One course's full record — title, hours, prereqs (structured + raw prose), cross-listings, source URL |
 | `get_msu_course_graph` | Walk the prereq DAG forward (`prereqs`) or reverse (`unlocks`). Depth 1–10, cycle detection, partial results when truncated |
+| **Emergency (4 tools, v0.7.0)** | |
+| `get_msu_emergency_guideline` | Emergency-guidance lookup (tornado, fire, active shooter, …). Slug / alias / free-text fuzzy. Body verbatim + 911 reminder + quick contacts |
+| `list_msu_emergency_types` | Enumerate the 12 published emergency-guideline types (slug + title + url) |
+| `find_msu_severe_weather_refuge` | Severe-weather-only refuge area by building name. Returns interior-room fallback guidance when the building isn't listed |
+| `get_msu_emergency_contacts` | 911 / MSU PD / Counseling / off-campus contacts. Filter by `all` \| `emergency` \| `campus` \| `off_campus` |
 | **Diagnostic (1 tool)** | |
 | `health_check` | Per-source counts, last build timestamp, last errors |
 
@@ -226,6 +231,8 @@ Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 
 ---
 
 ## What this WON'T do (limitations)
+
+**0. Substitute for emergency services.** This server returns MSU's *published* emergency guidance verbatim. It is not real-time alerts, not a dispatcher, not triage, not counseling. **If you are in a life-threatening emergency, stop reading and call 911 (or MSU PD at 662-325-2121).** Every emergency-tool response carries this same reminder.
 
 **1. Snapshots, not live data.** The hosted Cloudflare Worker reads a pre-built corpus rebuilt on each release. Responses include a `corpus_built_at` field so the model can flag staleness. For *always-live* (fetch-on-request) policy text, use a local install — the npm/plugin path live-scrapes `policies.msstate.edu`.
 

@@ -10,11 +10,11 @@ For non-trivial work — and ALWAYS before touching anything security-shaped (Wo
 2. **`SECURITY.md`** — what's in scope, what's NOT, and especially `## Out of scope: client-side circumvention`. That section defines the user-side abuse classes we explicitly *don't* defend against (local edits to the bundle, prompt-level circumvention, fork-the-corpus, LLM hallucination, indirect injection inside published PDFs). Treat anything matching those bullets as `wontfix` by design.
 3. **`docs/BUILD.md`** — architecture, decision history, deferred items (M1/M2/M6), eval methodology, threat model. The **Round-2 audit closure (2026-05-08)** section captures the per-finding history (N1–N10 + DISC) that `tools/security-checklist.sh` now mechanically enforces.
 
-After any change in scope, run `bash tools/security-checklist.sh | tail -1` and confirm the score is still **235** (was 230 pre-CAL6, 220 pre-v0.6.0, 192 pre-v0.5.0). CI hard-gates on `>= 100`; below 235 means a check regressed.
+After any change in scope, run `bash tools/security-checklist.sh | tail -1` and confirm the score is still **245** (was 235 pre-EMG, 230 pre-CAL6, 220 pre-v0.6.0, 192 pre-v0.5.0). CI hard-gates on `>= 100`; below 245 means a check regressed.
 
 ## What this repo is
 
-`msstate-mcp` is a Model Context Protocol server that exposes **Mississippi State University Operating Policies** (the `/current` index at <https://www.policies.msstate.edu/current>), **six MSU academic-date sources** (registrar academic + exam calendars on `registrar.msstate.edu`, university holidays on `hrm.msstate.edu`, the graduate-school PDFs on `grad.msstate.edu`, financial aid on `sfa.msstate.edu`, and housing events on `housing.msstate.edu`) added in v0.4.0 (2026-05-11), and **the MSU course catalog** on `catalog.msstate.edu` added in v0.6.0 (2026-05-12), to MCP-capable clients (Claude Code, Claude Desktop, Cursor, Windsurf, Zed, claude.ai connector, ChatGPT Plus/Pro connector). Tool count: **10** (4 policy + 2 calendar + 3 course + 1 health). Current version: **v0.6.0** (2026-05-12) — adds `search_msu_courses`, `get_msu_course`, `get_msu_course_graph` (BM25 search + prereq DAG walker). All three serve a pre-baked corpus snapshot — zero runtime fetches to MSU at request time. For project overview, architecture, decision history, eval methodology, and open issues, see [`docs/BUILD.md`](./docs/BUILD.md). Read it once before non-trivial work.
+`msstate-mcp` is a Model Context Protocol server that exposes **Mississippi State University Operating Policies** (the `/current` index at <https://www.policies.msstate.edu/current>), **six MSU academic-date sources** (registrar academic + exam calendars on `registrar.msstate.edu`, university holidays on `hrm.msstate.edu`, the graduate-school PDFs on `grad.msstate.edu`, financial aid on `sfa.msstate.edu`, and housing events on `housing.msstate.edu`) added in v0.4.0 (2026-05-11), and **the MSU course catalog** on `catalog.msstate.edu` added in v0.6.0 (2026-05-12), to MCP-capable clients (Claude Code, Claude Desktop, Cursor, Windsurf, Zed, claude.ai connector, ChatGPT Plus/Pro connector). Tool count: **14** (4 policy + 2 calendar + 3 course + 4 emergency + 1 health). Current version: **v0.7.0** (2026-05-13) — adds `get_msu_emergency_guideline`, `list_msu_emergency_types`, `find_msu_severe_weather_refuge`, `get_msu_emergency_contacts` over a baked snapshot of www.emergency.msstate.edu. All three serve a pre-baked corpus snapshot — zero runtime fetches to MSU at request time. For project overview, architecture, decision history, eval methodology, and open issues, see [`docs/BUILD.md`](./docs/BUILD.md). Read it once before non-trivial work.
 
 The server ships in two surfaces from one bundle:
 - **Claude Code plugin** (`/plugin install msstate-policies@msstate-mcp`)
@@ -68,6 +68,19 @@ Per-dept and per-course URLs are extracted from the live A-Z index and per-dept 
 
 All corpus-rule prohibitions apply: no training-data fallback, no third-party mirrors, no fetches against non-msstate.edu hosts, no `WebSearch` on this topic.
 
+### Corpus extension (2026-05-13) — emergency guidelines
+
+The corpus also includes emergency guidance from `www.emergency.msstate.edu`. Roots are pinned by the frozen `EMERGENCY_ROOTS` allowlist in `msstate-policies/src/emergency/types.ts`:
+
+1. `https://www.emergency.msstate.edu/guidelines/` — 12 guideline pages (frozen slug list in `EXPECTED_GUIDELINE_SLUGS`)
+2. `https://www.emergency.msstate.edu/refuge` — refuge-area table + "Important Contacts" block
+
+Per-guideline URLs are constructed from the frozen slug list, not extracted from external input. The /refuge fetch is a single canonical URL.
+
+All corpus-rule prohibitions apply: no training-data fallback, no third-party mirrors, no fetches against non-msstate.edu hosts, no `WebSearch` on this topic.
+
+Every emergency tool response carries the `MANDATORY_DISCLAIMER` constant from `types.ts` ("If this is a life-threatening emergency, call 911 now (or MSU PD at 662-325-2121).") on every code path including matched=null and error-shape responses.
+
 ## Network access notes
 
 - Codespace / dev sandbox: **has** network access to `policies.msstate.edu`.
@@ -82,7 +95,7 @@ All corpus-rule prohibitions apply: no training-data fallback, no third-party mi
 
 ## Security notes (round-2 closure 2026-05-08 + v0.5.0 SYN checks 2026-05-12)
 
-The mechanical security checklist (`tools/security-checklist.sh`) was extended from 100 → 192 pts during the round-2 audit, then **192 → 220** in v0.5.0 (added SYN1-SYN6 + CAL5 regression-guard), then **220 → 230** in v0.6.0 (CAT1-CAT4), then **230 → 235** with CAL6. CI hard-gates pushes/PRs on `score >= 100`. Current head should score **235/235**; if you regress it, fix the failing check before merging. The round-2 closure note in [`docs/BUILD.md`](./docs/BUILD.md) covers the per-finding history (N1-N10 + CAL1-CAL4 + SYN1-SYN6). `git log --grep "N\\(1\\|2\\|3\\|4\\|5\\|6\\|7\\|8\\|9\\|10\\)"` finds round-2 commits; `git log --grep "SYN"` finds v0.5.0 commits.
+The mechanical security checklist (`tools/security-checklist.sh`) was extended from 100 → 192 pts during the round-2 audit, then **192 → 220** in v0.5.0 (added SYN1-SYN6 + CAL5 regression-guard), then **220 → 230** in v0.6.0 (CAT1-CAT4), then **230 → 235** with CAL6, then **235 → 245** in v0.7.0 (added EMG1-EMG4 for the emergency module). CI hard-gates pushes/PRs on `score >= 100`. Current head should score **245/245**; if you regress it, fix the failing check before merging. The round-2 closure note in [`docs/BUILD.md`](./docs/BUILD.md) covers the per-finding history (N1-N10 + CAL1-CAL4 + SYN1-SYN6). `git log --grep "N\\(1\\|2\\|3\\|4\\|5\\|6\\|7\\|8\\|9\\|10\\)"` finds round-2 commits; `git log --grep "SYN"` finds v0.5.0 commits.
 
 A few patterns to keep in mind so the score doesn't drift:
 - **Worker error paths**: never echo `(err as Error).message` to clients; always log structured fields server-side, return generic messages with the JSON-RPC `id` for correlation.
@@ -92,6 +105,7 @@ A few patterns to keep in mind so the score doesn't drift:
 - **Disk cache**: `mkdirSync({ mode: 0o700 })` + `writeFileSync({ mode: 0o600 })` are load-bearing on multi-user hosts.
 - **Calendar checks (CAL1-CAL4, added 2026-05-11)**: calendar URLs hardcoded in `msstate-policies/src/calendars/types.ts`; all `https://` URLs inside `msstate-policies/src/calendars/` must stay on msstate.edu subdomains; Worker handler for `find_msu_date` caps `q.length > MAX_QUERY_CHARS` before tokenize; build aborts on calendar scrape failure.
 - **Course checks (CAT1-CAT4, added 2026-05-12)**: catalog URLs anchored by the frozen `CATALOG_ROOTS` allowlist in `msstate-policies/src/courses/types.ts`; all `https://` URLs inside `msstate-policies/src/courses/` must stay on msstate.edu subdomains; Worker handlers for `search_msu_courses`, `get_msu_course`, `get_msu_course_graph` cap input length before parse; build aborts with the canonical string `"refusing to ship a poisoned course corpus"` on any of: subprocess failure, parse error, < 500 records, empty `reverse_dag` with non-empty `forward_dag`, prereq parse-exception rate > 5%.
+- **Emergency checks (EMG1-EMG4, added 2026-05-13)**: emergency URLs anchored by `EMERGENCY_ROOTS` (frozen) in `msstate-policies/src/emergency/types.ts`; all `https://` URLs inside `msstate-policies/src/emergency/` must stay on msstate.edu; Worker handlers for the 3 input-taking emergency tools cap input length before parse (`list_msu_emergency_types` is exempt — takes no input); build aborts with the canonical string `"refusing to ship a poisoned emergency corpus"` on: subprocess failure, guideline count ≠ 12, any body < 200 chars, refuge count < 5, contact count < 3, or missing 911 entry.
 - **v0.5.0 synonym checks (SYN1-SYN6 + CAL5, added 2026-05-12)** — load-bearing:
   - **SYN4 (10 pts, load-bearing): zero runtime egress to Anthropic.** `grep -rn "api\.anthropic\.com" msstate-policies/src worker/src` must equal **0**. The only allowed reference is in `scripts/build-worker-corpus.mjs`. If you ever need synonyms refreshed at runtime, that's a v0.6.0+ conversation — DO NOT add a runtime fetch to `api.anthropic.com` to `src/` in any patch release.
   - **SYN6 (refined to property-access regex)**: `row.synonyms` property access / JSON-key / destructuring under `msstate-policies/src/tools/` must equal 0. The bare word "synonyms" in user-facing strings (e.g. the mode-note `"BM25 with synonyms"`) is allowed and tested for.
