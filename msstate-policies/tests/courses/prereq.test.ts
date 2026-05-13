@@ -13,9 +13,11 @@ function mkCourse(code: string, title: string, prereqCodes: string[] = []): Cour
       min_grade: null,
       non_course: [],
       raw_prose: `(Prerequisites: ${prereqCodes.join(" and ")})`,
+      parse_warnings: [],
     },
     coreqs: null, cross_listed: [],
     source_url: `https://catalog.msstate.edu/search/?P=${encodeURIComponent(code)}`,
+    prereq_summary: null,
   };
 }
 

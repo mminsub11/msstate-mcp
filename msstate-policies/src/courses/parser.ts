@@ -87,6 +87,7 @@ function parseClause(label: "Prerequisites" | "Corequisites", input: string): Pr
       min_grade: null,
       non_course: [],
       raw_prose: clause,
+      parse_warnings: [],  // Task 4.x will populate this when warranted
     };
   }
   return {
@@ -95,6 +96,7 @@ function parseClause(label: "Prerequisites" | "Corequisites", input: string): Pr
     min_grade: inferMinGrade(clause),
     non_course,
     raw_prose: clause,
+    parse_warnings: [],  // Task 4.x will populate this when warranted
   };
 }
 
@@ -205,5 +207,6 @@ export function parseCourseHtml(html: string, expectedCode: string): Course | nu
     coreqs,
     cross_listed,
     source_url: deriveSourceUrl(expectedCode),
+    prereq_summary: null,  // Task 6.1 will build the real summary
   };
 }

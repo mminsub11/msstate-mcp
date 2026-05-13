@@ -14,6 +14,7 @@ const CORPUS: CourseCorpus = {
       description: "Networking concepts.", semester_offered: null,
       prereqs: null, coreqs: null, cross_listed: [],
       source_url: "https://catalog.msstate.edu/search/?P=CSE%204153",
+      prereq_summary: null,
     },
     "CSE 4733": {
       code: "CSE 4733", title: "Operating Systems I",
@@ -21,6 +22,7 @@ const CORPUS: CourseCorpus = {
       description: "OS concepts.", semester_offered: null,
       prereqs: null, coreqs: null, cross_listed: [],
       source_url: "https://catalog.msstate.edu/search/?P=CSE%204733",
+      prereq_summary: null,
     },
   },
   forward_dag: {}, reverse_dag: {},

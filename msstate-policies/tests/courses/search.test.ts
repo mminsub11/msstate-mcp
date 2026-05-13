@@ -15,6 +15,7 @@ const COURSES: Course[] = [
     coreqs: null,
     cross_listed: [],
     source_url: "https://catalog.msstate.edu/search/?P=CSE%204153",
+    prereq_summary: null,
   },
   {
     code: "CSE 4733",
@@ -27,6 +28,7 @@ const COURSES: Course[] = [
     coreqs: null,
     cross_listed: [],
     source_url: "https://catalog.msstate.edu/search/?P=CSE%204733",
+    prereq_summary: null,
   },
   {
     code: "MA 1713",
@@ -39,6 +41,7 @@ const COURSES: Course[] = [
     coreqs: null,
     cross_listed: [],
     source_url: "https://catalog.msstate.edu/search/?P=MA%201713",
+    prereq_summary: null,
   },
 ];
 

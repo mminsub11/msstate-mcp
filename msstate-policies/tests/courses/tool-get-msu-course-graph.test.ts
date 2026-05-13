@@ -7,13 +7,13 @@ import type { CourseCorpus } from "../../src/courses/types.js";
 const CORPUS: CourseCorpus = {
   version: "test", scraped_at: "2026-05-12T00:00:00Z",
   records: {
-    "CSE 1284": { code: "CSE 1284", title: "Intro", hours: 4, level: "undergraduate", description: "", semester_offered: null, prereqs: null, coreqs: null, cross_listed: [], source_url: "" },
+    "CSE 1284": { code: "CSE 1284", title: "Intro", hours: 4, level: "undergraduate", description: "", semester_offered: null, prereqs: null, coreqs: null, cross_listed: [], source_url: "", prereq_summary: null },
     "CSE 1384": { code: "CSE 1384", title: "Inter", hours: 4, level: "undergraduate", description: "", semester_offered: null,
-      prereqs: { required_courses: ["CSE 1284"], logic: null, min_grade: null, non_course: [], raw_prose: "(Prerequisites: CSE 1284)" },
-      coreqs: null, cross_listed: [], source_url: "" },
+      prereqs: { required_courses: ["CSE 1284"], logic: null, min_grade: null, non_course: [], raw_prose: "(Prerequisites: CSE 1284)", parse_warnings: [] },
+      coreqs: null, cross_listed: [], source_url: "", prereq_summary: null },
     "CSE 2383": { code: "CSE 2383", title: "DS", hours: 3, level: "undergraduate", description: "", semester_offered: null,
-      prereqs: { required_courses: ["CSE 1384"], logic: null, min_grade: null, non_course: [], raw_prose: "(Prerequisites: CSE 1384)" },
-      coreqs: null, cross_listed: [], source_url: "" },
+      prereqs: { required_courses: ["CSE 1384"], logic: null, min_grade: null, non_course: [], raw_prose: "(Prerequisites: CSE 1384)", parse_warnings: [] },
+      coreqs: null, cross_listed: [], source_url: "", prereq_summary: null },
   },
   forward_dag: { "CSE 1384": ["CSE 1284"], "CSE 2383": ["CSE 1384"] },
   reverse_dag: { "CSE 1284": ["CSE 1384"], "CSE 1384": ["CSE 2383"] },

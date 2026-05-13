@@ -31,6 +31,16 @@ export const DEFAULT_GRAPH_DEPTH = 5;
  *  Must be uppercased and trimmed before matching. */
 export const COURSE_CODE_RE = /^[A-Z]{2,4}\s\d{4}$/;
 
+/** Per-row diagnostic signals emitted by the prereq parser. Empty array
+ *  means "parser thinks it got everything cleanly." Non-empty means the
+ *  client (or model) should fall back to `raw_prose` for fields whose
+ *  warning indicates incomplete parsing. */
+export type PrereqWarning =
+  | "non_course_unparsed"
+  | "grade_signal_present_but_unparsed"
+  | "grade_signal_ambiguous"
+  | "logic_ambiguous";
+
 /** Prereq prose decomposed via the two-pass parser (see parser.ts).
  *
  *  Authoritative fields (lossless against MSU prose):
@@ -48,6 +58,8 @@ export interface Prereq {
   min_grade: "A" | "B" | "C" | "D" | null;
   non_course: string[];
   raw_prose: string;
+  /** v0.9.0 — diagnostic signals; empty array when fully parsed. */
+  parse_warnings: PrereqWarning[];
 }
 
 export interface Course {
@@ -66,6 +78,10 @@ export interface Course {
   cross_listed: string[];
   /** Canonical catalog URL for this course. */
   source_url: string;
+  /** v0.9.0 — human-readable one-line prereq summary built at corpus
+   *  build time from the prereq fields. Null when raw_prose is null.
+   *  Sentinel string when parse_warnings is non-empty. */
+  prereq_summary: string | null;
 }
 
 /** Adjacency list keyed by course code. */
