@@ -260,6 +260,149 @@ function classifyBucket(descriptor: string): CreditHourBucket | null {
  * Column indices: label=0, resident=1, non_resident=2 (confirmed across all
  * fixtures — the column-header row is the first tbody row, not thead).
  */
+// ---------------------------------------------------------------------------
+// Vetmed flat-rate parser
+// ---------------------------------------------------------------------------
+
+/**
+ * Find the "Effective …" line from any <em> or <p> text in the article body.
+ */
+function findEffectiveLine($: ReturnType<typeof cheerioLoad>): string {
+  let found = "";
+  $("article p em, article p, section p em, section p").each((_, el) => {
+    const t = $(el).text().replace(/\s+/g, " ").trim();
+    if (/^effective\b/i.test(t)) {
+      found = t;
+      return false; // break
+    }
+    return undefined;
+  });
+  return found || "Effective term not stated on source page";
+}
+
+/**
+ * Parse the vetmed.msstate.edu/tuition rate page.
+ *
+ * Page structure (different domain from controller pages — no Bootstrap tabs):
+ *   <p><em>Effective Fall 2025 Semester through Summer 2026</em></p>
+ *   <h3><strong>Mississippi Resident Costs</strong></h3>
+ *   <table class="table">
+ *     <thead><tr><th></th><th>Semester Rate</th><th>Annual Rate</th></tr></thead>
+ *     <tbody>
+ *       <tr><td>Base Tuition</td><td>$13,682.88</td><td>$27,365.75</td></tr>
+ *       ...
+ *       <tr><td>Total Charge to Student</td><td>$14,951.50</td><td>$29,903.00</td></tr>
+ *     </tbody>
+ *   </table>
+ *   <h3><strong>Non-Resident Costs</strong></h3>
+ *   <table class="table">...</table>
+ *
+ * Strategy: find each <h3> to determine residency, then select the immediately
+ * following <table> sibling. Column 1 = Semester Rate, column 2 = Annual Rate.
+ * "Total Charge to Student" provides the totals; line items are the other rows.
+ * Produces two TuitionRateRow records per residency: one per_semester_flat and
+ * one annual_flat.
+ */
+export function parseVetmedRateHtml(html: string, pageUrl: string): TuitionRateRow[] {
+  const $ = cheerioLoad(html);
+  const out: TuitionRateRow[] = [];
+  const effective_term = findEffectiveLine($);
+
+  // Find each h3 that names a residency group, then grab its next table sibling.
+  $("h3").each((_, h3El) => {
+    const heading = $(h3El).text().replace(/\s+/g, " ").trim();
+    let residency: Residency | null = null;
+    if (/non.?resident/i.test(heading)) residency = "non_resident";
+    else if (/resident/i.test(heading)) residency = "resident";
+    if (!residency) return;
+
+    // Find the immediately following table sibling.
+    const $table = $(h3El).next("table");
+    if (!$table.length) return;
+
+    // Determine column indices from the <thead> row.
+    const headerCells = $table
+      .find("thead tr")
+      .first()
+      .find("th, td")
+      .map((_, c) => $(c).text().replace(/\s+/g, " ").trim().toLowerCase())
+      .get();
+
+    const semIdx = headerCells.findIndex((c) => /semester/i.test(c));
+    const annIdx = headerCells.findIndex((c) => /annual/i.test(c));
+    // Fall back to positional defaults if header detection fails.
+    const semCol = semIdx >= 0 ? semIdx : 1;
+    const annCol = annIdx >= 0 ? annIdx : 2;
+
+    const semItems: LineItem[] = [];
+    const annItems: LineItem[] = [];
+    let semTotal: number | null = null;
+    let annTotal: number | null = null;
+
+    $table.find("tbody tr").each((_, tr) => {
+      const cells = $(tr)
+        .find("td, th")
+        .map((_, c) => $(c).text().replace(/\s+/g, " ").trim())
+        .get();
+      if (cells.length < 1) return;
+      const label = cells[0];
+      if (!label) return;
+
+      const semAmt = semCol < cells.length ? parseMoney(cells[semCol]) : null;
+      const annAmt = annCol < cells.length ? parseMoney(cells[annCol]) : null;
+
+      if (/total/i.test(label)) {
+        semTotal = semAmt;
+        annTotal = annAmt;
+      } else {
+        if (semAmt !== null) semItems.push({ label, amount_usd: semAmt });
+        if (annAmt !== null) annItems.push({ label, amount_usd: annAmt });
+      }
+    });
+
+    // Fall back to summing line items if no explicit Total row found.
+    if (semTotal === null && semItems.length > 0) {
+      semTotal = semItems.reduce((s, li) => s + li.amount_usd, 0);
+    }
+    if (annTotal === null && annItems.length > 0) {
+      annTotal = annItems.reduce((s, li) => s + li.amount_usd, 0);
+    }
+
+    if (semTotal !== null && semTotal > 0) {
+      out.push({
+        campus: "vetmed",
+        level: "dvm",
+        residency,
+        term: "fall_spring",
+        rate_basis: "per_semester_flat",
+        credit_hour_bucket: null,
+        amount_usd: semTotal,
+        line_items: semItems,
+        effective_term,
+        source_url: pageUrl,
+        retrieved_at: RETRIEVED_AT_PLACEHOLDER,
+      });
+    }
+    if (annTotal !== null && annTotal > 0) {
+      out.push({
+        campus: "vetmed",
+        level: "dvm",
+        residency,
+        term: "annual",
+        rate_basis: "annual_flat",
+        credit_hour_bucket: null,
+        amount_usd: annTotal,
+        line_items: annItems,
+        effective_term,
+        source_url: pageUrl,
+        retrieved_at: RETRIEVED_AT_PLACEHOLDER,
+      });
+    }
+  });
+
+  return out;
+}
+
 export function parseControllerRateHtml(
   html: string,
   campus: CampusSlug,
