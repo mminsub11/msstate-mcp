@@ -39,12 +39,25 @@ function nodeToMarkdown($: CheerioAPI, el: Element): string[] {
   return text ? [text] : [];
 }
 
+/** Locate the main content container. Prefer the semantic <main> element if
+ *  it exists. On www.emergency.msstate.edu (Drupal 8) the page uses a
+ *  `<div role="main">` wrapper that contains BOTH `#main-content` and the
+ *  Important Contacts h3 (which lives in a sibling region). Prefer
+ *  `role="main"` over `#main-content` so we don't miss that contacts section. */
+function findMainContainer($: CheerioAPI): ReturnType<CheerioAPI> {
+  let main = $("main").first();
+  if (main.length > 0) return main;
+  main = $("div[role=main]").first();
+  if (main.length > 0) return main;
+  return $("#main-content").first();
+}
+
 export function parseGuidelineHtml(
   html: string,
   slug: string,
 ): Omit<GuidelineRow, "retrieved_at" | "aliases"> | null {
   const $ = cheerioLoad(html);
-  const main = $("main").first();
+  const main = findMainContainer($);
   if (main.length === 0) return null;
 
   const title =
@@ -71,7 +84,7 @@ export function parseGuidelineHtml(
 
 export function parseRefugeHtml(html: string): Omit<RefugeRow, "retrieved_at" | "source_url">[] {
   const $ = cheerioLoad(html);
-  const main = $("main").first();
+  const main = findMainContainer($);
   if (main.length === 0) return [];
   const table = main.find("table").first();
   if (table.length === 0) return [];
@@ -109,7 +122,7 @@ export function parseRefugeHtml(html: string): Omit<RefugeRow, "retrieved_at" | 
 
 export function parseContactsHtml(html: string): Omit<ContactRow, "retrieved_at" | "source_url">[] {
   const $ = cheerioLoad(html);
-  const main = $("main").first();
+  const main = findMainContainer($);
   if (main.length === 0) return [];
 
   // Find the "Important Contacts" heading and walk forward through its siblings.
@@ -134,12 +147,25 @@ export function parseContactsHtml(html: string): Omit<ContactRow, "retrieved_at"
     }
     if (tag === "ul") {
       $(el).find("> li").each((_, li) => {
-        const label = $(li).find("a").first().text().trim().replace(/\s+/g, " ");
-        const phone = $(li).find("strong").first().text().trim().replace(/\s+/g, " ");
-        if (!label || !phone) return;
-        // Drop ":" from a label like "EMERGENCY: 911" and trim.
-        const cleanLabel = label.replace(/:\s*\d+\s*$/, "").trim();
-        rows.push({ label: cleanLabel, phone, category });
+        // Phone: prefer the <a href="tel:..."> attribute (always the cleanest
+        // phone number). Fall back to <strong> only if no tel: link exists.
+        const telHref = $(li).find("a[href^='tel:']").first().attr("href") ?? "";
+        let phone = telHref ? telHref.replace(/^tel:/i, "").trim() : "";
+        if (!phone) {
+          phone = $(li).find("strong").first().text().trim().replace(/\s+/g, " ");
+        }
+        // A phone must contain at least one digit; otherwise skip the row.
+        if (!phone || !/\d/.test(phone)) return;
+
+        // Label: full <li> text, with the phone number stripped out, then
+        // strip stray trailing punctuation / colons.
+        const fullText = $(li).text().replace(/\s+/g, " ").trim();
+        let label = fullText;
+        const phoneEsc = phone.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        label = label.replace(new RegExp(phoneEsc, "g"), "").trim();
+        label = label.replace(/[:\s]+$/, "").trim();
+        if (!label) return;
+        rows.push({ label, phone, category });
       });
     }
   });
