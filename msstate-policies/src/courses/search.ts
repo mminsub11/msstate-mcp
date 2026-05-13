@@ -16,13 +16,18 @@ function tokenize(input: string): string[] {
   return input.normalize("NFKC").toLowerCase().split(TOKEN_SPLIT).filter((t) => t.length > 0);
 }
 
-interface IndexedDoc {
+export interface IndexedCourse {
   course: Course;
   codeTokens: string[];
   titleTokens: string[];
   descTokens: string[];
+  codeTf: Map<string, number>;
+  titleTf: Map<string, number>;
+  descTf: Map<string, number>;
   dl: number;
 }
+
+type IndexedDoc = IndexedCourse;
 
 const FIELD_WEIGHTS = { code: 4, title: 3, description: 1 } as const;
 const BM25_K1 = 1.2;
@@ -31,6 +36,16 @@ const BM25_B = 0.75;
 let docs: IndexedDoc[] = [];
 let df = new Map<string, number>();
 let avgLen = 0;
+
+function tfMap(tokens: string[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const t of tokens) m.set(t, (m.get(t) ?? 0) + 1);
+  return m;
+}
+
+export function __debugDocs(): IndexedCourse[] {
+  return docs;
+}
 
 export function indexCourses(courses: Course[]): void {
   docs = courses.map((c) => {
@@ -42,6 +57,9 @@ export function indexCourses(courses: Course[]): void {
       codeTokens,
       titleTokens,
       descTokens,
+      codeTf: tfMap(codeTokens),
+      titleTf: tfMap(titleTokens),
+      descTf: tfMap(descTokens),
       dl: codeTokens.length + titleTokens.length + descTokens.length,
     };
   });
@@ -66,12 +84,6 @@ function idf(token: string): number {
   return Math.log(1 + (n - dfi + 0.5) / (dfi + 0.5));
 }
 
-function countOf(token: string, arr: string[]): number {
-  let c = 0;
-  for (const t of arr) if (t === token) c++;
-  return c;
-}
-
 function bm25Term(tf: number, dl: number, idfV: number): number {
   if (tf <= 0) return 0;
   const denom = tf + BM25_K1 * (1 - BM25_B + (BM25_B * dl) / (avgLen || 1));
@@ -92,9 +104,9 @@ export function searchCourses(query: string, limit = 10): CourseHit[] {
     for (const q of qTokens) {
       const idfQ = idf(q);
       if (idfQ === 0) continue;
-      s += FIELD_WEIGHTS.code * bm25Term(countOf(q, d.codeTokens), d.dl, idfQ);
-      s += FIELD_WEIGHTS.title * bm25Term(countOf(q, d.titleTokens), d.dl, idfQ);
-      s += FIELD_WEIGHTS.description * bm25Term(countOf(q, d.descTokens), d.dl, idfQ);
+      s += FIELD_WEIGHTS.code * bm25Term(d.codeTf.get(q) ?? 0, d.dl, idfQ);
+      s += FIELD_WEIGHTS.title * bm25Term(d.titleTf.get(q) ?? 0, d.dl, idfQ);
+      s += FIELD_WEIGHTS.description * bm25Term(d.descTf.get(q) ?? 0, d.dl, idfQ);
     }
     if (s > 0) out.push({ course: d.course, score: s });
   }

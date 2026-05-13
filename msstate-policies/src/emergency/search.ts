@@ -32,12 +32,22 @@ function tokenize(input: string): string[] {
   return input.normalize("NFKC").toLowerCase().split(TOKEN_SPLIT).filter((t) => t.length > 0);
 }
 
+function tfMap(tokens: string[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const t of tokens) m.set(t, (m.get(t) ?? 0) + 1);
+  return m;
+}
+
 interface IndexedGuideline {
   row: GuidelineRow;
   titleTokens: string[];
   slugTokens: string[];
   bodyTokens: string[];
   aliasTokens: string[];
+  titleTf: Map<string, number>;
+  slugTf: Map<string, number>;
+  bodyTf: Map<string, number>;
+  aliasTf: Map<string, number>;
   dl: number;
 }
 
@@ -59,6 +69,10 @@ export function indexGuidelines(rows: GuidelineRow[]): void {
       slugTokens,
       bodyTokens,
       aliasTokens,
+      titleTf: tfMap(titleTokens),
+      slugTf: tfMap(slugTokens),
+      bodyTf: tfMap(bodyTokens),
+      aliasTf: tfMap(aliasTokens),
       dl: titleTokens.length + slugTokens.length + bodyTokens.length + aliasTokens.length,
     };
   });
@@ -83,12 +97,6 @@ function idf(token: string): number {
   return Math.log(1 + (n - dfi + 0.5) / (dfi + 0.5));
 }
 
-function countOf(token: string, arr: string[]): number {
-  let c = 0;
-  for (const t of arr) if (t === token) c++;
-  return c;
-}
-
 function bm25Term(tf: number, dl: number, idfV: number): number {
   if (tf <= 0) return 0;
   const denom = tf + BM25_K1 * (1 - BM25_B + (BM25_B * dl) / (avgLen || 1));
@@ -109,10 +117,10 @@ function bm25SearchGuidelines(query: string): BM25Hit[] {
     for (const q of qTokens) {
       const idfQ = idf(q);
       if (idfQ === 0) continue;
-      s += FIELD_WEIGHTS.title * bm25Term(countOf(q, d.titleTokens), d.dl, idfQ);
-      s += FIELD_WEIGHTS.slug  * bm25Term(countOf(q, d.slugTokens),  d.dl, idfQ);
-      s += FIELD_WEIGHTS.body  * bm25Term(countOf(q, d.bodyTokens),  d.dl, idfQ);
-      s += FIELD_WEIGHTS.alias * bm25Term(countOf(q, d.aliasTokens), d.dl, idfQ);
+      s += FIELD_WEIGHTS.title * bm25Term(d.titleTf.get(q) ?? 0, d.dl, idfQ);
+      s += FIELD_WEIGHTS.slug  * bm25Term(d.slugTf.get(q) ?? 0,  d.dl, idfQ);
+      s += FIELD_WEIGHTS.body  * bm25Term(d.bodyTf.get(q) ?? 0,  d.dl, idfQ);
+      s += FIELD_WEIGHTS.alias * bm25Term(d.aliasTf.get(q) ?? 0, d.dl, idfQ);
     }
     if (s > 0) out.push({ row: d.row, score: s });
   }
@@ -176,6 +184,7 @@ export function resolveGuideline(input: string): ResolveResult {
 interface IndexedRefuge {
   row: RefugeRow;
   buildingTokens: string[];
+  buildingTf: Map<string, number>;
   dl: number;
 }
 
@@ -186,7 +195,7 @@ let refugeAvgLen = 0;
 export function indexRefugeAreas(rows: RefugeRow[]): void {
   refugeDocs = rows.map((row) => {
     const buildingTokens = tokenize(row.building);
-    return { row, buildingTokens, dl: buildingTokens.length };
+    return { row, buildingTokens, buildingTf: tfMap(buildingTokens), dl: buildingTokens.length };
   });
   refugeDf = new Map();
   let total = 0;
@@ -232,7 +241,7 @@ export function findRefugeArea(query: string): RefugeRow[] {
     for (const q of qTokens) {
       const idfQ = refugeIdf(q);
       if (idfQ === 0) continue;
-      s += refugeBm25(countOf(q, d.buildingTokens), d.dl, idfQ);
+      s += refugeBm25(d.buildingTf.get(q) ?? 0, d.dl, idfQ);
     }
     if (s > 0) scored.push({ row: d.row, score: s });
   }

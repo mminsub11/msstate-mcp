@@ -1,6 +1,6 @@
 import { describe, test, before } from "node:test";
 import assert from "node:assert/strict";
-import { indexCourses, searchCourses } from "../../src/courses/search.js";
+import { indexCourses, searchCourses, __debugDocs } from "../../src/courses/search.js";
 import type { Course } from "../../src/courses/types.js";
 
 const COURSES: Course[] = [
@@ -71,5 +71,16 @@ describe("searchCourses — BM25 over course corpus", () => {
   test("respects limit", () => {
     const hits = searchCourses("course", 1);
     assert.ok(hits.length <= 1);
+  });
+});
+
+describe("courses BM25 — index uses precomputed term frequencies", () => {
+  test("internal IndexedCourse exposes tf maps after indexing", () => {
+    const debug = __debugDocs();
+    assert.ok(debug.length > 0, "indexCourses must have populated docs");
+    const sample = debug[0];
+    assert.ok(sample.codeTf instanceof Map, "codeTf must be a Map<string, number>");
+    assert.ok(sample.titleTf instanceof Map);
+    assert.ok(sample.descTf instanceof Map);
   });
 });
