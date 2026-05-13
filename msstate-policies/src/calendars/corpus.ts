@@ -19,13 +19,53 @@ import {
 } from "./types.js";
 import { scrapeCalendar } from "./scraper.js";
 
+// Warm-up gate: handlers await this before searching so the first request
+// gets a real answer even if the background warm is still in flight.
+let warmPromise: Promise<void> = Promise.resolve();
+
+export function setCalendarWarmReady(p: Promise<unknown>): void {
+  // Swallow rejection at the gate — handlers should fall back to whatever
+  // in-memory state the warm attempt managed to populate, not crash.
+  warmPromise = p.then(() => undefined, () => undefined);
+}
+
+export function awaitCalendarWarm(): Promise<void> {
+  return warmPromise;
+}
+
+export function resetCalendarWarmForTests(): void {
+  warmPromise = Promise.resolve();
+}
+
 interface CacheEntry {
   rows: CalendarRow[];
   expiresAt: number;
   error: string | null;
+  warnings: string[];
+  // last successful rows, kept even if the most recent attempt errored
+  lastGoodRows: CalendarRow[];
+  lastGoodAt: number | null;
 }
 
 const cache = new Map<CalendarSource, CacheEntry>();
+// Short TTL for error entries: debounces upstream during flaky conditions
+// without locking a source out for the rest of the day (vs. the long success TTL).
+const NEGATIVE_TTL_MS = 5 * 60 * 1000;
+
+type Scraper = (source: CalendarSource) => Promise<ScrapeResult>;
+let scraperImpl: Scraper = scrapeCalendar;
+export function __setScraperForTests(s: Scraper): void { scraperImpl = s; }
+
+export function resetCalendarCacheForTests(opts: { keepLastGood?: boolean } = {}): void {
+  if (!opts.keepLastGood) {
+    cache.clear();
+    scraperImpl = scrapeCalendar;
+    return;
+  }
+  for (const [k, v] of cache) {
+    cache.set(k, { ...v, expiresAt: 0 });
+  }
+}
 
 function ttlMsFor(source: CalendarSource): number {
   return source === "housing" ? 6 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
@@ -82,29 +122,45 @@ export async function loadCalendarSource(source: CalendarSource): Promise<Scrape
   const now = Date.now();
   const hit = cache.get(source);
   if (hit && hit.expiresAt > now) {
-    return { source, rows: hit.rows, error: hit.error };
+    return { source, rows: hit.rows, error: hit.error, warnings: hit.warnings.length > 0 ? hit.warnings : undefined };
   }
-  const result = await scrapeCalendar(source);
-  cache.set(source, {
-    rows: result.rows,
-    error: result.error,
-    expiresAt: now + ttlMsFor(source),
-  });
-  if (result.error) {
-    log("warn", "calendar source scrape error", { source, error: result.error });
+  const result = await scraperImpl(source);
+  const wasError = result.error !== null;
+  const lkg = hit?.lastGoodRows ?? [];
+  const entry: CacheEntry = wasError
+    ? {
+        rows: lkg, // serve last-known-good on transient error
+        error: result.error,
+        warnings: result.warnings ?? [],
+        expiresAt: now + NEGATIVE_TTL_MS,
+        lastGoodRows: lkg,
+        lastGoodAt: hit?.lastGoodAt ?? null,
+      }
+    : {
+        rows: result.rows,
+        error: null,
+        warnings: result.warnings ?? [],
+        expiresAt: now + ttlMsFor(source),
+        lastGoodRows: result.rows,
+        lastGoodAt: now,
+      };
+  cache.set(source, entry);
+  if (wasError) {
+    log("warn", "calendar source scrape error (serving LKG)", { source, error: result.error, lkg_count: lkg.length });
   }
-  return result;
+  return { source, rows: entry.rows, error: entry.error, warnings: entry.warnings.length > 0 ? entry.warnings : undefined };
 }
 
 export function getCalendarsCorpusHealth(): {
-  per_source: Record<string, { row_count: number; error: string | null }>;
+  per_source: Record<string, { row_count: number; error: string | null; warnings: string[] }>;
 } {
-  const per_source: Record<string, { row_count: number; error: string | null }> = {};
+  const per_source: Record<string, { row_count: number; error: string | null; warnings: string[] }> = {};
   for (const source of CALENDAR_SOURCES) {
     const entry = cache.get(source);
     per_source[source] = {
       row_count: entry?.rows.length ?? 0,
       error: entry?.error ?? null,
+      warnings: entry?.warnings ?? [],
     };
   }
   return { per_source };

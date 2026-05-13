@@ -27,6 +27,10 @@ interface IndexedDoc {
   synonymsTokens: string[];
   descriptionTokens: string[];
   termTokens: string[];
+  eventTf: Map<string, number>;
+  synonymsTf: Map<string, number>;
+  descriptionTf: Map<string, number>;
+  termTf: Map<string, number>;
   dl: number;
 }
 
@@ -37,6 +41,12 @@ const BM25_B = 0.75;
 let docs: IndexedDoc[] = [];
 let df = new Map<string, number>();
 let avgLen = 0;
+
+function tfMap(tokens: string[]): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const t of tokens) m.set(t, (m.get(t) ?? 0) + 1);
+  return m;
+}
 
 export function indexCalendarRows(rows: CalendarRow[]): void {
   docs = rows.map((r) => {
@@ -51,6 +61,10 @@ export function indexCalendarRows(rows: CalendarRow[]): void {
       synonymsTokens,
       descriptionTokens,
       termTokens,
+      eventTf: tfMap(eventTokens),
+      synonymsTf: tfMap(synonymsTokens),
+      descriptionTf: tfMap(descriptionTokens),
+      termTf: tfMap(termTokens),
       dl: eventTokens.length + synonymsTokens.length + descriptionTokens.length + termTokens.length,
     };
   });
@@ -75,12 +89,6 @@ function idf(token: string): number {
   return Math.log(1 + (n - dfi + 0.5) / (dfi + 0.5));
 }
 
-function countOf(token: string, arr: string[]): number {
-  let c = 0;
-  for (const t of arr) if (t === token) c++;
-  return c;
-}
-
 function bm25Term(tf: number, dl: number, idfV: number): number {
   if (tf <= 0) return 0;
   const denom = tf + BM25_K1 * (1 - BM25_B + (BM25_B * dl) / (avgLen || 1));
@@ -101,10 +109,10 @@ export function searchCalendarRows(query: string, limit = 10): CalendarHit[] {
     for (const q of qTokens) {
       const idfQ = idf(q);
       if (idfQ === 0) continue;
-      s += FIELD_WEIGHTS.event * bm25Term(countOf(q, d.eventTokens), d.dl, idfQ);
-      s += FIELD_WEIGHTS.synonyms * bm25Term(countOf(q, d.synonymsTokens), d.dl, idfQ);
-      s += FIELD_WEIGHTS.description * bm25Term(countOf(q, d.descriptionTokens), d.dl, idfQ);
-      s += FIELD_WEIGHTS.term * bm25Term(countOf(q, d.termTokens), d.dl, idfQ);
+      s += FIELD_WEIGHTS.event * bm25Term(d.eventTf.get(q) ?? 0, d.dl, idfQ);
+      s += FIELD_WEIGHTS.synonyms * bm25Term(d.synonymsTf.get(q) ?? 0, d.dl, idfQ);
+      s += FIELD_WEIGHTS.description * bm25Term(d.descriptionTf.get(q) ?? 0, d.dl, idfQ);
+      s += FIELD_WEIGHTS.term * bm25Term(d.termTf.get(q) ?? 0, d.dl, idfQ);
     }
     if (s > 0) out.push({ row: d.row, score: s });
   }

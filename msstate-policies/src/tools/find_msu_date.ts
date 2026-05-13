@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { getAllCalendarRows, searchCalendarRows } from "../calendars/search.js";
+import { awaitCalendarWarm } from "../calendars/corpus.js";
 import type { CalendarRow } from "../calendars/types.js";
 
 const FindMsuDateInput = z
@@ -50,6 +51,7 @@ export const find_msu_date = {
   zodSchema: FindMsuDateInput,
   async handler(rawInput: unknown) {
     const input = FindMsuDateInput.parse(rawInput);
+    await awaitCalendarWarm();
     const hits = searchCalendarRows(input.q, 10);
     const matches: Array<CalendarRow & { score?: number }> = hits.map((h) => ({
       ...h.row,

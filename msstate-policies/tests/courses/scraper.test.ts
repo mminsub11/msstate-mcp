@@ -115,3 +115,27 @@ describe("fetchCourseDetail", () => {
     assert.equal(called, false);
   });
 });
+
+describe("scrapeAllCourses — dept-page fetch parallelism", () => {
+  test("dept pages run through the bounded pool, not serially", async () => {
+    const events: string[] = [];
+    const deptUrls = [
+      "https://catalog.msstate.edu/undergraduate/a/",
+      "https://catalog.msstate.edu/undergraduate/b/",
+      "https://catalog.msstate.edu/undergraduate/c/",
+      "https://catalog.msstate.edu/undergraduate/d/",
+    ];
+    const fetchIndex = async () => deptUrls.map((u) => `<a href="${u}">dept</a>`).join("");
+    const fetchDept = async (u: string) => {
+      events.push(`start:${u}`);
+      await new Promise((r) => setTimeout(r, 20));
+      events.push(`end:${u}`);
+      return "<table></table>";
+    };
+    const { scrapeAllCourses } = await import("../../src/courses/scraper.js");
+    await scrapeAllCourses({ fetchIndex, fetchDept } as any).catch(() => {});
+    const firstEndIdx = events.findIndex((e) => e.startsWith("end:"));
+    const startsBeforeFirstEnd = events.slice(0, firstEndIdx).filter((e) => e.startsWith("start:")).length;
+    assert.ok(startsBeforeFirstEnd >= 2, `expected concurrent dept fetches; saw ${startsBeforeFirstEnd}`);
+  });
+});

@@ -7,10 +7,11 @@
  * Reverse direction ("unlocks"): from root, follow `reverse_dag` edges
  * (prereq → courses that require it). Useful for "what unlocks after X?".
  *
- * Cycle detection via visited-set. Depth clamped to [MIN_GRAPH_DEPTH,
- * MAX_GRAPH_DEPTH]. Result includes `truncated: true` whenever the walk
- * stopped early (depth cap or cycle), so the client knows the picture
- * is partial.
+ * Cycle detection via per-path ancestor set; convergent DAG edges in
+ * `emittedEdge` are emitted while only the first visit expands the node.
+ * Depth clamped to [MIN_GRAPH_DEPTH, MAX_GRAPH_DEPTH]. Result includes
+ * `truncated: true` whenever the walk stopped early (depth cap or cycle),
+ * so the client knows the picture is partial.
  */
 import {
   type CourseCorpus,
@@ -57,48 +58,64 @@ export function walkGraph(
   const adj = direction === "prereqs" ? corpus.forward_dag : corpus.reverse_dag;
   const nodes: GraphNode[] = [{ code: rootCode, title: root.title, depth: 0 }];
   const edges: GraphEdge[] = [];
-  const visited = new Set<string>([rootCode]);
+  const emittedNode = new Set<string>([rootCode]);
+  const emittedEdge = new Set<string>();
   let truncated = false;
   let depth_used = 0;
 
-  let frontier: Array<{ code: string; depth: number }> = [{ code: rootCode, depth: 0 }];
-  while (frontier.length > 0) {
-    const next: Array<{ code: string; depth: number }> = [];
-    for (const { code, depth } of frontier) {
-      if (depth >= depth_used_max) {
-        if ((adj[code] ?? []).length > 0) truncated = true;
-        continue;
-      }
-      const neighbors = adj[code] ?? [];
-      for (const n of neighbors) {
-        if (visited.has(n)) {
-          notes.push(`cycle detected at ${n}`);
-          truncated = true;
+  // BFS expansion order; each entry carries the ancestor path from root
+  // so true back-edges (path.has(n)) are distinguishable from convergent
+  // cross-edges (emittedNode.has(n) only).
+  function expandFrom(start: string): void {
+    let frontier: Array<{ code: string; depth: number; path: ReadonlySet<string> }> = [
+      { code: start, depth: 0, path: new Set([start]) },
+    ];
+    while (frontier.length > 0) {
+      const next: typeof frontier = [];
+      for (const { code, depth, path } of frontier) {
+        if (depth >= depth_used_max) {
+          if ((adj[code] ?? []).length > 0) truncated = true;
           continue;
         }
-        visited.add(n);
-        const c = corpus.records[n];
-        const title = c?.title ?? "(unknown)";
-        nodes.push({ code: n, title, depth: depth + 1 });
-        // Edge metadata: in forward direction, the edge represents
-        // "code requires n", carrying the logic/grade from code's prereqs.
-        // In reverse, the edge "n is unlocked by code" — surface the same
-        // metadata, just looked up via the source course.
-        const sourceCode = direction === "prereqs" ? code : n;
-        const sc = corpus.records[sourceCode];
-        const p = sc?.prereqs;
-        edges.push({
-          from: code,
-          to: n,
-          logic: p?.logic ?? null,
-          min_grade: p?.min_grade ?? null,
-        });
-        next.push({ code: n, depth: depth + 1 });
-        depth_used = Math.max(depth_used, depth + 1);
+        const neighbors = adj[code] ?? [];
+        for (const n of neighbors) {
+          if (path.has(n)) {
+            notes.push(`cycle detected at ${n}`);
+            truncated = true;
+            continue;
+          }
+          // Always emit the edge — convergent edges in a DAG are real data.
+          const edgeKey = `${code}->${n}`;
+          if (!emittedEdge.has(edgeKey)) {
+            const sourceCode = direction === "prereqs" ? code : n;
+            const p = corpus.records[sourceCode]?.prereqs;
+            edges.push({
+              from: code,
+              to: n,
+              logic: p?.logic ?? null,
+              min_grade: p?.min_grade ?? null,
+            });
+            emittedEdge.add(edgeKey);
+          }
+          // Emit node + expand only the first time we see it.
+          if (!emittedNode.has(n)) {
+            emittedNode.add(n);
+            const title = corpus.records[n]?.title ?? "(unknown)";
+            nodes.push({ code: n, title, depth: depth + 1 });
+            const nextPath = new Set(path);
+            nextPath.add(n);
+            next.push({ code: n, depth: depth + 1, path: nextPath });
+            // BFS guarantees first-seen depth is the shortest path to n; depth_used
+            // is therefore the shortest-path diameter from root, not the longest.
+            depth_used = Math.max(depth_used, depth + 1);
+          }
+        }
       }
+      frontier = next;
     }
-    frontier = next;
   }
+
+  expandFrom(rootCode);
 
   return {
     root: rootCode,

@@ -1,7 +1,7 @@
 import { describe, test, before } from "node:test";
 import assert from "node:assert/strict";
 import { search_msu_courses } from "../../src/tools/search_msu_courses.js";
-import { setCourseCorpus } from "../../src/courses/corpus.js";
+import { setCourseCorpus, __resetCourseCorpusForTests } from "../../src/courses/corpus.js";
 import type { CourseCorpus } from "../../src/courses/types.js";
 
 const CORPUS: CourseCorpus = {
@@ -49,5 +49,15 @@ describe("search_msu_courses", () => {
     const res = await search_msu_courses.handler({ q: "course", limit: 1 });
     const parsed = JSON.parse(res.content[0].text);
     assert.ok(parsed.matches.length <= 1);
+  });
+});
+
+describe("search_msu_courses — corpus unloaded", () => {
+  test("returns a structured error when the course corpus is not loaded", async () => {
+    __resetCourseCorpusForTests();
+    const res = await search_msu_courses.handler({ q: "calculus" });
+    assert.equal(res.isError, true);
+    const text = res.content[0].text;
+    assert.match(text, /course corpus not loaded/i);
   });
 });

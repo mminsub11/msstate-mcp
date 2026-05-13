@@ -88,6 +88,8 @@ export interface ScrapeResult {
   rows: CalendarRow[];
   /** Set when scrape failed and rows is empty. Logged into health_check. */
   error: string | null;
+  /** Per-entry failure messages when some sub-pages/PDFs failed but others succeeded. */
+  warnings?: string[];
 }
 
 export class CalendarWafError extends Error {

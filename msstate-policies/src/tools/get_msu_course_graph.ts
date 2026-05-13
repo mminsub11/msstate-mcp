@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 import { walkGraph } from "../courses/prereq.js";
-import { getCourseCorpus, isCourseCodeValid } from "../courses/corpus.js";
+import { getCourseCorpus, isCourseCodeValid, isCourseCorpusLoaded } from "../courses/corpus.js";
 import { DEFAULT_GRAPH_DEPTH, MAX_GRAPH_DEPTH, MAX_QUERY_CHARS, MIN_GRAPH_DEPTH } from "../courses/types.js";
 
 const Input = z
@@ -19,6 +19,12 @@ export const get_msu_course_graph = {
   inputSchema: zodToJsonSchema(Input, { target: "openApi3" }),
   zodSchema: Input,
   async handler(rawInput: unknown) {
+    if (!isCourseCorpusLoaded()) {
+      return {
+        isError: true,
+        content: [{ type: "text" as const, text: "course corpus not loaded — server starting up or build skipped course bake" }],
+      };
+    }
     const input = Input.parse(rawInput);
     const normalized = isCourseCodeValid(input.code);
     if (!normalized) throw new Error("invalid_course_code");

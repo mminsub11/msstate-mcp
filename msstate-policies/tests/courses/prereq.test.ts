@@ -114,3 +114,61 @@ describe("walkGraph — reverse (unlocks)", () => {
     assert.deepEqual(g.nodes.map((n) => n.code).sort(), ["CSE 1284", "CSE 1384", "CSE 2213"]);
   });
 });
+
+describe("walkGraph — shared prerequisites are not cycles", () => {
+  test("re-converging edges are emitted, not dropped as cycle", () => {
+    // MA 1723 and MA 2113 both require MA 1713
+    const corpus = mkCorpus([
+      mkCourse("MA 1713", "Calc I"),
+      mkCourse("MA 1723", "Calc II", ["MA 1713"]),
+      mkCourse("MA 2113", "Calc III", ["MA 1713"]),
+      mkCourse("MA 3253", "Diff Eq", ["MA 1723", "MA 2113"]),
+    ]);
+    const r = walkGraph(corpus, "MA 3253", "prereqs", 5);
+    const fromTo = r.edges.map((e) => `${e.from}->${e.to}`).sort();
+    assert.deepEqual(
+      fromTo,
+      ["MA 1723->MA 1713", "MA 2113->MA 1713", "MA 3253->MA 1723", "MA 3253->MA 2113"],
+      "both convergent edges to MA 1713 must be emitted",
+    );
+    assert.equal(r.truncated, false, "shared prereqs are not a cycle and not truncation");
+    assert.equal(
+      r.notes.some((n) => /cycle/i.test(n)),
+      false,
+      "no spurious 'cycle detected' note for a DAG",
+    );
+  });
+
+  test("MA 1713 appears once in nodes even when two parents reference it", () => {
+    const corpus = mkCorpus([
+      mkCourse("MA 1713", "Calc I"),
+      mkCourse("MA 1723", "Calc II", ["MA 1713"]),
+      mkCourse("MA 2113", "Calc III", ["MA 1713"]),
+      mkCourse("MA 3253", "Diff Eq", ["MA 1723", "MA 2113"]),
+    ]);
+    const r = walkGraph(corpus, "MA 3253", "prereqs", 5);
+    const ma1713Nodes = r.nodes.filter((n) => n.code === "MA 1713");
+    assert.equal(ma1713Nodes.length, 1, "shared node must be emitted exactly once");
+  });
+
+  test("a true cycle is still detected and truncated", () => {
+    // Pathological: A requires B, B requires A
+    const corpus = mkCorpus([mkCourse("XX 1000", "A", ["XX 2000"]), mkCourse("XX 2000", "B", ["XX 1000"])]);
+    const r = walkGraph(corpus, "XX 1000", "prereqs", 5);
+    assert.equal(r.truncated, true, "a true 2-cycle must mark truncated");
+    assert.equal(r.notes.some((n) => /cycle/i.test(n)), true, "must emit cycle note");
+  });
+
+  test("a 3-node cycle is detected (path-set isolates from global visited)", () => {
+    // A -> B -> C -> A: only path-based detection distinguishes this from
+    // a legitimate convergent cross-edge.
+    const corpus = mkCorpus([
+      mkCourse("XX 1000", "A", ["XX 2000"]),
+      mkCourse("XX 2000", "B", ["XX 3000"]),
+      mkCourse("XX 3000", "C", ["XX 1000"]),
+    ]);
+    const r = walkGraph(corpus, "XX 1000", "prereqs", 5);
+    assert.equal(r.truncated, true, "3-node cycle must mark truncated");
+    assert.equal(r.notes.some((n) => /cycle/i.test(n)), true, "must emit cycle note");
+  });
+});

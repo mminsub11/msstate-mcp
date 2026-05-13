@@ -24,7 +24,7 @@ import { chain_find_relevant_policies } from "./tools/chain_find_relevant.js";
 import { cite_policy } from "./tools/cite_policy.js";
 import { find_msu_date } from "./tools/find_msu_date.js";
 import { get_msu_calendar, indexCalendarRowsForGetter } from "./tools/get_msu_calendar.js";
-import { loadAllCalendarRows } from "./calendars/corpus.js";
+import { loadAllCalendarRows, setCalendarWarmReady } from "./calendars/corpus.js";
 import { indexCalendarRows } from "./calendars/search.js";
 import { search_msu_courses } from "./tools/search_msu_courses.js";
 import { get_msu_course } from "./tools/get_msu_course.js";
@@ -173,7 +173,7 @@ async function main(): Promise<void> {
       });
     });
 
-  loadAllCalendarRows()
+  const calendarWarm = loadAllCalendarRows()
     .then((rows) => {
       indexCalendarRows(rows);
       indexCalendarRowsForGetter(rows);
@@ -184,6 +184,7 @@ async function main(): Promise<void> {
         err: err instanceof Error ? err.message : String(err),
       });
     });
+  setCalendarWarmReady(calendarWarm);
 
   loadBakedCourseCorpus();
   loadBakedEmergencyCorpus();

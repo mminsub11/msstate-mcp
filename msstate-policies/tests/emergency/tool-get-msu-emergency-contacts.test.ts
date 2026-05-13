@@ -54,15 +54,37 @@ describe("get_msu_emergency_contacts", () => {
     const parsed = JSON.parse(res.content[0].text);
     assert.equal(parsed.contacts.length, 1);
   });
-  test("unknown category returns empty contacts (recoverable)", async () => {
+  test("unknown category signals invalid category with isError + disclaimer", async () => {
     const res = await get_msu_emergency_contacts.handler({ category: "weather" });
-    const parsed = JSON.parse(res.content[0].text);
-    assert.deepEqual(parsed.contacts, []);
+    const text = res.content?.[0]?.text ?? "";
+    assert.ok(
+      res.isError === true || /invalid|allowed|unknown category/i.test(text),
+      "must signal invalid category, not empty success",
+    );
+    const parsed = JSON.parse(text);
     assert.equal(parsed.disclaimer, MANDATORY_DISCLAIMER);
   });
   test("default (no category arg) treats as 'all'", async () => {
     const res = await get_msu_emergency_contacts.handler({});
     const parsed = JSON.parse(res.content[0].text);
     assert.equal(parsed.contacts.length, 3);
+  });
+});
+
+describe("get_msu_emergency_contacts — category validation", () => {
+  test("rejects unknown category with a structured response, not empty list", async () => {
+    const res = await get_msu_emergency_contacts.handler({ category: "garbage" });
+    const text = res.content?.[0]?.text ?? "";
+    assert.ok(
+      res.isError === true || /invalid|allowed|unknown category/i.test(text),
+      "must signal invalid category, not empty success",
+    );
+  });
+
+  test("hyphenated alias 'off-campus' resolves to off_campus", async () => {
+    const res = await get_msu_emergency_contacts.handler({ category: "off-campus" });
+    const parsed = JSON.parse(res.content[0].text);
+    assert.ok(parsed.contacts.length > 0, "alias must route to off_campus contacts");
+    assert.equal(parsed.disclaimer.startsWith("If this is a life-threatening emergency"), true);
   });
 });

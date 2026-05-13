@@ -68,7 +68,11 @@ export function parseDateRange(
     const d2 = Number(twoMonth[5]);
     const y1 = twoMonth[3] ? Number(twoMonth[3]) : (twoMonth[6] ? Number(twoMonth[6]) : fallbackYear);
     const y2 = twoMonth[6] ? Number(twoMonth[6]) : (y1 ?? fallbackYear);
-    if (m1 && m2 && y1 && y2) return [iso(y1, m1, d1), iso(y2, m2, d2)];
+    if (m1 && m2 && y1 && y2) {
+      const s = iso(y1, m1, d1);
+      const e = iso(y2, m2, d2);
+      if (s && e) return [s, e];
+    }
   }
 
   // Single-month range: "Month D-D, YYYY"
@@ -78,7 +82,11 @@ export function parseDateRange(
     const d1 = Number(oneMonthRange[2]);
     const d2 = Number(oneMonthRange[3]);
     const y = oneMonthRange[4] ? Number(oneMonthRange[4]) : fallbackYear;
-    if (m && y) return [iso(y, m, d1), iso(y, m, d2)];
+    if (m && y) {
+      const s = iso(y, m, d1);
+      const e = iso(y, m, d2);
+      if (s && e) return [s, e];
+    }
   }
 
   // Single date: "Month D, YYYY" or "DayOfWeek, Month D, YYYY"
@@ -89,13 +97,18 @@ export function parseDateRange(
     const y = single[3] ? Number(single[3]) : fallbackYear;
     if (m && y) {
       const v = iso(y, m, d);
-      return [v, v];
+      if (v) return [v, v];
     }
   }
   return null;
 }
 
-function iso(y: number, m: number, d: number): string {
+function iso(y: number, m: number, d: number): string | null {
+  if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(d)) return null;
+  if (m < 1 || m > 12) return null;
+  if (d < 1 || d > 31) return null;
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) return null;
   return `${y}`.padStart(4, "0") + "-" + `${m}`.padStart(2, "0") + "-" + `${d}`.padStart(2, "0");
 }
 

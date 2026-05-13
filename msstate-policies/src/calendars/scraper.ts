@@ -15,7 +15,7 @@
  *     binary downloads + pdf-parse, returns the full row set for the source.
  */
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
-import { httpGet } from "../http.js";
+import { httpGet as defaultHttpGet } from "../http.js";
 import { log } from "../log.js";
 import {
   CALENDAR_URLS,
@@ -38,6 +38,11 @@ import {
   parseGradPdfText,
   type GradPdfEntry,
 } from "./parsers/pdf_calendar.js";
+
+type HttpGet = typeof defaultHttpGet;
+let httpGet: HttpGet = defaultHttpGet;
+export function __setHttpGetForTests(fn: HttpGet): void { httpGet = fn; }
+export function __resetHttpGetForTests(): void { httpGet = defaultHttpGet; }
 
 const SUB_FETCH_CONCURRENCY = 4;
 const HTML_TIMEOUT_MS = 15_000;
@@ -154,6 +159,7 @@ async function scrapeTermB(source: TermPageSource): Promise<ScrapeResult> {
     return { source, rows: [], error: "no term entries found in index" };
   }
   const rows: CalendarRow[] = [];
+  const warnings: string[] = [];
   let lastError: string | null = null;
   for (let i = 0; i < entries.length; i += SUB_FETCH_CONCURRENCY) {
     const batch = entries.slice(i, i + SUB_FETCH_CONCURRENCY);
@@ -163,15 +169,20 @@ async function scrapeTermB(source: TermPageSource): Promise<ScrapeResult> {
           const res = await httpGet(entry.url, { timeoutMs: HTML_TIMEOUT_MS });
           const body = typeof res.body === "string" ? res.body : res.body.toString("utf8");
           if (detectCalendarWaf(body)) throw new CalendarWafError(source, entry.url);
-          return parseTermPage(body, source, entry);
+          return { rows: parseTermPage(body, source, entry), warning: null as string | null };
         } catch (err) {
-          lastError = err instanceof Error ? err.message : String(err);
-          log("warn", "term page fetch failed", { source, url: entry.url, err: lastError });
-          return [] as CalendarRow[];
+          const msg = err instanceof Error ? err.message : String(err);
+          // last-writer-wins under Promise.all concurrency — any representative error suffices
+          lastError = msg;
+          log("warn", "term page fetch failed", { source, url: entry.url, err: msg });
+          return { rows: [] as CalendarRow[], warning: `${entry.url}: ${msg}` };
         }
       }),
     );
-    for (const r of results) rows.push(...r);
+    for (const r of results) {
+      rows.push(...r.rows);
+      if (r.warning) warnings.push(r.warning);
+    }
   }
   // Aggregate-level dedup: same event/start in DIFFERENT terms is legitimate
   // (e.g., "Classes begin" in Spring 2027 vs Fall 2027). Same event/start in
@@ -186,7 +197,8 @@ async function scrapeTermB(source: TermPageSource): Promise<ScrapeResult> {
   return {
     source,
     rows: dedupedRows,
-    error: dedupedRows.length === 0 ? lastError ?? "no rows extracted" : null,
+    error: dedupedRows.length === 0 ? lastError ?? "no rows extracted" : (warnings.length > 0 ? lastError : null),
+    warnings: warnings.length > 0 ? warnings : undefined,
   };
 }
 
@@ -211,6 +223,7 @@ async function scrapeGradD(): Promise<ScrapeResult> {
     return { source: "grad_school_calendar", rows: [], error: "no PDF entries found in grad index" };
   }
   const rows: CalendarRow[] = [];
+  const warnings: string[] = [];
   let lastError: string | null = null;
   for (let i = 0; i < entries.length; i += SUB_FETCH_CONCURRENCY) {
     const batch = entries.slice(i, i + SUB_FETCH_CONCURRENCY);
@@ -227,15 +240,20 @@ async function scrapeGradD(): Promise<ScrapeResult> {
             throw new Error(`not a valid PDF: ${entry.url}`);
           }
           const parsed = await pdfParse(buf);
-          return parseGradPdfText(parsed.text, entry);
+          return { rows: parseGradPdfText(parsed.text, entry), warning: null as string | null };
         } catch (err) {
-          lastError = err instanceof Error ? err.message : String(err);
-          log("warn", "grad PDF fetch/parse failed", { url: entry.url, err: lastError });
-          return [] as CalendarRow[];
+          const msg = err instanceof Error ? err.message : String(err);
+          // last-writer-wins under Promise.all concurrency — any representative error suffices
+          lastError = msg;
+          log("warn", "grad PDF fetch/parse failed", { url: entry.url, err: msg });
+          return { rows: [] as CalendarRow[], warning: `${entry.url}: ${msg}` };
         }
       }),
     );
-    for (const r of results) rows.push(...r);
+    for (const r of results) {
+      rows.push(...r.rows);
+      if (r.warning) warnings.push(r.warning);
+    }
   }
   const aggregateSeen = new Set<string>();
   const dedupedRows = rows.filter((r) => {
@@ -247,6 +265,7 @@ async function scrapeGradD(): Promise<ScrapeResult> {
   return {
     source: "grad_school_calendar",
     rows: dedupedRows,
-    error: dedupedRows.length === 0 ? lastError ?? "no rows extracted" : null,
+    error: dedupedRows.length === 0 ? lastError ?? "no rows extracted" : (warnings.length > 0 ? lastError : null),
+    warnings: warnings.length > 0 ? warnings : undefined,
   };
 }

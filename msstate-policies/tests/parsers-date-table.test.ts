@@ -1,9 +1,9 @@
-import { test } from "node:test";
+import { test, describe } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseDateTable } from "../src/calendars/parsers/date_table.js";
+import { parseDateTable, parseDateRange } from "../src/calendars/parsers/date_table.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 function fixture(name: string): string {
@@ -91,4 +91,21 @@ test("parseDateTable: every row has a non-empty citation field", () => {
       `citation must contain source_url: ${r.citation}`,
     );
   }
+});
+
+describe("date_table — invalid dates", () => {
+  test("February 31 is rejected, not normalized to March 3", () => {
+    const r = parseDateRange("February 31, 2026");
+    assert.equal(r, null);
+  });
+  test("month=0 / day=0 is rejected", () => {
+    assert.equal(parseDateRange("Foobar 0, 2026"), null);
+    assert.equal(parseDateRange("January 0, 2026"), null);
+  });
+  test("April 31 (only 30 days) is rejected", () => {
+    assert.equal(parseDateRange("April 31, 2026"), null);
+  });
+  test("legitimate dates still parse", () => {
+    assert.deepEqual(parseDateRange("January 13, 2026"), ["2026-01-13", "2026-01-13"]);
+  });
 });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { filterContacts } from "../emergency/corpus.js";
+import { filterContacts, isValidCategoryInput } from "../emergency/corpus.js";
 import { MANDATORY_DISCLAIMER, MAX_QUERY_CHARS } from "../emergency/types.js";
 
 const Input = z
@@ -10,6 +10,7 @@ const Input = z
   .strict();
 
 const REFUGE_URL = "https://www.emergency.msstate.edu/refuge";
+const ALLOWED = ["all", "emergency", "campus", "off_campus"];
 
 export const get_msu_emergency_contacts = {
   name: "get_msu_emergency_contacts",
@@ -19,6 +20,25 @@ export const get_msu_emergency_contacts = {
   zodSchema: Input,
   async handler(rawInput: unknown) {
     const input = Input.parse(rawInput);
+    if (!isValidCategoryInput(input.category)) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                disclaimer: MANDATORY_DISCLAIMER,
+                error: `invalid category: ${input.category}`,
+                allowed: ALLOWED,
+              },
+              null,
+              2,
+            ),
+          },
+        ],
+      };
+    }
     const contacts = filterContacts(input.category).map((c) => ({
       label: c.label,
       phone: c.phone,
