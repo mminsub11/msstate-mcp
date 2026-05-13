@@ -476,7 +476,10 @@ export function parseControllerRateHtml(
 
         const resAmt = parseMoney(cells[residentIdx]);
         const nonResAmt = parseMoney(cells[nonResidentIdx]);
-        const isTotal = /total/i.test(label);
+        // "Total Fee" is the headline per-semester (or per-hour) amount we want.
+        // "Total Fee (Per Credit Hour)" is a derived per-hour breakdown on the
+        // full-time tables — treat it as a line item, not the headline total.
+        const isTotal = /total/i.test(label) && !/per.{0,4}(credit|hour)/i.test(label);
 
         if (isTotal) {
           residentTotal = resAmt;
@@ -487,13 +490,23 @@ export function parseControllerRateHtml(
         }
       }
 
-      // Fall back to summing line items if no explicit Total row was found.
-      if (residentTotal === null && residentItems.length > 0) {
-        residentTotal = residentItems.reduce((s, li) => s + li.amount_usd, 0);
-      }
-      if (nonResidentTotal === null && nonResidentItems.length > 0) {
-        nonResidentTotal = nonResidentItems.reduce((s, li) => s + li.amount_usd, 0);
-      }
+      // Reconcile Total against line-items sum.
+      //  - If no Total row was parsed, sum the line items.
+      //  - If Total is present but diverges from the sum by > 5%, the source
+      //    HTML has a typo (e.g. Meridian non-resident 12-16 publishes
+      //    "$14.968.00" instead of "$14,968.00", parsing to $14.96). Prefer
+      //    the line-items sum in that case — line items parse correctly
+      //    because they use the standard comma-as-thousands format.
+      const reconcile = (total: number | null, items: LineItem[]): number | null => {
+        if (items.length === 0) return total;
+        const sum = items.reduce((s: number, li: LineItem) => s + li.amount_usd, 0);
+        if (total === null) return sum;
+        if (sum === 0) return total;
+        const drift = Math.abs(total - sum) / sum;
+        return drift > 0.05 ? sum : total;
+      };
+      residentTotal = reconcile(residentTotal, residentItems);
+      nonResidentTotal = reconcile(nonResidentTotal, nonResidentItems);
 
       const push = (residency: Residency, total: number, items: LineItem[]) => {
         out.push({
