@@ -391,6 +391,94 @@ async function scrapeEmergencyViaSubprocess() {
   return parsed;
 }
 
+async function scrapeTuitionViaSubprocess() {
+  const { execFileSync } = await import("node:child_process");
+  console.error("[build-worker-corpus] scraping tuition pages...");
+  let raw;
+  try {
+    raw = execFileSync(
+      "npx",
+      ["--yes", "tsx", "scripts/_scrape-tuition.ts"],
+      {
+        cwd: process.cwd(),
+        stdio: ["ignore", "pipe", "inherit"],
+        maxBuffer: 16 * 1024 * 1024,
+      },
+    );
+  } catch (err) {
+    throw new Error(
+      `tuition scrape subprocess failed (${err.message ?? err}) — refusing to ship a poisoned tuition corpus`,
+    );
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw.toString("utf8"));
+  } catch {
+    throw new Error(
+      "tuition scrape subprocess produced unparseable JSON — refusing to ship a poisoned tuition corpus",
+    );
+  }
+  if (!parsed || !Array.isArray(parsed.rate_rows) || !Array.isArray(parsed.fee_rows)
+      || !Array.isArray(parsed.faq_rows) || !Array.isArray(parsed.campuses)) {
+    throw new Error(
+      "tuition scrape: malformed payload — refusing to ship a poisoned tuition corpus",
+    );
+  }
+  if (parsed.anyError) {
+    const failed = Object.entries(parsed.per_source ?? {})
+      .filter(([, info]) => !info.ok)
+      .map(([k, info]) => `${k}: ${info.error}`).join("; ");
+    throw new Error(
+      `tuition scrape: per-source failure (${failed}) — refusing to ship a poisoned tuition corpus`,
+    );
+  }
+  if (parsed.rate_rows.length < 40) {
+    throw new Error(
+      `tuition scrape: only ${parsed.rate_rows.length} rate rows (< 40) — refusing to ship a poisoned tuition corpus`,
+    );
+  }
+  if (!parsed.rate_rows.some((r) => r.campus === "vetmed")) {
+    throw new Error(
+      "tuition scrape: no vetmed rate rows — refusing to ship a poisoned tuition corpus",
+    );
+  }
+  for (const c of ["starkville", "meridian", "mgccc", "online"]) {
+    if (!parsed.rate_rows.some((r) => r.campus === c)) {
+      throw new Error(
+        `tuition scrape: no rate rows for campus=${c} — refusing to ship a poisoned tuition corpus`,
+      );
+    }
+  }
+  if (parsed.faq_rows.length < 10) {
+    throw new Error(
+      `tuition scrape: only ${parsed.faq_rows.length} FAQ rows (< 10) — refusing to ship a poisoned tuition corpus`,
+    );
+  }
+  const collegeFees = parsed.fee_rows.filter((r) => r.kind === "college").length;
+  const programFees = parsed.fee_rows.filter((r) => r.kind === "program").length;
+  if (collegeFees === 0) {
+    throw new Error(
+      "tuition scrape: 0 college fee rows — refusing to ship a poisoned tuition corpus",
+    );
+  }
+  if (programFees === 0) {
+    throw new Error(
+      "tuition scrape: 0 program fee rows — refusing to ship a poisoned tuition corpus",
+    );
+  }
+  for (const r of parsed.rate_rows) {
+    if (typeof r.amount_usd !== "number" || r.amount_usd <= 0 || r.amount_usd > 100_000) {
+      throw new Error(
+        `tuition scrape: implausible amount_usd=${r.amount_usd} for ${r.campus}/${r.level}/${r.residency}/${r.term} — refusing to ship a poisoned tuition corpus`,
+      );
+    }
+  }
+  console.error(
+    `[build-worker-corpus]   tuition: ${parsed.rate_rows.length} rates, ${parsed.fee_rows.length} fees, ${parsed.faq_rows.length} faqs, ${parsed.campuses.length} campuses`,
+  );
+  return parsed;
+}
+
 async function main() {
   const skipCatalog = process.argv.includes("--skip-catalog");
   console.error("build-worker-corpus: fetching index...");
@@ -542,6 +630,16 @@ async function main() {
     guidelines: emergencyPayload.guidelines,
     refuge_areas: emergencyPayload.refuge_areas,
     contacts: emergencyPayload.contacts,
+  };
+
+  const tuitionPayload = await scrapeTuitionViaSubprocess();
+  out.tuition = {
+    builtAt,
+    source: "https://www.controller.msstate.edu/accountservices/tuition",
+    rate_rows: tuitionPayload.rate_rows,
+    fee_rows: tuitionPayload.fee_rows,
+    faq_rows: tuitionPayload.faq_rows,
+    campuses: tuitionPayload.campuses,
   };
 
   // ---- v0.5.0: bake synonyms ---------------------------------------------
