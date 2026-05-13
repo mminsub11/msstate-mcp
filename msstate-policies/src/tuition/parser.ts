@@ -10,6 +10,7 @@ import type {
   CreditHourBucket,
   Residency,
   LineItem,
+  CampusEntry,
 } from "./types.js";
 
 const RETRIEVED_AT_PLACEHOLDER = "1970-01-01T00:00:00.000Z";
@@ -519,5 +520,50 @@ export function parseControllerRateHtml(
     });
   }
 
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Campus list builder
+// ---------------------------------------------------------------------------
+
+const DISPLAY_NAMES: Record<CampusSlug, string> = {
+  starkville: "Starkville Campus",
+  meridian: "Meridian Campus",
+  mgccc: "MGCCC — Engineering on the Coast",
+  online: "MSU Online Education",
+  vetmed: "College of Veterinary Medicine (DVM)",
+};
+
+const SOURCE_URLS: Record<CampusSlug, string> = {
+  starkville: "https://www.controller.msstate.edu/accountservices/tuition/starkville-campus",
+  meridian:   "https://www.controller.msstate.edu/accountservices/tuition/meridian-campus",
+  mgccc:      "https://www.controller.msstate.edu/accountservices/tuition/mgccc-campus-rates",
+  online:     "https://www.controller.msstate.edu/accountservices/tuition/online-education-rates",
+  vetmed:     "https://www.vetmed.msstate.edu/tuition",
+};
+
+export function buildCampusList(rateRows: TuitionRateRow[]): CampusEntry[] {
+  const byCampus = new Map<CampusSlug, { levels: Set<Level>; basis: "per_credit_hour" | "annual_flat" }>();
+  for (const r of rateRows) {
+    const entry = byCampus.get(r.campus) ?? {
+      levels: new Set(),
+      basis: r.campus === "vetmed" ? "annual_flat" : "per_credit_hour",
+    };
+    entry.levels.add(r.level);
+    byCampus.set(r.campus, entry);
+  }
+  const out: CampusEntry[] = [];
+  for (const slug of ["starkville", "meridian", "mgccc", "online", "vetmed"] as CampusSlug[]) {
+    const e = byCampus.get(slug);
+    if (!e) continue;
+    out.push({
+      slug,
+      display_name: DISPLAY_NAMES[slug],
+      levels_offered: Array.from(e.levels),
+      rate_basis: e.basis,
+      source_url: SOURCE_URLS[slug],
+    });
+  }
   return out;
 }
