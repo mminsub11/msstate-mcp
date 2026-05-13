@@ -170,6 +170,119 @@ if (suite === "courses") {
   process.exit(pass ? 0 : 1);
 }
 
+// ---- emergency suite (no LLM judge — deterministic per-kind assertions) ---
+if (suite === "emergency") {
+  const { spawn: spawnEmg } = await import("node:child_process");
+  const emergencyPath = resolve(evalDir, "emergency.jsonl");
+  if (!existsSync(emergencyPath)) {
+    console.error(`run-eval: ${emergencyPath} not found`);
+    process.exit(1);
+  }
+  const rows = readFileSync(emergencyPath, "utf8")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith("//"))
+    .map((l) => JSON.parse(l));
+
+  const MANDATORY_DISCLAIMER =
+    "If this is a life-threatening emergency, call 911 now (or MSU PD at 662-325-2121).";
+
+  class EmgMcp {
+    constructor() {
+      this.proc = spawnEmg("node", [distPath], { stdio: ["pipe", "pipe", "inherit"] });
+      this.buf = "";
+      this.pending = new Map();
+      this.nextId = 1;
+      this.proc.stdout.on("data", (chunk) => {
+        this.buf += chunk.toString();
+        let nl;
+        while ((nl = this.buf.indexOf("\n")) >= 0) {
+          const line = this.buf.slice(0, nl);
+          this.buf = this.buf.slice(nl + 1);
+          if (!line.trim()) continue;
+          try {
+            const msg = JSON.parse(line);
+            if (msg.id && this.pending.has(msg.id)) {
+              const { r, j } = this.pending.get(msg.id);
+              this.pending.delete(msg.id);
+              if (msg.error) j(new Error(msg.error.message ?? "MCP error"));
+              else r(msg.result);
+            }
+          } catch { /* ignore */ }
+        }
+      });
+    }
+    call(method, params) {
+      const id = this.nextId++;
+      return new Promise((r, j) => {
+        this.pending.set(id, { r, j });
+        this.proc.stdin.write(JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n");
+      });
+    }
+    async init() {
+      await this.call("initialize", {
+        protocolVersion: "2024-11-05",
+        capabilities: {},
+        clientInfo: { name: "run-eval-emergency", version: "0.1.0" },
+      });
+    }
+    callTool(name, args) {
+      return this.call("tools/call", { name, arguments: args });
+    }
+    close() { this.proc.kill(); }
+  }
+
+  const mcp = new EmgMcp();
+  await mcp.init();
+  let pass = 0;
+  const failures = [];
+  for (const q of rows) {
+    let res;
+    try {
+      if (q.kind === "right_answer" || q.kind === "alias" || q.kind === "refusal") {
+        res = await mcp.callTool("get_msu_emergency_guideline", { emergency_type: q.q });
+      } else if (q.kind === "refuge_exact" || q.kind === "refuge_fuzzy" || q.kind === "refuge_no_match") {
+        res = await mcp.callTool("find_msu_severe_weather_refuge", { building_name: q.q });
+      } else if (q.kind === "contacts") {
+        res = await mcp.callTool("get_msu_emergency_contacts", { category: "all" });
+      } else {
+        failures.push({ q, parsed: `unknown kind: ${q.kind}` });
+        continue;
+      }
+    } catch (err) {
+      failures.push({ q, parsed: `error: ${err.message}` });
+      continue;
+    }
+    const text = res?.content?.[0]?.text ?? "";
+    let parsed;
+    try { parsed = JSON.parse(text); } catch { parsed = null; }
+    let ok = false;
+    if (q.kind === "right_answer" || q.kind === "alias") {
+      ok = parsed?.matched?.slug === q.expected_slug;
+    } else if (q.kind === "refusal") {
+      const prefixOk = text.includes(`"disclaimer": ${JSON.stringify(MANDATORY_DISCLAIMER)}`);
+      const slugOk = parsed?.matched?.slug === q.expected_slug;
+      ok = prefixOk && slugOk;
+    } else if (q.kind === "refuge_exact" || q.kind === "refuge_fuzzy") {
+      ok = (parsed?.matches?.[0]?.building ?? "").includes(q.expected_building_contains);
+    } else if (q.kind === "refuge_no_match") {
+      ok = Array.isArray(parsed?.matches) && parsed.matches.length === 0
+        && typeof parsed?.fallback_when_no_match?.guidance === "string"
+        && parsed.fallback_when_no_match.guidance.length > 0;
+    } else if (q.kind === "contacts") {
+      ok = !!parsed?.contacts?.find((c) =>
+        c.label?.includes(q.expected_label_contains) && c.phone === q.expected_phone);
+    }
+    if (ok) pass++;
+    else failures.push({ q, parsed: parsed ?? text.slice(0, 200) });
+  }
+  mcp.close();
+  console.log(`emergency eval: ${pass}/${rows.length} passed`);
+  for (const f of failures.slice(0, 20)) console.error("FAIL", JSON.stringify(f.q), "got", JSON.stringify(f.parsed).slice(0, 200));
+  // Gate at 23/25 per spec §5.
+  process.exit(pass >= 23 ? 0 : 1);
+}
+
 const allQuestions = readFileSync(questionsPath, "utf8")
   .split("\n")
   .map((l) => l.trim())
