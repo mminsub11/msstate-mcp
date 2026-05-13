@@ -31,6 +31,12 @@ import { get_msu_course } from "./tools/get_msu_course.js";
 import { get_msu_course_graph } from "./tools/get_msu_course_graph.js";
 import { setCourseCorpus } from "./courses/corpus.js";
 import type { CourseCorpus } from "./courses/types.js";
+import { get_msu_emergency_guideline } from "./tools/get_msu_emergency_guideline.js";
+import { list_msu_emergency_types } from "./tools/list_msu_emergency_types.js";
+import { find_msu_severe_weather_refuge } from "./tools/find_msu_severe_weather_refuge.js";
+import { get_msu_emergency_contacts } from "./tools/get_msu_emergency_contacts.js";
+import { setEmergencyCorpus } from "./emergency/corpus.js";
+import type { EmergencyCorpus } from "./emergency/types.js";
 import { health_check } from "./tools/health_check.js";
 
 // Deterministic order — referenced in the README and CI smoke test.
@@ -44,6 +50,10 @@ const TOOLS = [
   search_msu_courses,
   get_msu_course,
   get_msu_course_graph,
+  get_msu_emergency_guideline,
+  list_msu_emergency_types,
+  find_msu_severe_weather_refuge,
+  get_msu_emergency_contacts,
   health_check,
 ] as const;
 
@@ -60,6 +70,7 @@ const TOOLS_BY_NAME = new Map<string, ToolDef>(
 declare const __VERSION__: string | undefined;
 declare const __GIT_SHA__: string | undefined;
 declare const __COURSE_CORPUS__: CourseCorpus | undefined;
+declare const __EMERGENCY_CORPUS__: EmergencyCorpus | undefined;
 
 function safeVersion(): string {
   return typeof __VERSION__ !== "undefined" ? __VERSION__ : "";
@@ -77,6 +88,19 @@ function loadBakedCourseCorpus(): void {
     });
   } else {
     log("warn", "no baked course corpus available; course tools will return empty results");
+  }
+}
+
+function loadBakedEmergencyCorpus(): void {
+  if (typeof __EMERGENCY_CORPUS__ !== "undefined" && __EMERGENCY_CORPUS__) {
+    setEmergencyCorpus(__EMERGENCY_CORPUS__);
+    log("info", "emergency corpus loaded", {
+      guidelines: __EMERGENCY_CORPUS__.guidelines.length,
+      refuge_areas: __EMERGENCY_CORPUS__.refuge_areas.length,
+      contacts: __EMERGENCY_CORPUS__.contacts.length,
+    });
+  } else {
+    log("warn", "no baked emergency corpus available; emergency tools will return empty results");
   }
 }
 
@@ -162,6 +186,7 @@ async function main(): Promise<void> {
     });
 
   loadBakedCourseCorpus();
+  loadBakedEmergencyCorpus();
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
