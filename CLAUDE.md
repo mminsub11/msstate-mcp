@@ -10,11 +10,11 @@ For non-trivial work — and ALWAYS before touching anything security-shaped (Wo
 2. **`SECURITY.md`** — what's in scope, what's NOT, and especially `## Out of scope: client-side circumvention`. That section defines the user-side abuse classes we explicitly *don't* defend against (local edits to the bundle, prompt-level circumvention, fork-the-corpus, LLM hallucination, indirect injection inside published PDFs). Treat anything matching those bullets as `wontfix` by design.
 3. **`docs/BUILD.md`** — architecture, decision history, deferred items (M1/M2/M6), eval methodology, threat model. The **Round-2 audit closure (2026-05-08)** section captures the per-finding history (N1–N10 + DISC) that `tools/security-checklist.sh` now mechanically enforces.
 
-After any change in scope, run `bash tools/security-checklist.sh | tail -1` and confirm the score is still **245** (was 235 pre-EMG, 230 pre-CAL6, 220 pre-v0.6.0, 192 pre-v0.5.0). CI hard-gates on `>= 100`; below 245 means a check regressed.
+After any change in scope, run `bash tools/security-checklist.sh | tail -1` and confirm the score is still **257** (was 245 pre-TUI, 235 pre-EMG, 230 pre-CAL6, 220 pre-v0.6.0, 192 pre-v0.5.0). CI hard-gates on `>= 100`; below 257 means a check regressed.
 
 ## What this repo is
 
-`msstate-mcp` is a Model Context Protocol server that exposes **Mississippi State University Operating Policies** (the `/current` index at <https://www.policies.msstate.edu/current>), **six MSU academic-date sources** (registrar academic + exam calendars on `registrar.msstate.edu`, university holidays on `hrm.msstate.edu`, the graduate-school PDFs on `grad.msstate.edu`, financial aid on `sfa.msstate.edu`, and housing events on `housing.msstate.edu`) added in v0.4.0 (2026-05-11), and **the MSU course catalog** on `catalog.msstate.edu` added in v0.6.0 (2026-05-12), to MCP-capable clients (Claude Code, Claude Desktop, Cursor, Windsurf, Zed, claude.ai connector, ChatGPT Plus/Pro connector). Tool count: **14** (4 policy + 2 calendar + 3 course + 4 emergency + 1 health). Current version: **v0.7.0** (2026-05-13) — adds `get_msu_emergency_guideline`, `list_msu_emergency_types`, `find_msu_severe_weather_refuge`, `get_msu_emergency_contacts` over a baked snapshot of www.emergency.msstate.edu. All three serve a pre-baked corpus snapshot — zero runtime fetches to MSU at request time. For project overview, architecture, decision history, eval methodology, and open issues, see [`docs/BUILD.md`](./docs/BUILD.md). Read it once before non-trivial work.
+`msstate-mcp` is a Model Context Protocol server that exposes **Mississippi State University Operating Policies** (the `/current` index at <https://www.policies.msstate.edu/current>), **six MSU academic-date sources** (registrar academic + exam calendars on `registrar.msstate.edu`, university holidays on `hrm.msstate.edu`, the graduate-school PDFs on `grad.msstate.edu`, financial aid on `sfa.msstate.edu`, and housing events on `housing.msstate.edu`) added in v0.4.0 (2026-05-11), and **the MSU course catalog** on `catalog.msstate.edu` added in v0.6.0 (2026-05-12), to MCP-capable clients (Claude Code, Claude Desktop, Cursor, Windsurf, Zed, claude.ai connector, ChatGPT Plus/Pro connector). Tool count: **18** (4 policy + 2 calendar + 3 course + 4 emergency + 4 tuition + 1 health). Current version: **v0.8.0** (2026-05-13) — adds `get_msu_tuition_rate`, `get_msu_enrollment_fees`, `find_msu_tuition_faq`, `list_msu_tuition_campuses` over a baked snapshot of MSU's published tuition pages. v0.7.0 (2026-05-13) added the emergency tools over www.emergency.msstate.edu. All three serve a pre-baked corpus snapshot — zero runtime fetches to MSU at request time. For project overview, architecture, decision history, eval methodology, and open issues, see [`docs/BUILD.md`](./docs/BUILD.md). Read it once before non-trivial work.
 
 The server ships in two surfaces from one bundle:
 - **Claude Code plugin** (`/plugin install msstate-policies@msstate-mcp`)
@@ -81,6 +81,30 @@ All corpus-rule prohibitions apply: no training-data fallback, no third-party mi
 
 Every emergency tool response carries the `MANDATORY_DISCLAIMER` constant from `types.ts` ("If this is a life-threatening emergency, call 911 now (or MSU PD at 662-325-2121).") on every code path including matched=null and error-shape responses.
 
+### Corpus extension (2026-05-13b) — tuition
+
+The corpus also includes MSU's published tuition rates, enrollment fees, and FAQ. Roots pinned by the frozen `TUITION_ROOTS` allowlist in `msstate-policies/src/tuition/types.ts` (9 URLs):
+
+1. `https://www.controller.msstate.edu/accountservices/tuition` (landing)
+2. `https://www.controller.msstate.edu/accountservices/tuition/frequently-asked-questions` (14 Q&A pairs)
+3. `https://www.controller.msstate.edu/accountservices/tuition/other-enrollment-costs` (College / Program / Course-Distance fees)
+4. `https://www.controller.msstate.edu/accountservices/tuition/select-your-campus` (campus index)
+5–8. `/{starkville,meridian,mgccc,online}-campus[-rates]` (4 controller campus rate pages, per-credit-hour)
+9. `https://www.vetmed.msstate.edu/tuition` (DVM flat per-semester + annual)
+
+All `https://` URLs inside `msstate-policies/src/tuition/` must stay on `*.msstate.edu`. Both `www.controller.msstate.edu` and `www.vetmed.msstate.edu` are allowed.
+
+Every tuition-tool response carries the `TUITION_DISCLAIMER` constant from `types.ts` — including not-found and error-shape responses.
+
+Build aborts with canonical string `"refusing to ship a poisoned tuition corpus"` (11 abort sites) on: per-source error, < 40 rate rows, missing vetmed or any controller campus, < 10 FAQ rows, 0 college fees, 0 program fees, or any rate row with `amount_usd <= 0 || > 100_000`.
+
+**Source-data quirks (handled, do not regress):**
+
+- Meridian non-resident 12-16 Total cell publishes `$14.968.00` (period instead of comma — typo). The parser reconciles Total against the line-items sum and uses the sum when drift > 5%.
+- Controller per-credit-hour tables (1-11 / 1-8 buckets) have ONE Total row labeled "Total Fee (Per Credit Hour)" — that IS the headline. Per-semester tables (12-16 / 9+) have TWO Total rows: "Total Fee" (per-semester, headline) and a derived "Total Fee (Per Credit Hour)" breakdown. The parser uses a two-pass scan: collect candidates first, prefer rows WITHOUT the per-credit qualifier when multiple exist.
+- Vetmed page is "Effective Fall 2025 through Summer 2026" — one academic year behind controller pages. Surfaced verbatim in `effective_term` so models can flag staleness.
+- MGCCC is undergrad-only by design (Engineering on the Coast partnership). `get_msu_tuition_rate` with `campus=mgccc, level=grad` returns an explicit `not_found_reason`.
+
 ## Network access notes
 
 - Codespace / dev sandbox: **has** network access to `policies.msstate.edu`.
@@ -95,7 +119,7 @@ Every emergency tool response carries the `MANDATORY_DISCLAIMER` constant from `
 
 ## Security notes (round-2 closure 2026-05-08 + v0.5.0 SYN checks 2026-05-12)
 
-The mechanical security checklist (`tools/security-checklist.sh`) was extended from 100 → 192 pts during the round-2 audit, then **192 → 220** in v0.5.0 (added SYN1-SYN6 + CAL5 regression-guard), then **220 → 230** in v0.6.0 (CAT1-CAT4), then **230 → 235** with CAL6, then **235 → 245** in v0.7.0 (added EMG1-EMG4 for the emergency module). CI hard-gates pushes/PRs on `score >= 100`. Current head should score **245/245**; if you regress it, fix the failing check before merging. The round-2 closure note in [`docs/BUILD.md`](./docs/BUILD.md) covers the per-finding history (N1-N10 + CAL1-CAL4 + SYN1-SYN6). `git log --grep "N\\(1\\|2\\|3\\|4\\|5\\|6\\|7\\|8\\|9\\|10\\)"` finds round-2 commits; `git log --grep "SYN"` finds v0.5.0 commits.
+The mechanical security checklist (`tools/security-checklist.sh`) was extended from 100 → 192 pts during the round-2 audit, then **192 → 220** in v0.5.0 (added SYN1-SYN6 + CAL5 regression-guard), then **220 → 230** in v0.6.0 (CAT1-CAT4), then **230 → 235** with CAL6, then **235 → 245** in v0.7.0 (added EMG1-EMG4 for the emergency module), then **245 → 257** in v0.8.0 (added TUI1-TUI5 for the tuition module). CI hard-gates pushes/PRs on `score >= 100`. Current head should score **257/257**; if you regress it, fix the failing check before merging. The round-2 closure note in [`docs/BUILD.md`](./docs/BUILD.md) covers the per-finding history (N1-N10 + CAL1-CAL4 + SYN1-SYN6). `git log --grep "N\\(1\\|2\\|3\\|4\\|5\\|6\\|7\\|8\\|9\\|10\\)"` finds round-2 commits; `git log --grep "SYN"` finds v0.5.0 commits.
 
 A few patterns to keep in mind so the score doesn't drift:
 - **Worker error paths**: never echo `(err as Error).message` to clients; always log structured fields server-side, return generic messages with the JSON-RPC `id` for correlation.
@@ -106,6 +130,7 @@ A few patterns to keep in mind so the score doesn't drift:
 - **Calendar checks (CAL1-CAL4, added 2026-05-11)**: calendar URLs hardcoded in `msstate-policies/src/calendars/types.ts`; all `https://` URLs inside `msstate-policies/src/calendars/` must stay on msstate.edu subdomains; Worker handler for `find_msu_date` caps `q.length > MAX_QUERY_CHARS` before tokenize; build aborts on calendar scrape failure.
 - **Course checks (CAT1-CAT4, added 2026-05-12)**: catalog URLs anchored by the frozen `CATALOG_ROOTS` allowlist in `msstate-policies/src/courses/types.ts`; all `https://` URLs inside `msstate-policies/src/courses/` must stay on msstate.edu subdomains; Worker handlers for `search_msu_courses`, `get_msu_course`, `get_msu_course_graph` cap input length before parse; build aborts with the canonical string `"refusing to ship a poisoned course corpus"` on any of: subprocess failure, parse error, < 500 records, empty `reverse_dag` with non-empty `forward_dag`, prereq parse-exception rate > 5%.
 - **Emergency checks (EMG1-EMG4, added 2026-05-13)**: emergency URLs anchored by `EMERGENCY_ROOTS` (frozen) in `msstate-policies/src/emergency/types.ts`; all `https://` URLs inside `msstate-policies/src/emergency/` must stay on msstate.edu; Worker handlers for the 3 input-taking emergency tools cap input length before parse (`list_msu_emergency_types` is exempt — takes no input); build aborts with the canonical string `"refusing to ship a poisoned emergency corpus"` on: subprocess failure, guideline count ≠ 12, any body < 200 chars, refuge count < 5, contact count < 3, or missing 911 entry.
+- **Tuition checks (TUI1-TUI5, added 2026-05-13b)**: tuition URLs anchored by `TUITION_ROOTS` (frozen) in `msstate-policies/src/tuition/types.ts`; all `https://` URLs inside `msstate-policies/src/tuition/` must stay on msstate.edu; Worker handlers for `get_msu_enrollment_fees` and `find_msu_tuition_faq` cap input length before parse; build aborts with the canonical string `"refusing to ship a poisoned tuition corpus"` on subprocess failure, missing campuses, < 40 rate rows, < 10 FAQ rows, 0 college or program fees, or implausible `amount_usd`. **TUITION_DISCLAIMER** present in `types.ts` AND referenced in all 4 tuition tool files (TUI5).
 - **v0.5.0 synonym checks (SYN1-SYN6 + CAL5, added 2026-05-12)** — load-bearing:
   - **SYN4 (10 pts, load-bearing): zero runtime egress to Anthropic.** `grep -rn "api\.anthropic\.com" msstate-policies/src worker/src` must equal **0**. The only allowed reference is in `scripts/build-worker-corpus.mjs`. If you ever need synonyms refreshed at runtime, that's a v0.6.0+ conversation — DO NOT add a runtime fetch to `api.anthropic.com` to `src/` in any patch release.
   - **SYN6 (refined to property-access regex)**: `row.synonyms` property access / JSON-key / destructuring under `msstate-policies/src/tools/` must equal 0. The bare word "synonyms" in user-facing strings (e.g. the mode-note `"BM25 with synonyms"`) is allowed and tested for.

@@ -154,6 +154,57 @@ Build pipeline: `scripts/_scrape-emergency.ts` runs as a subprocess from `build-
 
 Security: EMG1–EMG4 in `tools/security-checklist.sh` (+10 pts, 235 → 245).
 
+### Tuition module (v0.8.0, 2026-05-13)
+
+Adds 4 MCP tools over a baked snapshot of 9 `*.msstate.edu` tuition pages (8 controller + 1 vetmed). Tool count grows 14 → 18.
+
+**Architecture:** mirrors the emergency module structure. New module at `msstate-policies/src/tuition/` (`types.ts`, `parser.ts`, `scraper.ts`, `corpus.ts`, `search.ts`). Subprocess scraper at `scripts/_scrape-tuition.ts`. Build pipeline integration in `scripts/build-worker-corpus.mjs` adds `scrapeTuitionViaSubprocess` with 11 canonical-string abort sites. Worker dispatch in `worker/src/index.ts` mirrors the emergency block: types + BM25 helpers + route helpers + 4 `tools/list` entries + 4 `tools/call` cases + `/` info JSON counts.
+
+**Coverage:**
+
+| Campus | Undergrad | Grad | DVM | Rate basis |
+|---|---|---|---|---|
+| Starkville | yes (4 terms × 2 residencies) | yes | — | per_credit_hour |
+| Meridian | yes | yes | — | per_credit_hour |
+| MGCCC (Engineering on the Coast) | yes | — (no grad program) | — | per_credit_hour |
+| Online Education | yes | yes | — | per_credit_hour |
+| Vetmed | — | — | yes | annual_flat + per_semester_flat |
+
+**Heterogeneous row schema:** all rate rows share one `TuitionRateRow` shape. Controller pages set `rate_basis="per_credit_hour"` with one of the 4 `credit_hour_bucket` values; vetmed sets `rate_basis="annual_flat"` or `"per_semester_flat"` with `credit_hour_bucket=null`. The unified shape lets callers handle all 5 campuses uniformly.
+
+**Source-data handling (do not regress):**
+
+- **Meridian non-resident 12-16 typo:** MSU publishes `$14.968.00` (period instead of comma). `parseMoney` reads $14.96. The parser reconciles Total against the line-items sum and uses the sum when drift > 5%.
+- **Per-credit vs per-semester Total disambiguation:** controller pages put a `"Total Fee (Per Credit Hour)"` row in BOTH the 1-11 (where it IS the headline) and the 12-16 (where it's a derived breakdown of the per-semester `"Total Fee"`). Parser does a two-pass scan: collect candidates first, prefer rows WITHOUT the per-credit qualifier when multiple exist.
+- **Vetmed staleness:** "Effective Fall 2025 through Summer 2026" — one academic year behind controller pages. Surfaced verbatim in `effective_term` so models can flag staleness rather than silently extrapolating.
+
+**Build aborts** (canonical string `"refusing to ship a poisoned tuition corpus"`, 11 sites):
+
+1. subprocess crash
+2. JSON parse failure
+3. malformed payload
+4. any per-source error
+5. < 40 rate rows
+6. missing vetmed
+7. missing any of starkville/meridian/mgccc/online
+8. < 10 FAQ rows
+9. 0 college fee rows
+10. 0 program fee rows
+11. any rate row with `amount_usd <= 0 || > 100_000`
+
+**Routing rules in `get_msu_tuition_rate`:**
+
+- `campus=vetmed` + `level=undergrad`/`grad` → empty matches, `not_found_reason` points to Starkville grad
+- `level=dvm` + `campus≠vetmed` → empty matches, `not_found_reason` points to vetmed
+- `campus=mgccc` + `level=grad` → empty matches, `not_found_reason` mentions undergraduate-only partnership
+- `credit_hours > 16` (undergrad) → capped to `12-16` bucket
+- `credit_hours > 9` (grad) → mapped to `9+` bucket
+- `credit_hours` ignored when `campus=vetmed`
+
+**Security checks added:** TUI1-TUI5 in `tools/security-checklist.sh` (+12 pts; Linux CI score 245 → 257).
+
+**Eval suite:** `scripts/run-eval.mjs --suite=tuition` runs the 32-question deterministic eval at `msstate-policies/eval/tuition.jsonl` (rate lookups + rate not-found + fee lookups + FAQ top-match + list-campuses + adversarial empty). Threshold >= 90% pass. Current state: 32/32 (100%).
+
 ## Cloudflare Worker variant — claude.ai web + mobile
 
 `worker/` ships a remote HTTP/JSON-RPC variant of the same 5 tools so that Anthropic's claude.ai web connector and Claude mobile can use this server (the local stdio path doesn't work there — connectors are HTTP/SSE only).
