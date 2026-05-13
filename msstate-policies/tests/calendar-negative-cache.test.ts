@@ -9,7 +9,7 @@ describe("calendar negative cache TTL", () => {
     resetCalendarCacheForTests();
   });
 
-  test("a fresh error entry retries on next call within the long TTL", async () => {
+  test("a fresh error entry retries after the negative TTL elapses", async () => {
     let calls = 0;
     __setScraperForTests(async (): Promise<ScrapeResult> => {
       calls++;
@@ -18,10 +18,16 @@ describe("calendar negative cache TTL", () => {
     });
     const r1 = await loadCalendarSource("housing");
     assert.equal(r1.error, "WAF challenge");
+    // Within the 5-minute negative TTL, a second call must HIT the cache:
     const r2 = await loadCalendarSource("housing");
-    assert.equal(calls, 2, "must retry on error within long TTL");
-    assert.equal(r2.error, null);
-    assert.equal(r2.rows.length, 1);
+    assert.equal(calls, 1, "second call within negative TTL must hit cache, not retry");
+    assert.equal(r2.error, "WAF challenge");
+    // After expiring the entry, the next call retries and succeeds:
+    resetCalendarCacheForTests({ keepLastGood: true });
+    const r3 = await loadCalendarSource("housing");
+    assert.equal(calls, 2, "after expiry, must retry the scraper");
+    assert.equal(r3.error, null);
+    assert.equal(r3.rows.length, 1);
   });
 
   test("on transient error after a success, last-known-good rows are returned", async () => {

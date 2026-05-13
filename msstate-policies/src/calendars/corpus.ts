@@ -47,9 +47,9 @@ interface CacheEntry {
 }
 
 const cache = new Map<CalendarSource, CacheEntry>();
-// Error entries are never cached — always retry on next call so a single
-// WAF challenge or network blip doesn't lock a source out for the rest of the day.
-const NEGATIVE_TTL_MS = 0;
+// Short TTL for error entries: debounces upstream during flaky conditions
+// without locking a source out for the rest of the day (vs. the long success TTL).
+const NEGATIVE_TTL_MS = 5 * 60 * 1000;
 
 type Scraper = (source: CalendarSource) => Promise<ScrapeResult>;
 let scraperImpl: Scraper = scrapeCalendar;
