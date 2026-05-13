@@ -28,6 +28,10 @@ import { spawn } from "node:child_process";
 // ---- args ----------------------------------------------------------------
 const argv = process.argv.slice(2);
 function arg(name, def) {
+  // Support both --name value and --name=value forms.
+  const eqPrefx = `--${name}=`;
+  const eqEntry = argv.find((a) => a.startsWith(eqPrefx));
+  if (eqEntry) return eqEntry.slice(eqPrefx.length);
   const i = argv.indexOf(`--${name}`);
   if (i === -1) return def;
   const v = argv[i + 1];
@@ -281,6 +285,126 @@ if (suite === "emergency") {
   for (const f of failures.slice(0, 20)) console.error("FAIL", JSON.stringify(f.q), "got", JSON.stringify(f.parsed).slice(0, 200));
   // Gate at 23/25 per spec §5.
   process.exit(pass >= 23 ? 0 : 1);
+}
+
+// ---- tuition suite (no LLM judge — deterministic per-kind assertions) ------
+if (suite === "tuition") {
+  const { spawn: spawnTui } = await import("node:child_process");
+  const tuitionPath = resolve(evalDir, "tuition.jsonl");
+  if (!existsSync(tuitionPath)) {
+    console.error(`run-eval: ${tuitionPath} not found`);
+    process.exit(1);
+  }
+  const rows = readFileSync(tuitionPath, "utf8")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l && !l.startsWith("//"))
+    .map((l) => JSON.parse(l));
+
+  class TuiMcp {
+    constructor() {
+      this.proc = spawnTui("node", [distPath], { stdio: ["pipe", "pipe", "inherit"] });
+      this.buf = "";
+      this.pending = new Map();
+      this.nextId = 1;
+      this.proc.stdout.on("data", (chunk) => {
+        this.buf += chunk.toString();
+        let nl;
+        while ((nl = this.buf.indexOf("\n")) >= 0) {
+          const line = this.buf.slice(0, nl);
+          this.buf = this.buf.slice(nl + 1);
+          if (!line.trim()) continue;
+          try {
+            const msg = JSON.parse(line);
+            if (msg.id && this.pending.has(msg.id)) {
+              const { r, j } = this.pending.get(msg.id);
+              this.pending.delete(msg.id);
+              if (msg.error) j(new Error(msg.error.message ?? "MCP error"));
+              else r(msg.result);
+            }
+          } catch { /* ignore */ }
+        }
+      });
+    }
+    call(method, params) {
+      const id = this.nextId++;
+      return new Promise((r, j) => {
+        this.pending.set(id, { r, j });
+        this.proc.stdin.write(JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n");
+      });
+    }
+    async init() {
+      await this.call("initialize", {
+        protocolVersion: "2024-11-05",
+        capabilities: {},
+        clientInfo: { name: "run-eval-tuition", version: "0.1.0" },
+      });
+    }
+    callTool(name, args) {
+      return this.call("tools/call", { name, arguments: args });
+    }
+    close() { this.proc.kill(); }
+  }
+
+  const mcp = new TuiMcp();
+  await mcp.init();
+  let pass = 0;
+  const failures = [];
+  for (const q of rows) {
+    let res;
+    try {
+      if (q.kind === "rate_lookup" || q.kind === "rate_not_found") {
+        res = await mcp.callTool("get_msu_tuition_rate", q.args);
+      } else if (q.kind === "fee_lookup") {
+        res = await mcp.callTool("get_msu_enrollment_fees", q.args);
+      } else if (q.kind === "faq_top_match") {
+        res = await mcp.callTool("find_msu_tuition_faq", q.args);
+      } else if (q.kind === "list_campuses") {
+        res = await mcp.callTool("list_msu_tuition_campuses", q.args);
+      } else if (q.kind === "adversarial_empty") {
+        res = await mcp.callTool(q.tool, q.args);
+      } else {
+        failures.push({ q, parsed: `unknown kind: ${q.kind}` });
+        continue;
+      }
+    } catch (err) {
+      failures.push({ q, parsed: `error: ${err.message}` });
+      continue;
+    }
+    const text = res?.content?.[0]?.text ?? "";
+    let parsed;
+    try { parsed = JSON.parse(text); } catch { parsed = null; }
+    let ok = false;
+    if (q.kind === "rate_lookup") {
+      const m = parsed?.matches?.[0];
+      ok = m && Math.abs(m.amount_usd - q.expected_amount) < 0.5;
+    } else if (q.kind === "rate_not_found") {
+      ok = parsed?.matches?.length === 0 &&
+        (parsed?.not_found_reason ?? "").toLowerCase().includes((q.expected_reason_contains ?? "").toLowerCase());
+    } else if (q.kind === "fee_lookup") {
+      const m = parsed?.matches?.find?.((r) =>
+        (r.label ?? "").toLowerCase().includes((q.expected_label_contains ?? "").toLowerCase()));
+      const field = q.expected_field ?? "per_credit_usd";
+      ok = m && Math.abs((m[field] ?? Number.NaN) - q.expected_amount) < 0.5;
+    } else if (q.kind === "faq_top_match") {
+      const matches = parsed?.matches ?? [];
+      const needle = (q.expected_question_contains ?? "").toLowerCase();
+      ok = matches.some((m) => (m.question ?? "").toLowerCase().includes(needle));
+    } else if (q.kind === "list_campuses") {
+      const slugs = (parsed?.campuses ?? []).map((c) => c.slug);
+      ok = slugs.length === 5 &&
+        ["starkville", "meridian", "mgccc", "online", "vetmed"].every((s) => slugs.includes(s));
+    } else if (q.kind === "adversarial_empty") {
+      ok = Array.isArray(parsed?.matches) && parsed.matches.length === 0;
+    }
+    if (ok) pass++;
+    else failures.push({ q, parsed: parsed ?? text.slice(0, 200) });
+  }
+  mcp.close();
+  console.log(`tuition eval: ${pass}/${rows.length} passed`);
+  for (const f of failures.slice(0, 20)) console.error("FAIL", JSON.stringify(f.q), "got", JSON.stringify(f.parsed).slice(0, 200));
+  const threshold = Math.ceil(rows.length * 0.9);
+  process.exit(pass >= threshold ? 0 : 1);
 }
 
 const allQuestions = readFileSync(questionsPath, "utf8")
