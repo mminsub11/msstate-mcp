@@ -261,3 +261,48 @@ describe("inferMinGrade — Section 2 (broader phrasings)", () => {
     assert.equal(p?.min_grade, null);
   });
 });
+
+describe("parse_warnings — Section 3a (warning emission)", () => {
+  test("non_course_unparsed when raw_prose has content but extractors found nothing", () => {
+    // A phrase NO non_course pattern catches.
+    const p = parsePrereqProse("(Prerequisites: a vibe check from the department chair)");
+    assert.ok(p);
+    assert.ok(p.parse_warnings.includes("non_course_unparsed"),
+      `expected non_course_unparsed in ${JSON.stringify(p.parse_warnings)}`);
+  });
+  test("no warning when fully parsed (clean course-codes case)", () => {
+    const p = parsePrereqProse("(Prerequisites: CSE 1384)");
+    assert.ok(p);
+    assert.deepEqual(p.parse_warnings, []);
+  });
+  test("no warning when non_course extraction succeeded", () => {
+    const p = parsePrereqProse("(Prerequisites: senior standing)");
+    assert.ok(p);
+    assert.deepEqual(p.parse_warnings, []);
+  });
+  test("grade_signal_present_but_unparsed when prose mentions 'grade' but inferMinGrade returns null", () => {
+    // "with a B grade" — "grade" trigger word present, but no pattern matches a letter+grade combo.
+    const p = parsePrereqProse("(Prerequisites: CSE 1384 with a B grade)");
+    assert.ok(p);
+    // The "minimum B grade" pattern requires "minimum"; "with a B grade" doesn't match.
+    // But the trigger word "grade" IS present, so we emit the warning.
+    assert.ok(p.parse_warnings.includes("grade_signal_present_but_unparsed"),
+      `expected grade_signal_present_but_unparsed in ${JSON.stringify(p.parse_warnings)}`);
+  });
+  test("no grade warning when 'grade' word absent", () => {
+    const p = parsePrereqProse("(Prerequisites: CSE 1384)");
+    assert.ok(p);
+    assert.ok(!p.parse_warnings.includes("grade_signal_present_but_unparsed"));
+  });
+  test("logic_ambiguous emitted when 'mixed' AND/OR composition detected", () => {
+    const p = parsePrereqProse("(Prerequisites: CSE 1284 and (MA 1713 or MA 1723))");
+    assert.ok(p);
+    assert.equal(p.logic, "mixed");
+    assert.ok(p.parse_warnings.includes("logic_ambiguous"));
+  });
+  test("'none' in raw_prose emits no warning (treated as null-equivalent)", () => {
+    const p = parsePrereqProse("(Prerequisites: none)");
+    assert.ok(p);
+    assert.deepEqual(p.parse_warnings, []);
+  });
+});

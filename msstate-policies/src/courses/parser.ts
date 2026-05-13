@@ -10,7 +10,7 @@
  *   When uncertain, set logic="mixed" and rely on raw_prose verbatim.
  */
 import { load as cheerioLoad } from "cheerio";
-import { COURSE_CODE_RE, type Course, type Prereq } from "./types.js";
+import { COURSE_CODE_RE, type Course, type Prereq, type PrereqWarning } from "./types.js";
 
 const COURSE_TOKEN_RE = /\b[A-Z]{2,4}\s\d{4}\b/g;
 const NON_COURSE_PATTERNS: Array<{ rx: RegExp; label: (m: RegExpExecArray) => string }> = [
@@ -124,31 +124,61 @@ function uniqueCourseCodes(clause: string): string[] {
   return out;
 }
 
+const GRADE_TRIGGER_RE = /\b(grade|better|minimum|earning)\b/i;
+const NONE_EQUIVALENT_RE = /^\s*(none|n\/?a|see\s+description)\s*$/i;
+
+function computeWarnings(
+  clause: string,
+  required_courses: string[],
+  non_course: string[],
+  logic: Prereq["logic"],
+  min_grade: Prereq["min_grade"],
+): PrereqWarning[] {
+  // Treat "none"/"n/a"/"see description" as null-equivalent — no warning.
+  // Strip the leading "(Prerequisites: " label first.
+  const inner = clause.replace(/^\(\s*[A-Za-z]+:\s*/i, "").replace(/\)$/, "");
+  if (NONE_EQUIVALENT_RE.test(inner)) {
+    return [];
+  }
+
+  const warnings: PrereqWarning[] = [];
+
+  // non_course_unparsed: raw_prose has content but neither required_courses NOR non_course got anything.
+  if (required_courses.length === 0 && non_course.length === 0) {
+    warnings.push("non_course_unparsed");
+  }
+
+  // grade_signal_present_but_unparsed: grade-trigger word present, but inferMinGrade returned null.
+  if (min_grade === null && GRADE_TRIGGER_RE.test(clause)) {
+    warnings.push("grade_signal_present_but_unparsed");
+  }
+
+  // logic_ambiguous: parser marked composition as "mixed".
+  if (logic === "mixed") {
+    warnings.push("logic_ambiguous");
+  }
+
+  return warnings;
+}
+
 function parseClause(label: "Prerequisites" | "Corequisites", input: string): Prereq | null {
   if (!input) return null;
   const clause = extractParenthesized(label, input);
   if (!clause) return null;
+
   const required_courses = uniqueCourseCodes(clause);
   const non_course = extractNonCourse(clause);
-  if (required_courses.length === 0 && non_course.length === 0) {
-    // Empty (no recognizable content); still report raw_prose so caller knows
-    // there WAS a prereq clause we couldn't decompose.
-    return {
-      required_courses: [],
-      logic: null,
-      min_grade: null,
-      non_course: [],
-      raw_prose: clause,
-      parse_warnings: [],  // Task 4.x will populate this when warranted
-    };
-  }
+  const logic = inferLogic(clause);
+  const min_grade = inferMinGrade(clause);
+  const parse_warnings = computeWarnings(clause, required_courses, non_course, logic, min_grade);
+
   return {
     required_courses,
-    logic: inferLogic(clause),
-    min_grade: inferMinGrade(clause),
+    logic,
+    min_grade,
     non_course,
     raw_prose: clause,
-    parse_warnings: [],  // Task 4.x will populate this when warranted
+    parse_warnings,
   };
 }
 
