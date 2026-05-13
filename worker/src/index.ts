@@ -750,6 +750,136 @@ function filterEmergencyContacts(categoryInput: string): ContactRow[] {
   return rows.filter((c) => c.category === want);
 }
 
+// ---- tuition block ---------------------------------------------------------
+
+interface TuitionLineItem { label: string; amount_usd: number; }
+type CampusSlug = "starkville" | "meridian" | "mgccc" | "online" | "vetmed";
+type Level = "undergrad" | "grad" | "dvm";
+type Residency = "resident" | "non_resident";
+type TermT = "fall_spring" | "winter" | "summer" | "annual";
+type RateBasis = "per_credit_hour" | "per_semester_flat" | "annual_flat";
+type CreditHourBucket = "1-11" | "12-16" | "1-8" | "9+";
+
+interface TuitionRateRow {
+  campus: CampusSlug; level: Level; residency: Residency; term: TermT;
+  rate_basis: RateBasis; credit_hour_bucket: CreditHourBucket | null;
+  amount_usd: number; line_items: TuitionLineItem[];
+  effective_term: string; source_url: string; retrieved_at: string;
+}
+interface FeeRow {
+  kind: "college" | "program" | "course_distance";
+  label: string; per_credit_usd: number | null;
+  full_time_cap_usd: number | null; flat_amount_usd: number | null;
+  applicability_note: string; source_url: string; retrieved_at: string;
+}
+interface FaqRow {
+  question: string; answer: string; source_url: string; retrieved_at: string;
+}
+interface CampusEntry {
+  slug: CampusSlug; display_name: string; levels_offered: Level[];
+  rate_basis: "per_credit_hour" | "annual_flat"; source_url: string;
+}
+interface TuitionCorpus {
+  builtAt: string; source: string;
+  rate_rows: TuitionRateRow[]; fee_rows: FeeRow[];
+  faq_rows: FaqRow[]; campuses: CampusEntry[];
+}
+
+const TUITION: TuitionCorpus | null =
+  (corpus as { tuition?: TuitionCorpus }).tuition ?? null;
+
+const TUITION_DISCLAIMER =
+  "Tuition rates are subject to change without notice. Always verify the current rate at https://www.controller.msstate.edu/accountservices/tuition before paying.";
+
+// BM25 over the FAQ rows (question×2, answer×1; k1=1.2, b=0.75)
+const TUI_FIELD_WEIGHTS = { question: 2, answer: 1 } as const;
+const TUI_BM25_K1 = 1.2;
+const TUI_BM25_B = 0.75;
+
+interface TuiFaqDoc {
+  row: FaqRow; qTokens: string[]; aTokens: string[]; dl: number;
+}
+const TUI_FAQ_DOCS: TuiFaqDoc[] = (TUITION?.faq_rows ?? []).map((row) => {
+  const qTokens = tokenize(row.question);
+  const aTokens = tokenize(row.answer);
+  return { row, qTokens, aTokens, dl: qTokens.length + aTokens.length };
+});
+const TUI_FAQ_DF = new Map<string, number>();
+let TUI_FAQ_AVGLEN = 0;
+{
+  let total = 0;
+  for (const d of TUI_FAQ_DOCS) {
+    total += d.dl;
+    const seen = new Set<string>();
+    for (const t of [...d.qTokens, ...d.aTokens]) {
+      if (seen.has(t)) continue;
+      seen.add(t);
+      TUI_FAQ_DF.set(t, (TUI_FAQ_DF.get(t) ?? 0) + 1);
+    }
+  }
+  TUI_FAQ_AVGLEN = TUI_FAQ_DOCS.length > 0 ? total / TUI_FAQ_DOCS.length : 0;
+}
+function tuiFaqIdf(t: string): number {
+  const n = TUI_FAQ_DOCS.length;
+  const dfi = TUI_FAQ_DF.get(t) ?? 0;
+  if (dfi === 0 || n === 0) return 0;
+  return Math.log(1 + (n - dfi + 0.5) / (dfi + 0.5));
+}
+function tuiBm25(tf: number, dl: number, idfV: number): number {
+  if (tf <= 0) return 0;
+  const denom = tf + TUI_BM25_K1 * (1 - TUI_BM25_B + (TUI_BM25_B * dl) / (TUI_FAQ_AVGLEN || 1));
+  return idfV * ((tf * (TUI_BM25_K1 + 1)) / denom);
+}
+function tuiSearchFaq(query: string, k: number): { row: FaqRow; score: number }[] {
+  const qTokens = tokenize(query);
+  if (qTokens.length === 0) return [];
+  const out: { row: FaqRow; score: number }[] = [];
+  for (const d of TUI_FAQ_DOCS) {
+    let s = 0;
+    for (const q of qTokens) {
+      const idfQ = tuiFaqIdf(q);
+      if (idfQ === 0) continue;
+      s += TUI_FIELD_WEIGHTS.question * tuiBm25(countOf(q, d.qTokens), d.dl, idfQ);
+      s += TUI_FIELD_WEIGHTS.answer   * tuiBm25(countOf(q, d.aTokens), d.dl, idfQ);
+    }
+    if (s > 0) out.push({ row: d.row, score: s });
+  }
+  out.sort((a, b) => b.score - a.score);
+  return out.slice(0, Math.max(1, Math.min(k, out.length)));
+}
+
+// Rate routing (mirrors src/tuition/search.ts)
+function tuiPickBucket(level: Level, hours: number): CreditHourBucket | null {
+  if (level === "undergrad") return hours <= 11 ? "1-11" : "12-16";
+  if (level === "grad")      return hours <= 8 ? "1-8"  : "9+";
+  return null;
+}
+interface TuiRateReq {
+  campus: CampusSlug; level: Level; residency: Residency;
+  term?: TermT; credit_hours?: number;
+}
+function tuiRouteRate(req: TuiRateReq): { matches: TuitionRateRow[]; not_found_reason?: string } {
+  if (req.campus === "vetmed" && req.level !== "dvm") {
+    return { matches: [], not_found_reason: "Vetmed publishes tuition for the DVM program only. For graduate-level MS/PhD vet med programs, see Starkville graduate rates." };
+  }
+  if (req.level === "dvm" && req.campus !== "vetmed") {
+    return { matches: [], not_found_reason: "DVM tuition is published only by the College of Veterinary Medicine. See campus=vetmed." };
+  }
+  if (req.campus === "mgccc" && req.level === "grad") {
+    return { matches: [], not_found_reason: "MGCCC partnership covers undergraduate engineering only — graduate students enroll on the Starkville campus." };
+  }
+  let rows = (TUITION?.rate_rows ?? []).filter(
+    (r) => r.campus === req.campus && r.level === req.level && r.residency === req.residency,
+  );
+  if (req.term) rows = rows.filter((r) => r.term === req.term);
+  if (req.campus === "vetmed") return { matches: rows };
+  if (typeof req.credit_hours === "number") {
+    const b = tuiPickBucket(req.level, req.credit_hours);
+    if (b) rows = rows.filter((r) => r.credit_hour_bucket === b || r.credit_hour_bucket === null);
+  }
+  return { matches: rows };
+}
+
 // ---- Helpers ----------------------------------------------------------------
 
 function findPolicy(numberOrSlug?: string, url?: string): Policy | undefined {
@@ -977,6 +1107,50 @@ const TOOLS = [
         },
       },
     },
+  },
+  {
+    name: "get_msu_tuition_rate",
+    description: "Look up MSU tuition for a specific campus + level + residency + (optional) term + (optional) credit_hours. Returns matching rate rows verbatim with effective_term and a breakdown of line_items. Every response includes the disclaimer that rates are subject to change. Rules: campus=vetmed requires level=dvm; level=dvm requires campus=vetmed; campus=mgccc has no graduate program. Undergrad credit_hours buckets: 1-11 / 12-16. Grad: 1-8 / 9+. Hours >16 cap to 12-16. Source: controller.msstate.edu (4 campuses) + vetmed.msstate.edu/tuition.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        campus: { type: "string", enum: ["starkville", "meridian", "mgccc", "online", "vetmed"] },
+        level: { type: "string", enum: ["undergrad", "grad", "dvm"] },
+        residency: { type: "string", enum: ["resident", "non_resident"] },
+        term: { type: "string", enum: ["fall_spring", "winter", "summer", "annual"] },
+        credit_hours: { type: "integer", minimum: 1, maximum: 30 },
+      },
+      required: ["campus", "level", "residency"],
+    },
+  },
+  {
+    name: "get_msu_enrollment_fees",
+    description: "List MSU's per-college, per-program, and per-course/distance enrollment fees. `kind`: 'college' | 'program' | 'course_distance'. `filter` (optional): case-insensitive substring on the label. Every response carries the tuition disclaimer. Source: controller.msstate.edu/accountservices/tuition/other-enrollment-costs.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        kind: { type: "string", enum: ["college", "program", "course_distance"] },
+        filter: { type: "string", description: "Substring filter, max 4096 chars" },
+      },
+      required: ["kind"],
+    },
+  },
+  {
+    name: "find_msu_tuition_faq",
+    description: "Search MSU's tuition FAQ (controller.msstate.edu/accountservices/tuition/frequently-asked-questions) for a question. Returns top-k matching Q&A pairs verbatim. `q`: free-text. `k`: 1-10, default 3. Every response carries the tuition disclaimer. BM25.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        q: { type: "string", description: "Question text, max 4096 chars" },
+        k: { type: "integer", minimum: 1, maximum: 10 },
+      },
+      required: ["q"],
+    },
+  },
+  {
+    name: "list_msu_tuition_campuses",
+    description: "List MSU's 5 published tuition campuses (starkville, meridian, mgccc, online, vetmed) with display name, levels_offered, rate_basis, and source URL. Use this to discover valid `campus` values before calling get_msu_tuition_rate.",
+    inputSchema: { type: "object", properties: {} },
   },
   {
     name: "health_check",
@@ -1335,10 +1509,79 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<Mc
       });
     }
 
+    case "get_msu_tuition_rate": {
+      const a = args as Record<string, unknown>;
+      const campus = String(a.campus ?? "") as CampusSlug;
+      const level  = String(a.level ?? "")  as Level;
+      const residency = String(a.residency ?? "") as Residency;
+      const term = a.term ? (String(a.term) as TermT) : undefined;
+      const credit_hours = typeof a.credit_hours === "number" ? a.credit_hours : undefined;
+      const VALID_CAMPUS = ["starkville","meridian","mgccc","online","vetmed"];
+      const VALID_LEVEL  = ["undergrad","grad","dvm"];
+      const VALID_RES    = ["resident","non_resident"];
+      if (!VALID_CAMPUS.includes(campus)) return errorContent("campus must be one of: " + VALID_CAMPUS.join(", "));
+      if (!VALID_LEVEL.includes(level))   return errorContent("level must be one of: " + VALID_LEVEL.join(", "));
+      if (!VALID_RES.includes(residency)) return errorContent("residency must be one of: " + VALID_RES.join(", "));
+      if (typeof credit_hours === "number" && (credit_hours < 1 || credit_hours > 30 || !Number.isInteger(credit_hours))) {
+        return errorContent("credit_hours must be an integer between 1 and 30.");
+      }
+      const r = tuiRouteRate({ campus, level, residency, term, credit_hours });
+      return jsonContent({
+        disclaimer: TUITION_DISCLAIMER,
+        matches: r.matches,
+        ...(r.not_found_reason ? { not_found_reason: r.not_found_reason } : {}),
+        corpus_built_at: TUITION?.builtAt ?? null,
+      });
+    }
+    case "get_msu_enrollment_fees": {
+      const a = args as Record<string, unknown>;
+      const kind = String(a.kind ?? "");
+      const filter = typeof a.filter === "string" ? a.filter : undefined;
+      if (filter !== undefined && filter.length > MAX_QUERY_CHARS) return tooLong("filter", filter);
+      if (!["college", "program", "course_distance"].includes(kind)) {
+        return errorContent("kind must be one of: college, program, course_distance");
+      }
+      let rows = (TUITION?.fee_rows ?? []).filter((r) => r.kind === kind);
+      if (filter && filter.trim().length > 0) {
+        const f = filter.trim().toLowerCase();
+        rows = rows.filter((r) => r.label.toLowerCase().includes(f));
+      }
+      return jsonContent({
+        disclaimer: TUITION_DISCLAIMER,
+        matches: rows,
+        corpus_built_at: TUITION?.builtAt ?? null,
+      });
+    }
+    case "find_msu_tuition_faq": {
+      const a = args as Record<string, unknown>;
+      const q = String(a.q ?? "");
+      if (q.length === 0) return errorContent("q is required.");
+      if (q.length > MAX_QUERY_CHARS) return tooLong("q", q);
+      const k = typeof a.k === "number" ? a.k : 3;
+      if (!Number.isInteger(k) || k < 1 || k > 10) return errorContent("k must be an integer between 1 and 10.");
+      const hits = tuiSearchFaq(q, k);
+      return jsonContent({
+        disclaimer: TUITION_DISCLAIMER,
+        matches: hits.map((h) => ({
+          question: h.row.question, answer: h.row.answer,
+          source_url: h.row.source_url, bm25_score: h.score,
+          retrieved_at: h.row.retrieved_at,
+        })),
+        corpus_built_at: TUITION?.builtAt ?? null,
+      });
+    }
+    case "list_msu_tuition_campuses": {
+      return jsonContent({
+        disclaimer: TUITION_DISCLAIMER,
+        campuses: TUITION?.campuses ?? [],
+        corpus_built_at: TUITION?.builtAt ?? null,
+      });
+    }
+
     case "health_check": {
       return jsonContent({
         runtime: "cloudflare-workers",
-        version: "0.7.0",
+        version: "0.8.0",
         index_row_count: corpus.indexRowCount,
         policies_in_corpus: POLICIES.length,
         corpus_built_at: corpus.builtAt,
@@ -1353,6 +1596,10 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<Mc
         emergency_refuge_count: EMERGENCY?.refuge_areas.length ?? 0,
         emergency_contact_count: EMERGENCY?.contacts.length ?? 0,
         emergency_built_at: EMERGENCY?.builtAt ?? null,
+        tuition_rate_count: TUITION?.rate_rows.length ?? 0,
+        tuition_fee_count: TUITION?.fee_rows.length ?? 0,
+        tuition_faq_count: TUITION?.faq_rows.length ?? 0,
+        tuition_campus_count: TUITION?.campuses.length ?? 0,
         note: "This is the Cloudflare Workers variant. Corpus is a pre-extracted snapshot; rebuild via scripts/build-worker-corpus.mjs to refresh.",
       });
     }
@@ -1389,7 +1636,7 @@ async function handleRpc(req: JsonRpcRequest): Promise<JsonRpcResponse | null> {
         id,
         result: {
           protocolVersion: PROTOCOL_VERSION,
-          serverInfo: { name: "msstate-policies", version: "0.7.0" },
+          serverInfo: { name: "msstate-policies", version: "0.8.0" },
           capabilities: { tools: { listChanged: false } },
         },
       };
@@ -1459,7 +1706,7 @@ export default {
           JSON.stringify(
             {
               name: "msstate-policies-mcp",
-              version: "0.7.0",
+              version: "0.8.0",
               runtime: "cloudflare-workers",
               policies: POLICIES.length,
               builtAt: corpus.builtAt,

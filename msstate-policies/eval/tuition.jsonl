@@ -1,0 +1,32 @@
+{"kind":"rate_lookup","desc":"starkville undergrad resident 12-16 fall_spring (15 hrs)","args":{"campus":"starkville","level":"undergrad","residency":"resident","term":"fall_spring","credit_hours":15},"expected_amount":5497.5}
+{"kind":"rate_lookup","desc":"starkville undergrad resident 1-11 fall_spring (6 hrs)","args":{"campus":"starkville","level":"undergrad","residency":"resident","term":"fall_spring","credit_hours":6},"expected_amount":458.25}
+{"kind":"rate_lookup","desc":"starkville undergrad non_resident 12-16 fall_spring (12 hrs)","args":{"campus":"starkville","level":"undergrad","residency":"non_resident","term":"fall_spring","credit_hours":12},"expected_amount":14993}
+{"kind":"rate_lookup","desc":"starkville undergrad non_resident 1-11 fall_spring (9 hrs)","args":{"campus":"starkville","level":"undergrad","residency":"non_resident","term":"fall_spring","credit_hours":9},"expected_amount":1249.75}
+{"kind":"rate_lookup","desc":"starkville grad resident 9+ fall_spring (12 hrs)","args":{"campus":"starkville","level":"grad","residency":"resident","term":"fall_spring","credit_hours":12},"expected_amount":5497.5}
+{"kind":"rate_lookup","desc":"starkville grad resident 1-8 fall_spring (3 hrs)","args":{"campus":"starkville","level":"grad","residency":"resident","term":"fall_spring","credit_hours":3},"expected_amount":610.84}
+{"kind":"rate_lookup","desc":"starkville grad non_resident 9+ fall_spring (10 hrs)","args":{"campus":"starkville","level":"grad","residency":"non_resident","term":"fall_spring","credit_hours":10},"expected_amount":14993}
+{"kind":"rate_lookup","desc":"meridian undergrad resident 12-16 fall_spring (16 hrs)","args":{"campus":"meridian","level":"undergrad","residency":"resident","term":"fall_spring","credit_hours":16},"expected_amount":5472.5}
+{"kind":"rate_lookup","desc":"meridian grad resident 9+ fall_spring (9 hrs)","args":{"campus":"meridian","level":"grad","residency":"resident","term":"fall_spring","credit_hours":9},"expected_amount":5472.5}
+{"kind":"rate_lookup","desc":"mgccc undergrad resident 12-16 fall_spring (14 hrs)","args":{"campus":"mgccc","level":"undergrad","residency":"resident","term":"fall_spring","credit_hours":14},"expected_amount":5472.5}
+{"kind":"rate_lookup","desc":"online undergrad resident 12-16 fall_spring (13 hrs)","args":{"campus":"online","level":"undergrad","residency":"resident","term":"fall_spring","credit_hours":13},"expected_amount":5422.5}
+{"kind":"rate_lookup","desc":"online grad non_resident 9+ fall_spring (9 hrs)","args":{"campus":"online","level":"grad","residency":"non_resident","term":"fall_spring","credit_hours":9},"expected_amount":5422.5}
+{"kind":"rate_lookup","desc":"vetmed dvm resident fall_spring","args":{"campus":"vetmed","level":"dvm","residency":"resident","term":"fall_spring"},"expected_amount":14951.5}
+{"kind":"rate_lookup","desc":"vetmed dvm non_resident annual","args":{"campus":"vetmed","level":"dvm","residency":"non_resident","term":"annual"},"expected_amount":52643}
+{"kind":"rate_not_found","desc":"vetmed undergrad not offered","args":{"campus":"vetmed","level":"undergrad","residency":"resident"},"expected_reason_contains":"DVM"}
+{"kind":"rate_not_found","desc":"dvm on starkville campus not valid","args":{"campus":"starkville","level":"dvm","residency":"resident"},"expected_reason_contains":"vetmed"}
+{"kind":"rate_not_found","desc":"mgccc grad not offered","args":{"campus":"mgccc","level":"grad","residency":"resident"},"expected_reason_contains":"undergraduate"}
+{"kind":"fee_lookup","desc":"Bagley Engineering college fee per_credit $41.75","args":{"kind":"college","filter":"engineering"},"expected_label_contains":"Engineering","expected_amount":41.75,"expected_field":"per_credit_usd"}
+{"kind":"fee_lookup","desc":"Honors College flat $75","args":{"kind":"program","filter":"honors"},"expected_label_contains":"Honors","expected_amount":75,"expected_field":"flat_amount_usd"}
+{"kind":"fee_lookup","desc":"MBA program per_credit $350","args":{"kind":"program","filter":"business administration"},"expected_label_contains":"Business Administration","expected_amount":350,"expected_field":"per_credit_usd"}
+{"kind":"fee_lookup","desc":"College of Business per_credit $41.75","args":{"kind":"college","filter":"business"},"expected_label_contains":"Business","expected_amount":41.75,"expected_field":"per_credit_usd"}
+{"kind":"fee_lookup","desc":"Architecture program per_credit $62.50","args":{"kind":"program","filter":"architecture"},"expected_label_contains":"Architecture","expected_amount":62.5,"expected_field":"per_credit_usd"}
+{"kind":"faq_top_match","desc":"campus question","args":{"q":"why do I need to know my campus","k":3},"expected_question_contains":"campus"}
+{"kind":"faq_top_match","desc":"freshmen college fee question","args":{"q":"do freshmen pay a college fee","k":3},"expected_question_contains":"freshmen"}
+{"kind":"faq_top_match","desc":"college fee differences question","args":{"q":"why are college fees different between colleges","k":5},"expected_question_contains":"College fees different"}
+{"kind":"faq_top_match","desc":"online campus distance fee question","args":{"q":"online education campus distance fee charged","k":5},"expected_question_contains":"Online Education"}
+{"kind":"faq_top_match","desc":"non-resident online question","args":{"q":"non-resident student taking online course pay non-resident tuition","k":3},"expected_question_contains":"non-resident"}
+{"kind":"faq_top_match","desc":"graduate students college fees question","args":{"q":"graduate students overload hours college fees","k":3},"expected_question_contains":"Graduate"}
+{"kind":"list_campuses","desc":"5 campuses returned with correct slugs","args":{}}
+{"kind":"adversarial_empty","desc":"nursing program fee not in corpus","tool":"get_msu_enrollment_fees","args":{"kind":"program","filter":"nursing"}}
+{"kind":"adversarial_empty","desc":"law college fee not in corpus","tool":"get_msu_enrollment_fees","args":{"kind":"college","filter":"law"}}
+{"kind":"adversarial_empty","desc":"pharmacy program fee not in corpus","tool":"get_msu_enrollment_fees","args":{"kind":"program","filter":"pharmacy"}}

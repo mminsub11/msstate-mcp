@@ -486,4 +486,94 @@ else
   note "FAIL" "EMG4 build-worker-corpus.mjs missing emergency-corpus poison-abort" 2
 fi
 
+# =============================================================================
+# Tuition module checks (TUI1-TUI5, added 2026-05-13). +12 pts total.
+# =============================================================================
+
+# TUI1: All https:// URLs inside msstate-policies/src/tuition/ stay on msstate.edu.
+TUI_NON_MSU=$(grep -rE 'https://[^"'"'"'[:space:])]+' msstate-policies/src/tuition 2>/dev/null \
+  | grep -vE 'https://[^/]*msstate\.edu' \
+  | wc -l | tr -d ' ')
+if [ "$TUI_NON_MSU" = "0" ]; then
+  score=$((score + 3))
+  note "PASS" "TUI1 all tuition-module URLs stay on msstate.edu" 3
+else
+  note "FAIL" "TUI1 found $TUI_NON_MSU non-msstate.edu URLs in src/tuition/" 3
+fi
+
+# TUI2: TUITION_ROOTS frozen Object.freeze allowlist present, exact 9 URLs.
+TUI_ROOTS_OK=0
+if grep -qE 'export const TUITION_ROOTS.*=.*Object\.freeze\(' msstate-policies/src/tuition/types.ts 2>/dev/null; then
+  EXPECTED_TUI_URLS=(
+    "https://www.controller.msstate.edu/accountservices/tuition"
+    "https://www.controller.msstate.edu/accountservices/tuition/frequently-asked-questions"
+    "https://www.controller.msstate.edu/accountservices/tuition/other-enrollment-costs"
+    "https://www.controller.msstate.edu/accountservices/tuition/select-your-campus"
+    "https://www.controller.msstate.edu/accountservices/tuition/starkville-campus"
+    "https://www.controller.msstate.edu/accountservices/tuition/meridian-campus"
+    "https://www.controller.msstate.edu/accountservices/tuition/mgccc-campus-rates"
+    "https://www.controller.msstate.edu/accountservices/tuition/online-education-rates"
+    "https://www.vetmed.msstate.edu/tuition"
+  )
+  TUI_MISSING=0
+  for u in "${EXPECTED_TUI_URLS[@]}"; do
+    if ! grep -qF "\"$u\"" msstate-policies/src/tuition/types.ts; then
+      TUI_MISSING=$((TUI_MISSING+1))
+    fi
+  done
+  if [ "$TUI_MISSING" = "0" ]; then TUI_ROOTS_OK=1; fi
+fi
+if [ "$TUI_ROOTS_OK" = "1" ]; then
+  score=$((score + 2))
+  note "PASS" "TUI2 TUITION_ROOTS frozen allowlist present with all 9 URLs" 2
+else
+  note "FAIL" "TUI2 TUITION_ROOTS allowlist missing or incomplete" 2
+fi
+
+# TUI3: Worker length-caps `q` and `filter` before parse on the 2 string-taking
+# tuition tools. (list_msu_tuition_campuses + get_msu_tuition_rate are exempt.)
+TUI3_OK=1
+if ! grep -nA 6 'case "get_msu_enrollment_fees":' worker/src/index.ts \
+     | grep -q "MAX_QUERY_CHARS"; then
+  TUI3_OK=0
+fi
+if ! grep -nA 6 'case "find_msu_tuition_faq":' worker/src/index.ts \
+     | grep -q "MAX_QUERY_CHARS"; then
+  TUI3_OK=0
+fi
+if [ "$TUI3_OK" = "1" ]; then
+  score=$((score + 3))
+  note "PASS" "TUI3 Worker length-caps q + filter before parse on tuition tools" 3
+else
+  note "FAIL" "TUI3 Worker missing length-cap on at least one tuition tool" 3
+fi
+
+# TUI4: Build aborts with the canonical string on poisoned tuition corpus.
+TUI4_COUNT=$(grep -c "refusing to ship a poisoned tuition corpus" scripts/build-worker-corpus.mjs 2>/dev/null | tr -d ' ')
+TUI4_COUNT=${TUI4_COUNT:-0}
+if [ "$TUI4_COUNT" -ge "8" ] 2>/dev/null; then
+  score=$((score + 2))
+  note "PASS" "TUI4 build aborts on poisoned tuition corpus ($TUI4_COUNT abort sites)" 2
+else
+  note "FAIL" "TUI4 only $TUI4_COUNT 'refusing to ship a poisoned tuition corpus' sites (need >= 8)" 2
+fi
+
+# TUI5: TUITION_DISCLAIMER constant present in types.ts AND referenced in
+# all 4 tuition tool files.
+TUI5_OK=1
+if ! grep -q 'TUITION_DISCLAIMER' msstate-policies/src/tuition/types.ts 2>/dev/null; then
+  TUI5_OK=0
+fi
+for f in get_msu_tuition_rate get_msu_enrollment_fees find_msu_tuition_faq list_msu_tuition_campuses; do
+  if ! grep -q 'TUITION_DISCLAIMER' "msstate-policies/src/tools/${f}.ts" 2>/dev/null; then
+    TUI5_OK=0
+  fi
+done
+if [ "$TUI5_OK" = "1" ]; then
+  score=$((score + 2))
+  note "PASS" "TUI5 TUITION_DISCLAIMER present in types.ts + 4 tool files" 2
+else
+  note "FAIL" "TUI5 TUITION_DISCLAIMER missing from types.ts or one of the tool files" 2
+fi
+
 echo "$score"

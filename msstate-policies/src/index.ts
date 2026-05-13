@@ -37,6 +37,12 @@ import { find_msu_severe_weather_refuge } from "./tools/find_msu_severe_weather_
 import { get_msu_emergency_contacts } from "./tools/get_msu_emergency_contacts.js";
 import { setEmergencyCorpus } from "./emergency/corpus.js";
 import type { EmergencyCorpus } from "./emergency/types.js";
+import { get_msu_tuition_rate } from "./tools/get_msu_tuition_rate.js";
+import { get_msu_enrollment_fees } from "./tools/get_msu_enrollment_fees.js";
+import { find_msu_tuition_faq } from "./tools/find_msu_tuition_faq.js";
+import { list_msu_tuition_campuses } from "./tools/list_msu_tuition_campuses.js";
+import { setTuitionCorpus } from "./tuition/corpus.js";
+import type { TuitionCorpus } from "./tuition/types.js";
 import { health_check } from "./tools/health_check.js";
 
 // Deterministic order — referenced in the README and CI smoke test.
@@ -54,6 +60,10 @@ const TOOLS = [
   list_msu_emergency_types,
   find_msu_severe_weather_refuge,
   get_msu_emergency_contacts,
+  get_msu_tuition_rate,
+  get_msu_enrollment_fees,
+  find_msu_tuition_faq,
+  list_msu_tuition_campuses,
   health_check,
 ] as const;
 
@@ -71,6 +81,7 @@ declare const __VERSION__: string | undefined;
 declare const __GIT_SHA__: string | undefined;
 declare const __COURSE_CORPUS__: CourseCorpus | undefined;
 declare const __EMERGENCY_CORPUS__: EmergencyCorpus | undefined;
+declare const __TUITION_CORPUS__: TuitionCorpus | undefined;
 
 function safeVersion(): string {
   return typeof __VERSION__ !== "undefined" ? __VERSION__ : "";
@@ -101,6 +112,20 @@ function loadBakedEmergencyCorpus(): void {
     });
   } else {
     log("warn", "no baked emergency corpus available; emergency tools will return empty results");
+  }
+}
+
+function loadBakedTuitionCorpus(): void {
+  if (typeof __TUITION_CORPUS__ !== "undefined" && __TUITION_CORPUS__) {
+    setTuitionCorpus(__TUITION_CORPUS__);
+    log("info", "tuition corpus loaded", {
+      rate_rows: __TUITION_CORPUS__.rate_rows.length,
+      fee_rows: __TUITION_CORPUS__.fee_rows.length,
+      faq_rows: __TUITION_CORPUS__.faq_rows.length,
+      campuses: __TUITION_CORPUS__.campuses.length,
+    });
+  } else {
+    log("warn", "no baked tuition corpus available; tuition tools will return empty results");
   }
 }
 
@@ -188,6 +213,7 @@ async function main(): Promise<void> {
 
   loadBakedCourseCorpus();
   loadBakedEmergencyCorpus();
+  loadBakedTuitionCorpus();
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

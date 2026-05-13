@@ -29,6 +29,10 @@ Covers three domains, all sourced exclusively from `*.msstate.edu`:
 - *"What do I need to take before CSE 4733 (Operating Systems)?"* → walks the prereq chain
 - *"What does Calc I unlock?"* → reverse-walks the DAG to show downstream courses
 
+**Tuition (v0.8.0):**
+- *"How much is in-state undergrad tuition at Starkville for Fall 2026?"*
+- *"What's the College of Engineering fee?"*
+
 The model **refuses** when no MSU source covers the question (*"What's the weather?"*, *"Football scores?"*) rather than guessing.
 
 ---
@@ -51,7 +55,7 @@ Fastest path. Works in the browser and the Claude iOS/Android apps. Requires a p
 1. Sign in at <https://claude.ai>
 2. **Settings → Connectors → Add custom connector**
 3. **Name:** `MSU` &nbsp;&nbsp; **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
-4. Save. You should see **14 tools** appear
+4. Save. You should see **18 tools** appear
 5. New chat, enable the connector, ask a question
 
 Mobile apps pick up the connector automatically once you set it up on web.
@@ -63,7 +67,7 @@ Same flow as claude.ai. Free-tier ChatGPT can't add connectors — use the [Open
 1. Sign in at <https://chatgpt.com>
 2. **Settings → Connectors → Add custom connector**
 3. **Name:** `MSU` &nbsp;&nbsp; **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
-4. Save → 14 tools available
+4. Save → 18 tools available
 
 ### Claude Code
 
@@ -104,7 +108,7 @@ You need [Node.js 18+](https://nodejs.org).
 
 **3.** Fully quit the client (Cmd+Q / right-click tray → Quit) and reopen.
 
-**4.** Verify the `msstate-policies` server shows **14 tools**. First call takes ~5 seconds (cold fetch); later calls reuse cached data.
+**4.** Verify the `msstate-policies` server shows **18 tools**. First call takes ~5 seconds (cold fetch); later calls reuse cached data.
 
 Ready-to-paste snippet at [`examples/claude_desktop_config.json`](examples/claude_desktop_config.json).
 
@@ -166,7 +170,7 @@ Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 
 
 ---
 
-## The 14 tools
+## The 18 tools
 
 | Tool | Use it for |
 |---|---|
@@ -187,6 +191,11 @@ Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 
 | `list_msu_emergency_types` | Enumerate the 12 published emergency-guideline types (slug + title + url) |
 | `find_msu_severe_weather_refuge` | Severe-weather-only refuge area by building name. Returns interior-room fallback guidance when the building isn't listed |
 | `get_msu_emergency_contacts` | 911 / MSU PD / Counseling / off-campus contacts. Filter by `all` \| `emergency` \| `campus` \| `off_campus` |
+| **Tuition (4 tools, v0.8.0)** | |
+| `get_msu_tuition_rate` | Structured rate lookup by campus + level + residency + (optional) term + credit_hours. Returns matching rows with line-item breakdown, effective_term, and a mandatory "rates subject to change" disclaimer. Routing rules: vetmed=DVM only; mgccc=undergrad only; level=dvm requires campus=vetmed. |
+| `get_msu_enrollment_fees` | Per-college, per-program, and per-course/distance fees from controller.msstate.edu/accountservices/tuition/other-enrollment-costs. Filter by substring (e.g. "engineering", "honors", "business administration"). |
+| `find_msu_tuition_faq` | BM25 search across MSU's 14-question tuition FAQ. Returns top-k Q&A pairs verbatim with anchor URLs. |
+| `list_msu_tuition_campuses` | Enumerate the 5 published tuition campuses (starkville, meridian, mgccc, online, vetmed) with levels_offered + rate_basis + source URL. |
 | **Diagnostic (1 tool)** | |
 | `health_check` | Per-source counts, last build timestamp, last errors |
 
