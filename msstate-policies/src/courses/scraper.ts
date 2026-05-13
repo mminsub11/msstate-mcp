@@ -194,20 +194,20 @@ export async function scrapeAllCourses(opts: ScrapeAllOptions = {}): Promise<Scr
   const per_dept: Record<string, { course_count: number; error: string | null }> = {};
   const allCodes = new Set<string>();
 
-  for (const deptUrl of deptUrls) {
+  await pool(deptUrls, CONCURRENCY, async (deptUrl) => {
     try {
       const deptHtml = await deptFetcher(deptUrl);
       const codes = extractCourseCodesFromDeptHtml(deptHtml);
       if (codes.length === 0) {
         per_dept[deptUrl] = { course_count: 0, error: "zero courses extracted" };
-        continue;
+        return;
       }
       for (const c of codes) allCodes.add(c);
       per_dept[deptUrl] = { course_count: codes.length, error: null };
     } catch (e) {
       per_dept[deptUrl] = { course_count: 0, error: e instanceof Error ? e.message : String(e) };
     }
-  }
+  });
 
   const codes = Array.from(allCodes);
   if (codes.length === 0) {
