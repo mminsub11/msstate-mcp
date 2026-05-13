@@ -46,13 +46,22 @@ const CATEGORY_INPUT_MAP: Record<string, ContactCategory | "all"> = {
   all: "all",
   emergency: "emergency",
   campus: "campus_non_emergency",
+  campus_non_emergency: "campus_non_emergency",
+  "non-emergency": "campus_non_emergency",
+  non_emergency: "campus_non_emergency",
   off_campus: "off_campus_non_emergency",
+  "off-campus": "off_campus_non_emergency",
+  off_campus_non_emergency: "off_campus_non_emergency",
 };
+
+export function isValidCategoryInput(input: string): boolean {
+  return CATEGORY_INPUT_MAP[input.toLowerCase().trim()] !== undefined;
+}
 
 export function filterContacts(categoryInput: string): ContactRow[] {
   if (!CORPUS) return [];
   const want = CATEGORY_INPUT_MAP[categoryInput.toLowerCase().trim()];
-  if (!want) return []; // unknown — recoverable empty
+  if (!want) return []; // unknown — caller should have validated first
   if (want === "all") return CORPUS.contacts.slice();
   return CORPUS.contacts.filter((c) => c.category === want);
 }
