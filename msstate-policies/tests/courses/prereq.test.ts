@@ -158,4 +158,17 @@ describe("walkGraph — shared prerequisites are not cycles", () => {
     assert.equal(r.truncated, true, "a true 2-cycle must mark truncated");
     assert.equal(r.notes.some((n) => /cycle/i.test(n)), true, "must emit cycle note");
   });
+
+  test("a 3-node cycle is detected (path-set isolates from global visited)", () => {
+    // A -> B -> C -> A: only path-based detection distinguishes this from
+    // a legitimate convergent cross-edge.
+    const corpus = mkCorpus([
+      mkCourse("XX 1000", "A", ["XX 2000"]),
+      mkCourse("XX 2000", "B", ["XX 3000"]),
+      mkCourse("XX 3000", "C", ["XX 1000"]),
+    ]);
+    const r = walkGraph(corpus, "XX 1000", "prereqs", 5);
+    assert.equal(r.truncated, true, "3-node cycle must mark truncated");
+    assert.equal(r.notes.some((n) => /cycle/i.test(n)), true, "must emit cycle note");
+  });
 });

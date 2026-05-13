@@ -7,10 +7,11 @@
  * Reverse direction ("unlocks"): from root, follow `reverse_dag` edges
  * (prereq → courses that require it). Useful for "what unlocks after X?".
  *
- * Cycle detection via visited-set. Depth clamped to [MIN_GRAPH_DEPTH,
- * MAX_GRAPH_DEPTH]. Result includes `truncated: true` whenever the walk
- * stopped early (depth cap or cycle), so the client knows the picture
- * is partial.
+ * Cycle detection via per-path ancestor set; convergent DAG edges in
+ * `emittedEdge` are emitted while only the first visit expands the node.
+ * Depth clamped to [MIN_GRAPH_DEPTH, MAX_GRAPH_DEPTH]. Result includes
+ * `truncated: true` whenever the walk stopped early (depth cap or cycle),
+ * so the client knows the picture is partial.
  */
 import {
   type CourseCorpus,
@@ -62,10 +63,10 @@ export function walkGraph(
   let truncated = false;
   let depth_used = 0;
 
-  // Path-based cycle detection: we only need to flag re-entry into a node
-  // that's an ancestor on the current root→here path. For an acyclic graph
-  // (course prereqs in practice are acyclic) this set never repeats.
-  function bfs(start: string): void {
+  // BFS expansion order; each entry carries the ancestor path from root
+  // so true back-edges (path.has(n)) are distinguishable from convergent
+  // cross-edges (emittedNode.has(n) only).
+  function expandFrom(start: string): void {
     let frontier: Array<{ code: string; depth: number; path: ReadonlySet<string> }> = [
       { code: start, depth: 0, path: new Set([start]) },
     ];
@@ -104,6 +105,8 @@ export function walkGraph(
             const nextPath = new Set(path);
             nextPath.add(n);
             next.push({ code: n, depth: depth + 1, path: nextPath });
+            // BFS guarantees first-seen depth is the shortest path to n; depth_used
+            // is therefore the shortest-path diameter from root, not the longest.
             depth_used = Math.max(depth_used, depth + 1);
           }
         }
@@ -112,7 +115,7 @@ export function walkGraph(
     }
   }
 
-  bfs(rootCode);
+  expandFrom(rootCode);
 
   return {
     root: rootCode,
