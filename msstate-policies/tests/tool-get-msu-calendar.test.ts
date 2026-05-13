@@ -61,3 +61,29 @@ test("get_msu_calendar with no term returns all rows for the source", async () =
 test("get_msu_calendar rejects unknown source via zod", async () => {
   await assert.rejects(() => get_msu_calendar.handler({ source: "athletics" }));
 });
+
+import { describe } from "node:test";
+
+describe("get_msu_calendar — pagination", () => {
+  test("respects limit; total reports unpaged count; offset slides window", async () => {
+    const rows = Array.from({ length: 120 }, (_, i) => ({
+      source: "academic_calendar",
+      event: `Event ${i}`,
+      start: "2026-01-01", end: "2026-01-01",
+      term: "Spring 2026",
+      source_url: "https://x",
+      citation: "[X](https://x)",
+    }));
+    indexCalendarRowsForGetter(rows as any);
+    const res1 = await get_msu_calendar.handler({ source: "academic_calendar", limit: 25 });
+    const p1 = JSON.parse(res1.content[0].text);
+    assert.equal(p1.rows.length, 25);
+    assert.equal(p1.total, 120);
+    assert.equal(p1.limit, 25);
+    assert.equal(p1.offset, 0);
+    const res2 = await get_msu_calendar.handler({ source: "academic_calendar", limit: 25, offset: 100 });
+    const p2 = JSON.parse(res2.content[0].text);
+    assert.equal(p2.rows.length, 20, "tail page returns remainder");
+    assert.equal(p2.offset, 100);
+  });
+});
