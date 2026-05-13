@@ -1,7 +1,7 @@
 import { describe, test, before } from "node:test";
 import assert from "node:assert/strict";
 import { setEmergencyCorpus } from "../../src/emergency/corpus.js";
-import { resolveGuideline, findRefugeArea } from "../../src/emergency/search.js";
+import { indexGuidelines, resolveGuideline, findRefugeArea } from "../../src/emergency/search.js";
 import type { EmergencyCorpus } from "../../src/emergency/types.js";
 
 const CORPUS: EmergencyCorpus = {
@@ -81,5 +81,40 @@ describe("findRefugeArea", () => {
   });
   test("returns empty when nothing relevant", () => {
     assert.deepEqual(findRefugeArea("xyzzy plugh"), []);
+  });
+});
+
+describe("resolveGuideline — confidence threshold", () => {
+  test("strong alias-driven query keeps the match", () => {
+    indexGuidelines([
+      { slug: "severe-weather", title: "Severe Weather", url: "x", body_markdown: "Seek refuge during a tornado.", aliases: ["tornado", "twister"], retrieved_at: "t" },
+      { slug: "active-shooter", title: "Active Shooter", url: "x", body_markdown: "Run, hide, fight.", aliases: ["gunman"], retrieved_at: "t" },
+    ] as any);
+    const r = resolveGuideline("tornado warning");
+    assert.equal(r.matched?.slug, "severe-weather");
+    assert.equal(r.via, "bm25");
+    assert.ok(r.score > 0);
+  });
+
+  test("ambiguous low-signal query yields matched=null + suggestions", () => {
+    indexGuidelines([
+      { slug: "severe-weather", title: "Severe Weather", url: "x", body_markdown: "Seek refuge during a tornado.", aliases: ["tornado", "twister"], retrieved_at: "t" },
+      { slug: "active-shooter", title: "Active Shooter", url: "x", body_markdown: "Run, hide, fight.", aliases: ["gunman"], retrieved_at: "t" },
+    ] as any);
+    const r = resolveGuideline("the");
+    assert.equal(r.matched, null, "weak query must not produce a confident match");
+    assert.equal(r.via, "none");
+    assert.ok(
+      r.did_you_mean.length > 0 || r.suggestions.length > 0,
+      "must surface candidates so the user can pick",
+    );
+  });
+
+  test("score is exposed even when matched is null", () => {
+    indexGuidelines([
+      { slug: "severe-weather", title: "Severe Weather", url: "x", body_markdown: "x", aliases: [], retrieved_at: "t" },
+    ] as any);
+    const r = resolveGuideline("nonexistent garbage query that won't tokenize");
+    assert.equal(typeof r.score, "number");
   });
 });

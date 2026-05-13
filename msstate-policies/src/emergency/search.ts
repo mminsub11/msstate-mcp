@@ -22,6 +22,12 @@ const TOKEN_SPLIT = /[\s\-_/.,;:()\[\]{}!?"'`<>|@#$%^&*=+]+/;
 const BM25_K1 = 1.2;
 const BM25_B = 0.75;
 
+// BM25 confidence gates for emergency match.
+// MIN_ABSOLUTE: score below this is "no real signal" given alias=4/title=3 weights.
+// MIN_MARGIN_RATIO: top-hit must beat runner-up by 25%; otherwise tie → ambiguous.
+const BM25_MIN_ABSOLUTE = 1.5;
+const BM25_MIN_MARGIN_RATIO = 1.25;
+
 function tokenize(input: string): string[] {
   return input.normalize("NFKC").toLowerCase().split(TOKEN_SPLIT).filter((t) => t.length > 0);
 }
@@ -138,17 +144,30 @@ export function resolveGuideline(input: string): ResolveResult {
     const row = docs.find((d) => d.row.slug === aliasSlug)?.row ?? null;
     if (row) return { matched: row, via: "alias", did_you_mean: [], suggestions: [], score: 1 };
   }
-  // 3. BM25
+  // 3. BM25 — gated by absolute score + margin over runner-up.
   const hits = bm25SearchGuidelines(norm);
   if (hits.length === 0) {
     return { matched: null, via: "none", did_you_mean: [], suggestions: docs.map((d) => d.row), score: 0 };
   }
+  const top = hits[0];
+  const runnerUp = hits[1]?.score ?? 0;
+  const passesAbsolute = top.score >= BM25_MIN_ABSOLUTE;
+  const passesMargin = runnerUp === 0 ? true : top.score >= runnerUp * BM25_MIN_MARGIN_RATIO;
+  if (!passesAbsolute || !passesMargin) {
+    return {
+      matched: null,
+      via: "none",
+      did_you_mean: hits.slice(0, 3).map((h) => h.row),
+      suggestions: [],
+      score: top.score,
+    };
+  }
   return {
-    matched: hits[0].row,
+    matched: top.row,
     via: "bm25",
     did_you_mean: hits.slice(1, 3).map((h) => h.row),
     suggestions: [],
-    score: hits[0].score,
+    score: top.score,
   };
 }
 
