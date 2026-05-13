@@ -66,12 +66,32 @@ export function parseGuidelineHtml(
   if (!title) return null;
 
   const blocks: string[] = [];
-  main.find("> *, > div > *").each((_, el) => {
-    const t = ((el as Element).tagName ?? "").toLowerCase();
+  const seen = new Set<Element>();
+
+  function emitNode(el: Element): void {
+    const t = (el.tagName ?? "").toLowerCase();
     if (t === "h1") return; // title already captured
+    // For generic containers, recurse into children instead of emitting
+    // the container's full text (which would duplicate child content).
+    if (t === "div" || t === "section" || t === "article") {
+      $(el).children().each((_, child) => {
+        if (!seen.has(child as Element)) {
+          seen.add(child as Element);
+          emitNode(child as Element);
+        }
+      });
+      return;
+    }
     const md = nodeToMarkdown($, el);
     for (const line of md) blocks.push(line);
+  }
+
+  main.children().each((_, el) => {
+    if (seen.has(el as Element)) return;
+    seen.add(el as Element);
+    emitNode(el as Element);
   });
+
   const body_markdown = blocks.join("\n\n").trim();
 
   return {

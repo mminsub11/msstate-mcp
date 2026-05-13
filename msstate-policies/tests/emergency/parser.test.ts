@@ -123,3 +123,17 @@ describe("parseContactsHtml", () => {
     assert.deepEqual(parseContactsHtml("<main><p>nothing</p></main>"), []);
   });
 });
+
+describe("parseGuidelineHtml — no duplicate content", () => {
+  test("a div-wrapped paragraph is emitted once, not twice", () => {
+    const html = `<main>
+      <h1 class="page-title">Severe Weather</h1>
+      <div><p>Seek refuge during a tornado.</p></div>
+      <p>Final paragraph.</p>
+    </main>`;
+    const r = parseGuidelineHtml(html, "severe-weather");
+    assert.ok(r);
+    const occurrences = (r!.body_markdown.match(/Seek refuge during a tornado\./g) ?? []).length;
+    assert.equal(occurrences, 1, `expected exactly 1 occurrence, got ${occurrences}`);
+  });
+});
