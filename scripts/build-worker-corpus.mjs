@@ -326,6 +326,71 @@ async function scrapeCalendarsViaSubprocess() {
   return payload;
 }
 
+async function scrapeEmergencyViaSubprocess() {
+  const { execFileSync } = await import("node:child_process");
+  console.error("[build-worker-corpus] scraping emergency guidelines...");
+  let raw;
+  try {
+    raw = execFileSync(
+      "npx",
+      ["--yes", "tsx", "scripts/_scrape-emergency.ts"],
+      {
+        cwd: process.cwd(),
+        stdio: ["ignore", "pipe", "inherit"],
+        maxBuffer: 8 * 1024 * 1024,
+      },
+    );
+  } catch (err) {
+    throw new Error(
+      `emergency scrape subprocess failed (${err.message ?? err}) — refusing to ship a poisoned emergency corpus`,
+    );
+  }
+  let parsed;
+  try {
+    parsed = JSON.parse(raw.toString("utf8"));
+  } catch {
+    throw new Error(
+      "emergency scrape subprocess produced unparseable JSON — refusing to ship a poisoned emergency corpus",
+    );
+  }
+  if (!parsed || !Array.isArray(parsed.guidelines)) {
+    throw new Error(
+      "emergency scrape: malformed payload — refusing to ship a poisoned emergency corpus",
+    );
+  }
+  if (parsed.guidelines.length !== 12) {
+    throw new Error(
+      `emergency scrape: ${parsed.guidelines.length} guidelines (expected exactly 12) — refusing to ship a poisoned emergency corpus`,
+    );
+  }
+  for (const g of parsed.guidelines) {
+    if (typeof g.body_markdown !== "string" || g.body_markdown.length < 200) {
+      throw new Error(
+        `emergency scrape: guideline ${g.slug} body too short (${g.body_markdown?.length ?? 0} chars < 200) — refusing to ship a poisoned emergency corpus`,
+      );
+    }
+  }
+  if (!Array.isArray(parsed.refuge_areas) || parsed.refuge_areas.length < 5) {
+    throw new Error(
+      `emergency scrape: only ${parsed.refuge_areas?.length ?? 0} refuge rows (< 5) — refusing to ship a poisoned emergency corpus`,
+    );
+  }
+  if (!Array.isArray(parsed.contacts) || parsed.contacts.length < 3) {
+    throw new Error(
+      `emergency scrape: only ${parsed.contacts?.length ?? 0} contacts (< 3) — refusing to ship a poisoned emergency corpus`,
+    );
+  }
+  if (!parsed.contacts.find((c) => c.phone === "911")) {
+    throw new Error(
+      "emergency scrape: no 911 contact in result — refusing to ship a poisoned emergency corpus",
+    );
+  }
+  console.error(
+    `[build-worker-corpus]   emergency: ${parsed.guidelines.length} guidelines, ${parsed.refuge_areas.length} refuge rows, ${parsed.contacts.length} contacts`,
+  );
+  return parsed;
+}
+
 async function main() {
   const skipCatalog = process.argv.includes("--skip-catalog");
   console.error("build-worker-corpus: fetching index...");
@@ -469,6 +534,15 @@ async function main() {
       reverse_dag: coursesPayload.reverse_dag,
     };
   }
+
+  const emergencyPayload = await scrapeEmergencyViaSubprocess();
+  out.emergency = {
+    builtAt,
+    source: "https://www.emergency.msstate.edu/",
+    guidelines: emergencyPayload.guidelines,
+    refuge_areas: emergencyPayload.refuge_areas,
+    contacts: emergencyPayload.contacts,
+  };
 
   // ---- v0.5.0: bake synonyms ---------------------------------------------
   const anthropicKey = process.env.ANTHROPIC_API_KEY;

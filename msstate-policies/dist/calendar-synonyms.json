@@ -1,6 +1,6 @@
 {
   "model": "claude-haiku-4-5",
-  "built_at": "2026-05-12T21:48:05.256Z",
+  "built_at": "2026-05-13T03:26:58.531Z",
   "synonyms": {
     "5e6863473c094260d15d2d5077d4ef7f346987c087933bb6f634750bfca6aaab": [
       "Payment deadline for class enrollment",
@@ -5840,139 +5840,6 @@
       "End of summer work study period",
       "Summer federal work study deadline"
     ],
-    "384d1284f237c231d11cecc52d99b8390898f7c139ba626d280dc5db9d79c0ce": [
-      "Federal Work Study employment starts",
-      "Begin Federal Work Study job",
-      "Start work study position",
-      "Federal Work Study begins",
-      "First day Federal Work Study"
-    ],
-    "a67fe812400db0f1b73c8c5b0129e4df4ef6d657e9aadc325e55d515e760da75": [
-      "Final day to add or drop courses",
-      "Last chance to modify your course schedule",
-      "Deadline for dropping or adding classes",
-      "Final opportunity to change your courses",
-      "Last day to adjust your course registration"
-    ],
-    "c569c6e9dddc0171a9929b4b4c036276ea11964fe7e1a45039213fb09b5a5c97": [
-      "MTAG MESG Application Due",
-      "Submit MTAG MESG Application",
-      "MTAG and MESG Application Closes",
-      "Application Deadline for MTAG MESG",
-      "MTAG MESG Application Submission Deadline"
-    ],
-    "2a019973001b53bb895891c3d4bf905d1990e1a61433223c7084c5c9fb2ae9ea": [
-      "Final deadline to withdraw from course",
-      "Course withdrawal deadline with grade mark",
-      "Last chance to drop class with W",
-      "Deadline for course drop option",
-      "Final day to withdraw from class"
-    ],
-    "888c7c96c98a639ea7d2d8fc84311a629564af40620af13c1c442907c5de850a": [
-      "Classes end for Tuesday Thursday schedule",
-      "Final class day Tuesday Thursday session",
-      "Classes conclude Tuesday and Thursday",
-      "End of Tuesday Thursday classes",
-      "Tuesday Thursday classes finish"
-    ],
-    "698e42d419fb7706e82d6d96f2abcb62bccc4702f42883b6c8042536937d8eae": [
-      "State Aid Application Now Available Online",
-      "Apply for State Financial Aid Today",
-      "State Aid Application Open for Students",
-      "Financial Aid Application Accessible Now",
-      "Submit State Aid Application Online"
-    ],
-    "1b27d75afa9029bb199f75328c4274674d498307f18c8c7de676df98ee77d02b": [
-      "Apply for general scholarships",
-      "General scholarship application launch",
-      "Open scholarship applications",
-      "Scholarship applications now available",
-      "Start your scholarship application"
-    ],
-    "eb3a66b7fbc5ba667e0e3d2a50b1dd185a517b575cf70150ac2a725294b1e7e1": [
-      "Residence halls close for spring",
-      "Dorms shut down spring semester",
-      "Student housing closes spring break",
-      "On-campus living ends for spring",
-      "Halls closure during spring session"
-    ],
-    "106e63ce676f565902ca75d0d143be7a8dbe63a30a9a13df78a000d5694c0fbb": [
-      "Select your dorm room online",
-      "Online housing selection process",
-      "Pick your residence hall room",
-      "Virtual room assignment system",
-      "Choose housing through portal"
-    ],
-    "4c3d6544a17e25bc148daef6459535c75301654790c19cc7e64263012cbdaac8": [
-      "Arrival for summer session",
-      "Check-in day maymester",
-      "Move-in summer program",
-      "Residence hall arrival",
-      "Housing check-in event"
-    ],
-    "93f5d93b7309c0a3f121660d7f4931a4b5547db53c06abea37c915d9350125d5": [
-      "Day to remember those who died",
-      "Holiday honoring fallen soldiers",
-      "National memorial observance day",
-      "Remembrance day for the fallen",
-      "Holiday celebrating military sacrifice"
-    ],
-    "c0e4e10981158b7f24f8a1cedc0f2d7ba52046d381b5e9427f524014849f2560": [
-      "Move into residence halls for summer",
-      "Summer housing arrival day",
-      "Check in for summer session",
-      "Summer residence move-in day",
-      "Housing move-in for summer term"
-    ],
-    "924dde3e08957569a50df59dbafa086498adb2bb61f0d3315ad57d6cab92e20f": [
-      "Student Housing Checkout for May Session",
-      "Residence Hall Departure During Maymester",
-      "Move Out Day for May Term Students",
-      "Housing Clearance for Maymester Participants",
-      "Student Dormitory Checkout During May"
-    ],
-    "bb29b913f50e4dbbb3b2a5b6b24f7dd6092aead9e30e4ac71b0a91b93bedcb68": [
-      "Fourth of July celebration",
-      "American independence observance",
-      "National freedom holiday",
-      "Patriotic independence day",
-      "US independence commemoration"
-    ],
-    "19949e3ffdc0282622b2b13c866905ae5ce8efaf93d975fda7b93c70042d79b3": [
-      "Arrival for second summer session",
-      "Check-in during summer session two",
-      "Moving in for summer session part two",
-      "Second summer housing arrival day",
-      "Summer session two residence move-in"
-    ],
-    "56c6f5da2d169b651dbbcda9df0db093b25b479fa6a4f22e513ce813f88409af": [
-      "Summer session housing departure",
-      "Moving out after summer classes",
-      "End of summer session checkout",
-      "Vacate dorms for summer break",
-      "Summer housing move-out day"
-    ],
-    "dd9609eda5dab2ff2923b38058e3f8e1343f1fb9e8cbf2146287d064c622e9ec": [
-      "Upper class sorority move-in day",
-      "Panhellenic upper division move-in",
-      "Sorority move-in for upper classmen",
-      "Upper level greek life move-in",
-      "Panhellenic move-in event upper division"
-    ],
-    "4ecb51a63e1b17a41523312be1e1bc1760b7e48c6e0938d7be99ca8240ad9b69": [
-      "End of summer housing checkout",
-      "Summer session two departure day",
-      "Move out at end of summer",
-      "Summer housing final checkout",
-      "Summer term move-out process"
-    ],
-    "c06d7faf1a53fa157a137d40eeac95048b451e8f1ad31d27d50b3f37bde2a66f": [
-      "Maroon Band Student Move-In",
-      "Famous Maroon Band Arrival",
-      "Maroon Band Check-In Day",
-      "Band Move-In for Students",
-      "Maroon Band Housing Start"
-    ],
     "d65aa6a0888b2daa56a8dd8878476537eccedfaa6da45a57facf23d43f9c5087": [
       "Summer Federal Work Study begins",
       "Start summer Federal Work Study job",
@@ -6140,6 +6007,139 @@
       "Deadline for fall federal work study",
       "Final work study employment day this fall",
       "Last opportunity for fall work study"
+    ],
+    "384d1284f237c231d11cecc52d99b8390898f7c139ba626d280dc5db9d79c0ce": [
+      "Federal Work Study employment starts",
+      "Begin Federal Work Study job",
+      "Start work study position",
+      "Federal Work Study begins",
+      "First day Federal Work Study"
+    ],
+    "a67fe812400db0f1b73c8c5b0129e4df4ef6d657e9aadc325e55d515e760da75": [
+      "Final day to add or drop courses",
+      "Last chance to modify your course schedule",
+      "Deadline for dropping or adding classes",
+      "Final opportunity to change your courses",
+      "Last day to adjust your course registration"
+    ],
+    "c569c6e9dddc0171a9929b4b4c036276ea11964fe7e1a45039213fb09b5a5c97": [
+      "MTAG MESG Application Due",
+      "Submit MTAG MESG Application",
+      "MTAG and MESG Application Closes",
+      "Application Deadline for MTAG MESG",
+      "MTAG MESG Application Submission Deadline"
+    ],
+    "2a019973001b53bb895891c3d4bf905d1990e1a61433223c7084c5c9fb2ae9ea": [
+      "Final deadline to withdraw from course",
+      "Course withdrawal deadline with grade mark",
+      "Last chance to drop class with W",
+      "Deadline for course drop option",
+      "Final day to withdraw from class"
+    ],
+    "888c7c96c98a639ea7d2d8fc84311a629564af40620af13c1c442907c5de850a": [
+      "Classes end for Tuesday Thursday schedule",
+      "Final class day Tuesday Thursday session",
+      "Classes conclude Tuesday and Thursday",
+      "End of Tuesday Thursday classes",
+      "Tuesday Thursday classes finish"
+    ],
+    "698e42d419fb7706e82d6d96f2abcb62bccc4702f42883b6c8042536937d8eae": [
+      "State Aid Application Now Available Online",
+      "Apply for State Financial Aid Today",
+      "State Aid Application Open for Students",
+      "Financial Aid Application Accessible Now",
+      "Submit State Aid Application Online"
+    ],
+    "1b27d75afa9029bb199f75328c4274674d498307f18c8c7de676df98ee77d02b": [
+      "Apply for general scholarships",
+      "General scholarship application launch",
+      "Open scholarship applications",
+      "Scholarship applications now available",
+      "Start your scholarship application"
+    ],
+    "eb3a66b7fbc5ba667e0e3d2a50b1dd185a517b575cf70150ac2a725294b1e7e1": [
+      "Residence halls close for spring",
+      "Dorms shut down spring semester",
+      "Student housing closes spring break",
+      "On-campus living ends for spring",
+      "Halls closure during spring session"
+    ],
+    "106e63ce676f565902ca75d0d143be7a8dbe63a30a9a13df78a000d5694c0fbb": [
+      "Select your dorm room online",
+      "Online housing selection process",
+      "Pick your residence hall room",
+      "Virtual room assignment system",
+      "Choose housing through portal"
+    ],
+    "4c3d6544a17e25bc148daef6459535c75301654790c19cc7e64263012cbdaac8": [
+      "Arrival for summer session",
+      "Check-in day maymester",
+      "Move-in summer program",
+      "Residence hall arrival",
+      "Housing check-in event"
+    ],
+    "93f5d93b7309c0a3f121660d7f4931a4b5547db53c06abea37c915d9350125d5": [
+      "Day to remember those who died",
+      "Holiday honoring fallen soldiers",
+      "National memorial observance day",
+      "Remembrance day for the fallen",
+      "Holiday celebrating military sacrifice"
+    ],
+    "c0e4e10981158b7f24f8a1cedc0f2d7ba52046d381b5e9427f524014849f2560": [
+      "Move into residence halls for summer",
+      "Summer housing arrival day",
+      "Check in for summer session",
+      "Summer residence move-in day",
+      "Housing move-in for summer term"
+    ],
+    "924dde3e08957569a50df59dbafa086498adb2bb61f0d3315ad57d6cab92e20f": [
+      "Student Housing Checkout for May Session",
+      "Residence Hall Departure During Maymester",
+      "Move Out Day for May Term Students",
+      "Housing Clearance for Maymester Participants",
+      "Student Dormitory Checkout During May"
+    ],
+    "bb29b913f50e4dbbb3b2a5b6b24f7dd6092aead9e30e4ac71b0a91b93bedcb68": [
+      "Fourth of July celebration",
+      "American independence observance",
+      "National freedom holiday",
+      "Patriotic independence day",
+      "US independence commemoration"
+    ],
+    "19949e3ffdc0282622b2b13c866905ae5ce8efaf93d975fda7b93c70042d79b3": [
+      "Arrival for second summer session",
+      "Check-in during summer session two",
+      "Moving in for summer session part two",
+      "Second summer housing arrival day",
+      "Summer session two residence move-in"
+    ],
+    "56c6f5da2d169b651dbbcda9df0db093b25b479fa6a4f22e513ce813f88409af": [
+      "Summer session housing departure",
+      "Moving out after summer classes",
+      "End of summer session checkout",
+      "Vacate dorms for summer break",
+      "Summer housing move-out day"
+    ],
+    "dd9609eda5dab2ff2923b38058e3f8e1343f1fb9e8cbf2146287d064c622e9ec": [
+      "Upper class sorority move-in day",
+      "Panhellenic upper division move-in",
+      "Sorority move-in for upper classmen",
+      "Upper level greek life move-in",
+      "Panhellenic move-in event upper division"
+    ],
+    "4ecb51a63e1b17a41523312be1e1bc1760b7e48c6e0938d7be99ca8240ad9b69": [
+      "End of summer housing checkout",
+      "Summer session two departure day",
+      "Move out at end of summer",
+      "Summer housing final checkout",
+      "Summer term move-out process"
+    ],
+    "c06d7faf1a53fa157a137d40eeac95048b451e8f1ad31d27d50b3f37bde2a66f": [
+      "Maroon Band Student Move-In",
+      "Famous Maroon Band Arrival",
+      "Maroon Band Check-In Day",
+      "Band Move-In for Students",
+      "Maroon Band Housing Start"
     ]
   }
 }
