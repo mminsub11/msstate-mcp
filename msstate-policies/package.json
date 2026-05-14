@@ -1,6 +1,6 @@
 {
   "name": "msstate-policies-mcp",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "MCP server exposing Mississippi State University Operating Policies and academic dates (registrar, exams, holidays, grad school, financial aid, housing). Unofficial.",
   "bin": {
     "msstate-policies-mcp": "dist/index.js"

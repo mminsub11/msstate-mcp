@@ -7,8 +7,7 @@
  * Worker mode: doesn't run this — Worker imports rows from corpus.json.
  */
 import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import { log } from "../log.js";
 import { contentHash } from "./hash.js";
 import {
@@ -83,8 +82,13 @@ export async function loadAllCalendarRows(): Promise<CalendarRow[]> {
   for (const r of rows) r.contentHash = contentHash(r);
 
   // Path differs between source-mode (tests; from src/calendars/) and
-  // bundled-mode (dist/index.js). Try both.
-  const here = dirname(fileURLToPath(import.meta.url));
+  // bundled-mode (dist/index.js). Use __dirname — esbuild emits CJS so
+  // __dirname is native there, and tsx (CJS-default in this repo) provides
+  // it in source mode too. Mirrors the pattern already used in src/search.ts.
+  // import.meta.url is unsafe here: esbuild's CJS shim makes it undefined,
+  // which silently broke the calendar loader for every npm/plugin user in
+  // v1.0.0–v1.0.1.
+  const here = __dirname;
   const candidates = [
     join(here, "calendar-synonyms.json"),                          // bundled
     join(here, "..", "..", "dist", "calendar-synonyms.json"),      // source
