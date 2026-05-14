@@ -1,6 +1,6 @@
 {
   "model": "claude-haiku-4-5",
-  "built_at": "2026-05-13T17:10:31.492Z",
+  "built_at": "2026-05-13T23:20:57.601Z",
   "synonyms": {
     "5e6863473c094260d15d2d5077d4ef7f346987c087933bb6f634750bfca6aaab": [
       "Payment deadline for class enrollment",
@@ -3698,97 +3698,6 @@
       "Afternoon class twice weekly",
       "Evening class on Tuesdays Thursdays"
     ],
-    "84c0f774016c1237e398c5e6abd8879f6fba88ad94098babb832e0127a64d27c": [
-      "Tuesday Thursday class",
-      "Class meeting Tuesday and Thursday",
-      "Twice weekly class session",
-      "Class on alternate weekdays",
-      "Weekday class meeting"
-    ],
-    "b7cbb9a52cad2bcc9e293c6ec19f54c660921ea7d41cf311d0b981d81a89c1e3": [
-      "Monday and Wednesday class",
-      "Weekday class meeting",
-      "Class on Monday and Wednesday",
-      "Twice weekly class session",
-      "Regular weekday class"
-    ],
-    "8d9631415a4ec84ad171bfe7fe580f13da415cd2b32b572e00173167b33c693d": [
-      "Tuesday Thursday class session",
-      "Class meeting twice weekly",
-      "Biweekly Tuesday Thursday course",
-      "Tuesday Thursday course meeting",
-      "Class on Tuesday and Thursday"
-    ],
-    "5a8276124121a32bcc24ccd4667056738fcf30cb3c45ee1393192f4890cb9261": [
-      "Weekday class meeting",
-      "Monday Wednesday course",
-      "Mid-week instruction",
-      "Class session twice weekly",
-      "Regular weekday lectures"
-    ],
-    "90ec5b17978e641b67e0c68e482fe5741781f3e59eb45100b4a092258e1da1e9": [
-      "Test during summer session",
-      "Assessment for maymester course",
-      "Final exam for summer term",
-      "Evaluation during compressed summer",
-      "Quiz or test for summer class"
-    ],
-    "65f25bab971847f1c61bddc9688220c9214d627c478e520ff2bae192f47a7b1b": [
-      "Morning class weekdays",
-      "Early weekday class",
-      "Weekday morning course",
-      "Daytime weekday class",
-      "Class on weekdays morning"
-    ],
-    "d17c04cc7f435bdc1fefb72090730ea88309906c15f2902ff1073fd7ad57fc89": [
-      "Morning class meeting weekdays",
-      "Weekday class session",
-      "Regular weekday morning class",
-      "Classes on weekdays",
-      "Weekday morning instruction"
-    ],
-    "b4fa93af5550ed65990fc44ef0d9d8c7ee1ed1aa852391cab42a01a2381aee92": [
-      "Weekday afternoon class session",
-      "Monday through Friday class",
-      "Afternoon weekday class time",
-      "Regular weekday class meeting",
-      "Class on weekdays afternoon"
-    ],
-    "f0fd157462ba14896151c415fa3a935683ea9c09b7334ecb2a6f076f109b417e": [
-      "Weekday morning class",
-      "Multiple day class session",
-      "Afternoon weekday class",
-      "Regular weekday class",
-      "Class meeting weekdays"
-    ],
-    "a8948f3a73d7b948fe986eb3a4e6aab2762c21e8383d4eddec17099e95462656": [
-      "Early morning weekday class",
-      "Regular weekday class session",
-      "Weekday class every morning",
-      "Recurring weekday morning class",
-      "Class held on weekdays"
-    ],
-    "b2581de015f2d604e9c879ba866d76d1b08ea77852961eb05f892257807c91f9": [
-      "Morning class on weekdays",
-      "Weekday morning instruction",
-      "Class meets mornings on weekdays",
-      "Regular weekday morning session",
-      "Weekday morning class meeting"
-    ],
-    "f6b71b55e1445fca99ea788a87f1f918a0da142cc5f81dc82f2d51e1e3c9f77d": [
-      "Afternoon weekday class",
-      "Early afternoon class weekdays",
-      "Weekday class in afternoon",
-      "Afternoon class meeting weekdays",
-      "Weekday afternoon class session"
-    ],
-    "8c8e05788e918226981ee5ff4e03f8d549fbe38415c553d5110c33397a130471": [
-      "afternoon weekday class",
-      "weekday class in afternoon",
-      "classes meeting weekdays afternoon",
-      "regular weekday afternoon session",
-      "weekday afternoon instruction"
-    ],
     "6814e0d5a0419351d0439e622732a5a2dded9b5ed7c79248cf47d33bd4c76be7": [
       "Winter holiday celebration",
       "Christmas and New Year festivities",
@@ -6043,6 +5952,55 @@
       "Last opportunity for summer Federal Work Study",
       "Summer Federal Work Study job final day"
     ],
+    "384d1284f237c231d11cecc52d99b8390898f7c139ba626d280dc5db9d79c0ce": [
+      "Start your fall Federal Work Study job",
+      "Begin fall Federal Work Study employment",
+      "First day of fall Federal Work Study",
+      "Commence fall Federal Work Study position",
+      "Start working fall Federal Work Study"
+    ],
+    "a67fe812400db0f1b73c8c5b0129e4df4ef6d657e9aadc325e55d515e760da75": [
+      "Final deadline to add or drop courses",
+      "Last chance to modify course registration",
+      "Deadline for adding or dropping classes",
+      "Final day to change course enrollment",
+      "Last opportunity to add or drop classes"
+    ],
+    "c569c6e9dddc0171a9929b4b4c036276ea11964fe7e1a45039213fb09b5a5c97": [
+      "MTAG MESG Application Due",
+      "Submit Your MTAG MESG Application",
+      "MTAG and MESG Applications Close",
+      "Deadline for MTAG MESG Forms",
+      "Final Day to Apply for MTAG MESG"
+    ],
+    "2a019973001b53bb895891c3d4bf905d1990e1a61433223c7084c5c9fb2ae9ea": [
+      "Final deadline for course withdrawal with W grade",
+      "Last chance to drop course with W mark",
+      "Course drop deadline with W grade option",
+      "Final day for W grade course withdrawal",
+      "Drop course with W grade before deadline"
+    ],
+    "888c7c96c98a639ea7d2d8fc84311a629564af40620af13c1c442907c5de850a": [
+      "When do Tuesday Thursday classes end",
+      "Monday Wednesday class end dates",
+      "Fall mini term classes conclusion",
+      "End of Monday Tuesday Wednesday Thursday",
+      "Class session ending schedule mini term"
+    ],
+    "698e42d419fb7706e82d6d96f2abcb62bccc4702f42883b6c8042536937d8eae": [
+      "State Aid Application Now Open Online",
+      "Apply for State Financial Aid Today",
+      "State Aid Application Open for Students",
+      "Submit State Aid Application Online",
+      "State Financial Aid Application Available"
+    ],
+    "1b27d75afa9029bb199f75328c4274674d498307f18c8c7de676df98ee77d02b": [
+      "Apply for general scholarships",
+      "General scholarship application starts",
+      "Open general scholarship applications",
+      "Scholarship application now available",
+      "Begin your scholarship application"
+    ],
     "eb3a66b7fbc5ba667e0e3d2a50b1dd185a517b575cf70150ac2a725294b1e7e1": [
       "Residence halls close for spring",
       "Dorms shut down spring semester",
@@ -6126,55 +6084,6 @@
       "Maroon Band Check-In Day",
       "Band Move-In for Students",
       "Maroon Band Housing Start"
-    ],
-    "384d1284f237c231d11cecc52d99b8390898f7c139ba626d280dc5db9d79c0ce": [
-      "Start your fall Federal Work Study job",
-      "Begin fall Federal Work Study employment",
-      "First day of fall Federal Work Study",
-      "Commence fall Federal Work Study position",
-      "Start working fall Federal Work Study"
-    ],
-    "a67fe812400db0f1b73c8c5b0129e4df4ef6d657e9aadc325e55d515e760da75": [
-      "Final deadline to add or drop courses",
-      "Last chance to modify course registration",
-      "Deadline for adding or dropping classes",
-      "Final day to change course enrollment",
-      "Last opportunity to add or drop classes"
-    ],
-    "c569c6e9dddc0171a9929b4b4c036276ea11964fe7e1a45039213fb09b5a5c97": [
-      "MTAG MESG Application Due",
-      "Submit Your MTAG MESG Application",
-      "MTAG and MESG Applications Close",
-      "Deadline for MTAG MESG Forms",
-      "Final Day to Apply for MTAG MESG"
-    ],
-    "2a019973001b53bb895891c3d4bf905d1990e1a61433223c7084c5c9fb2ae9ea": [
-      "Final deadline for course withdrawal with W grade",
-      "Last chance to drop course with W mark",
-      "Course drop deadline with W grade option",
-      "Final day for W grade course withdrawal",
-      "Drop course with W grade before deadline"
-    ],
-    "888c7c96c98a639ea7d2d8fc84311a629564af40620af13c1c442907c5de850a": [
-      "When do Tuesday Thursday classes end",
-      "Monday Wednesday class end dates",
-      "Fall mini term classes conclusion",
-      "End of Monday Tuesday Wednesday Thursday",
-      "Class session ending schedule mini term"
-    ],
-    "698e42d419fb7706e82d6d96f2abcb62bccc4702f42883b6c8042536937d8eae": [
-      "State Aid Application Now Open Online",
-      "Apply for State Financial Aid Today",
-      "State Aid Application Open for Students",
-      "Submit State Aid Application Online",
-      "State Financial Aid Application Available"
-    ],
-    "1b27d75afa9029bb199f75328c4274674d498307f18c8c7de676df98ee77d02b": [
-      "Apply for general scholarships",
-      "General scholarship application starts",
-      "Open general scholarship applications",
-      "Scholarship application now available",
-      "Begin your scholarship application"
     ]
   }
 }

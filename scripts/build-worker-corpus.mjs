@@ -481,8 +481,10 @@ async function scrapeTuitionViaSubprocess() {
 
 async function main() {
   const skipCatalog = process.argv.includes("--skip-catalog");
+  const skipCalendars = process.argv.includes("--skip-calendars");
   console.error("build-worker-corpus: fetching index...");
   if (skipCatalog) console.error("build-worker-corpus: --skip-catalog enabled (reusing courses block)");
+  if (skipCalendars) console.error("build-worker-corpus: --skip-calendars enabled (reusing calendar block from existing corpus)");
   const html = await fetchText(`${BASE}/current`);
   const $ = cheerioLoad(html);
 
@@ -567,12 +569,48 @@ async function main() {
     policies,
   };
 
-  const calendarPayload = await scrapeCalendarsViaSubprocess();
-  out.academic_calendar = {
-    rows: calendarPayload.rows,
-    per_source: calendarPayload.per_source,
-    built_at: builtAt,
-  };
+  // --skip-calendars is the escape hatch for MSU calendar 403/rate-limit
+  // flakiness (recurring intermittent failures on registrar/sfa term pages).
+  // Reuses the on-disk corpus's calendar block when set; fails loudly if
+  // nothing usable on disk so we never silently ship without a calendar.
+  // Symmetric to --skip-catalog. Use sparingly — calendar freshness should
+  // be reasserted on a healthy day before any release.
+  let calendarPayload;
+  if (skipCalendars) {
+    let existingCalendar;
+    try {
+      const prior = JSON.parse(readFileSync(outPath, "utf8"));
+      existingCalendar = prior.academic_calendar;
+    } catch (err) {
+      throw new Error(
+        `--skip-calendars requires an existing worker/corpus.json with a calendar block (read failed: ${err.message ?? err}) — refusing to ship a poisoned calendar corpus`,
+      );
+    }
+    if (!existingCalendar || !Array.isArray(existingCalendar.rows) || existingCalendar.rows.length === 0) {
+      throw new Error(
+        "--skip-calendars: existing worker/corpus.json has no usable calendar block — refusing to ship a poisoned calendar corpus",
+      );
+    }
+    console.error(
+      `[build-worker-corpus]   reusing existing calendar block (${existingCalendar.rows.length} rows, built_at ${existingCalendar.built_at ?? "?"})`,
+    );
+    calendarPayload = {
+      rows: existingCalendar.rows,
+      per_source: existingCalendar.per_source ?? {},
+    };
+    out.academic_calendar = {
+      rows: existingCalendar.rows,
+      per_source: existingCalendar.per_source ?? {},
+      built_at: existingCalendar.built_at ?? builtAt,
+    };
+  } else {
+    calendarPayload = await scrapeCalendarsViaSubprocess();
+    out.academic_calendar = {
+      rows: calendarPayload.rows,
+      per_source: calendarPayload.per_source,
+      built_at: builtAt,
+    };
+  }
 
   // Sanity guard: registrar term pages must yield at least one multi-day row.
   // If the extractor regresses to single-day-only, abort the build instead of
