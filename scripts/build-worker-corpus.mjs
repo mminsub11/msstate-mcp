@@ -582,12 +582,108 @@ async function scrapeOnlineViaSubprocess() {
   return parsed;
 }
 
+async function scrapeDiningViaSubprocess() {
+  const { execFileSync } = await import("node:child_process");
+  console.error("[build-worker-corpus] scraping msstatedining.mydininghub.com...");
+  let raw;
+  try {
+    raw = execFileSync(
+      "npx",
+      ["--yes", "tsx", "scripts/_scrape-dining.ts"],
+      { cwd: process.cwd(), stdio: ["ignore", "pipe", "inherit"], maxBuffer: 32 * 1024 * 1024 },
+    );
+  } catch (err) {
+    throw new Error(
+      `dining scrape subprocess failed (${err.message ?? err}) - refusing to ship a poisoned dining corpus`,
+    );
+  }
+  let parsed;
+  try { parsed = JSON.parse(raw.toString("utf8")); }
+  catch {
+    throw new Error("dining scrape produced unparseable JSON - refusing to ship a poisoned dining corpus");
+  }
+  if (!parsed || !Array.isArray(parsed.locations)) {
+    throw new Error("dining scrape malformed payload - refusing to ship a poisoned dining corpus");
+  }
+  if (parsed.anyError) {
+    const failed = Object.entries(parsed.per_source ?? {})
+      .filter(([, info]) => !info.ok)
+      .map(([k, info]) => `${k}: ${info.error}`).join("; ");
+    throw new Error(`dining scrape per-source failure (${failed}) - refusing to ship a poisoned dining corpus`);
+  }
+  if (parsed.locations.length < 15) {
+    throw new Error(`dining scrape only ${parsed.locations.length} locations (<15) - refusing to ship a poisoned dining corpus`);
+  }
+  const noHours = parsed.locations.filter((l) =>
+    (l.parse_warnings ?? []).includes("no_hours_extracted"),
+  ).length;
+  if (noHours > 5) {
+    throw new Error(`dining scrape ${noHours} venues missing hours (>5) - refusing to ship a poisoned dining corpus`);
+  }
+  for (const l of parsed.locations) {
+    try {
+      const u = new URL(l.url);
+      if (u.host !== "msstatedining.mydininghub.com") {
+        throw new Error(`dining location URL not on allowlist (${l.url}) - refusing to ship a poisoned dining corpus`);
+      }
+    } catch {
+      throw new Error(`dining location URL malformed (${l.url}) - refusing to ship a poisoned dining corpus`);
+    }
+  }
+  console.error(
+    `[build-worker-corpus]   dining: ${parsed.locations.length} locations (${noHours} missing hours)`,
+  );
+  return parsed;
+}
+
 async function main() {
   const skipCatalog = process.argv.includes("--skip-catalog");
   const skipCalendars = process.argv.includes("--skip-calendars");
+  const skipDining = process.argv.includes("--skip-dining");
+  const onlyDining = process.argv.includes("--only-dining");
   console.error("build-worker-corpus: fetching index...");
   if (skipCatalog) console.error("build-worker-corpus: --skip-catalog enabled (reusing courses block)");
   if (skipCalendars) console.error("build-worker-corpus: --skip-calendars enabled (reusing calendar block from existing corpus)");
+  if (skipDining) console.error("build-worker-corpus: --skip-dining enabled (reusing dining block from existing corpus)");
+  if (onlyDining) console.error("build-worker-corpus: --only-dining enabled (all non-dining blocks reused from disk, only dining re-scraped)");
+
+  // --only-dining short-circuit: copy every non-dining block from on-disk
+  // corpus and re-scrape only the dining module. This avoids re-fetching all
+  // policy PDFs, courses, calendars, etc. during an incremental dining refresh.
+  if (onlyDining) {
+    const outDir = resolve(dirname(fileURLToPath(import.meta.url)), "..", "worker");
+    const outPath = resolve(outDir, "corpus.json");
+    let existing;
+    try {
+      existing = JSON.parse(readFileSync(outPath, "utf8"));
+    } catch (err) {
+      throw new Error(
+        `--only-dining: no existing corpus.json to reuse (${err.message ?? err}) - refusing to ship a poisoned corpus`,
+      );
+    }
+    if (!existing || typeof existing !== "object") {
+      throw new Error("--only-dining: existing corpus.json is not a valid object - refusing to ship a poisoned corpus");
+    }
+    const builtAt = new Date().toISOString();
+    const out = {};
+    for (const k of Object.keys(existing)) {
+      if (k !== "dining_services") out[k] = existing[k];
+    }
+    const diningPayload = await scrapeDiningViaSubprocess();
+    out.dining_services = {
+      builtAt,
+      source: "https://msstatedining.mydininghub.com/",
+      locations: diningPayload.locations,
+    };
+    mkdirSync(outDir, { recursive: true });
+    writeFileSync(outPath, JSON.stringify(out));
+    const bytes = JSON.stringify(out).length;
+    console.error(
+      `build-worker-corpus: wrote ${outPath} (--only-dining) — ${diningPayload.locations.length} dining locations, ${(bytes / 1024 / 1024).toFixed(2)} MB raw`,
+    );
+    return;
+  }
+
   const html = await fetchText(`${BASE}/current`);
   const $ = cheerioLoad(html);
 
@@ -860,6 +956,30 @@ process.stdout.write(JSON.stringify(breakdown));
     staff: onlinePayload.staff,
     info_pages: onlinePayload.info_pages,
   };
+
+  if (!skipDining) {
+    const diningPayload = await scrapeDiningViaSubprocess();
+    out.dining_services = {
+      builtAt,
+      source: "https://msstatedining.mydininghub.com/",
+      locations: diningPayload.locations,
+    };
+  } else {
+    console.error("[build-worker-corpus] --skip-dining: reusing dining block from disk");
+    let existingDining;
+    try {
+      const prior = JSON.parse(readFileSync(outPath, "utf8"));
+      existingDining = prior.dining_services ?? null;
+    } catch (err) {
+      throw new Error(
+        `--skip-dining: failed to read existing corpus.json (${err.message ?? err}) - refusing to ship a poisoned dining corpus`,
+      );
+    }
+    if (!existingDining) {
+      throw new Error("--skip-dining: no dining block on disk - refusing to ship a poisoned dining corpus");
+    }
+    out.dining_services = existingDining;
+  }
 
   // ---- v0.5.0: bake synonyms ---------------------------------------------
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
