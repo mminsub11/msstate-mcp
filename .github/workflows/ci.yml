@@ -47,12 +47,12 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: tools/list smoke test (must list exactly 7 tools — 4 policy + 2 calendar + 1 health)
+      - name: tools/list smoke test (must list exactly 22 tools — 4 policy + 2 calendar + 3 course + 4 emergency + 4 tuition + 4 online + 1 health)
         run: |
           PAYLOAD='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
           COUNT=$(printf '%s\n' "$PAYLOAD" | node dist/index.js | head -n1 | jq -r '.result.tools | length')
           echo "tool count = $COUNT"
-          test "$COUNT" = "7"
+          test "$COUNT" = "22"
 
       # N6: gate every push/PR on the mechanical security checklist + npm audit
       # so regressions surface in CI rather than at the next manual release.
