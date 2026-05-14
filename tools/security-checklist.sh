@@ -576,4 +576,74 @@ else
   note "FAIL" "TUI5 TUITION_DISCLAIMER missing from types.ts or one of the tool files" 2
 fi
 
+# =============================================================================
+# Online module checks (ONL1-ONL5, added 2026-05-13). +12 pts total.
+# =============================================================================
+
+# ONL1: All https:// URLs inside msstate-policies/src/online/ stay on *.msstate.edu.
+ONL_NON_MSU=$(grep -rE 'https://[^"'"'"'[:space:])]+' msstate-policies/src/online 2>/dev/null \
+  | grep -vE 'https://[^/]*msstate\.edu' \
+  | wc -l | tr -d ' ')
+if [ "$ONL_NON_MSU" = "0" ]; then
+  score=$((score + 3))
+  note "PASS" "ONL1 all online-module URLs stay on msstate.edu" 3
+else
+  note "FAIL" "ONL1 found $ONL_NON_MSU non-msstate.edu URLs in src/online/" 3
+fi
+
+# ONL2: ONLINE_ROOTS + SUPPORT_PAGE_SLUGS frozen allowlists present.
+ONL2_OK=0
+if grep -qE 'export const ONLINE_ROOTS.*=.*Object\.freeze\(' msstate-policies/src/online/types.ts 2>/dev/null \
+  && grep -qE 'export const SUPPORT_PAGE_SLUGS.*=.*Object\.freeze\(' msstate-policies/src/online/types.ts 2>/dev/null; then
+  ONL2_OK=1
+fi
+if [ "$ONL2_OK" = "1" ]; then
+  score=$((score + 2))
+  note "PASS" "ONL2 ONLINE_ROOTS + SUPPORT_PAGE_SLUGS frozen allowlists present" 2
+else
+  note "FAIL" "ONL2 ONLINE_ROOTS or SUPPORT_PAGE_SLUGS missing or not frozen" 2
+fi
+
+# ONL3: Worker length-caps q, subject_keyword, name_query before parse.
+ONL3_OK=1
+for case_name in "list_online_programs" "get_online_program" "find_online_info"; do
+  if ! grep -nA 8 "case \"$case_name\":" worker/src/index.ts \
+       | grep -q "MAX_QUERY_CHARS"; then
+    ONL3_OK=0
+  fi
+done
+if [ "$ONL3_OK" = "1" ]; then
+  score=$((score + 3))
+  note "PASS" "ONL3 Worker length-caps string inputs on online tools" 3
+else
+  note "FAIL" "ONL3 Worker missing length-cap on at least one online tool" 3
+fi
+
+# ONL4: Build aborts with canonical string on poisoned online corpus.
+ONL4_COUNT=$(grep -c "refusing to ship a poisoned online corpus" scripts/build-worker-corpus.mjs 2>/dev/null | tr -d ' ')
+ONL4_COUNT=${ONL4_COUNT:-0}
+if [ "$ONL4_COUNT" -ge "8" ] 2>/dev/null; then
+  score=$((score + 2))
+  note "PASS" "ONL4 build aborts on poisoned online corpus ($ONL4_COUNT abort sites)" 2
+else
+  note "FAIL" "ONL4 only $ONL4_COUNT 'refusing to ship a poisoned online corpus' sites (need >= 8)" 2
+fi
+
+# ONL5: ONLINE_DISCLAIMER present in types.ts AND referenced in all 4 online tool files.
+ONL5_OK=1
+if ! grep -q 'ONLINE_DISCLAIMER' msstate-policies/src/online/types.ts 2>/dev/null; then
+  ONL5_OK=0
+fi
+for f in list_online_programs get_online_program get_online_admissions_process find_online_info; do
+  if ! grep -q 'ONLINE_DISCLAIMER' "msstate-policies/src/tools/${f}.ts" 2>/dev/null; then
+    ONL5_OK=0
+  fi
+done
+if [ "$ONL5_OK" = "1" ]; then
+  score=$((score + 2))
+  note "PASS" "ONL5 ONLINE_DISCLAIMER present in types.ts + 4 tool files" 2
+else
+  note "FAIL" "ONL5 ONLINE_DISCLAIMER missing from types.ts or one of the tool files" 2
+fi
+
 echo "$score"
