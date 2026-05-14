@@ -305,6 +305,47 @@ Adds three tools (`search_msu_courses`, `get_msu_course`, `get_msu_course_graph`
 - **Security envelope.** Round-3 checklist 220 → **230** via CAT1–CAT4. Per-check intent documented in the Round-3 audit closure subsection of `## Security` below.
 - **Eval shape.** 52 rows split across 3 buckets: `course_explain` (23 — paraphrase → expected_codes), `prereq_chain` (14 — root → forward-DAG subset), `unlocks` (15 — root → reverse-DAG subset). Every expected_code value derived from the live scrape in the same session per the corpus rule. Ship thresholds: ≥90% / ≥95% / ≥95%. v0.6.0 ships at 100% / 100% / 100%.
 
+## Prereq parser quality (v0.9.0, 2026-05-13)
+
+Closes three measured accuracy gaps in the prereq parser. No new MCP tools — the `Prereq` block and `Course` record each gain one diagnostic field.
+
+**Baseline (pre-v0.9.0):**
+
+- 130 of 678 courses (19.2%) had non-empty `raw_prose` but ZERO `required_courses` extracted
+- 63 of those 130 (9.3% of all prereqs) also had ZERO `non_course` — entirely dropped
+- 28 of 108 "C or better" phrasings (26%) missed `min_grade` extraction
+
+**Post-fix (v0.9.0 measured against live MSU 2026-05-13):**
+
+| Category | Baseline | Post-fix | Ceiling | Reduction |
+|---|---|---|---|---|
+| `non_course_unparsed` | 63 | 31 | 35 | 51% |
+| `grade_signal_present_but_unparsed` | 28 | 12 | 20 | 57% |
+| `logic_ambiguous` | n/a | 169 | 200 | — (new metric) |
+| Courses with non-null `prereq_summary` | 0 | 674 | — | — |
+
+**New fields on every Course/Prereq response:**
+
+- `Prereq.parse_warnings: PrereqWarning[]` — 4 diagnostic categories (`non_course_unparsed`, `grade_signal_present_but_unparsed`, `grade_signal_ambiguous`, `logic_ambiguous`). Empty array means fully parsed.
+- `Course.prereq_summary: string | null` — one-line human-readable summary built at corpus build time. Null when raw_prose is null. Warning sentinel string when parse_warnings is non-empty.
+
+**Parser categories** (now 9 in `extractNonCourse`):
+
+- consent/permission of instructor + department head (existing)
+- class standing (existing)
+- ACT/SAT (existing)
+- broader permission/consent of any role (NEW)
+- admission to <Program> (NEW)
+- N hours of <field> (NEW)
+- completion of <X> (NEW)
+- proficiency with/in <X> (NEW)
+
+**Grade phrasings** (6 patterns in `GRADE_PATTERNS`, prioritized): `minimum grade of X`, `grade of X or better`, `X or better` (lookbehind-guarded), `minimum X grade`, `earning X`, `with X or better`.
+
+See `msstate-policies/src/courses/parser.ts` for the regex details.
+
+**Build-time guards:** 3 new abort sites in `scripts/build-worker-corpus.mjs` enforce per-category ceilings (35/20/200). Plus new `--skip-calendars` flag (symmetric to `--skip-catalog`) for MSU calendar 403 flakiness — reuses on-disk calendar block, fails loudly when nothing usable on disk.
+
 ### Design summary (v0.5.0 / v0.6.0)
 
 The brainstorm specs that drove v0.5.0 and v0.6.0 are not preserved in-tree (post-ship cleanup per `.dev/README.md`). The load-bearing decisions are captured here so the rationale survives `git log` rot:

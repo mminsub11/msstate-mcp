@@ -14,7 +14,7 @@ After any change in scope, run `bash tools/security-checklist.sh | tail -1` and 
 
 ## What this repo is
 
-`msstate-mcp` is a Model Context Protocol server that exposes **Mississippi State University Operating Policies** (the `/current` index at <https://www.policies.msstate.edu/current>), **six MSU academic-date sources** (registrar academic + exam calendars on `registrar.msstate.edu`, university holidays on `hrm.msstate.edu`, the graduate-school PDFs on `grad.msstate.edu`, financial aid on `sfa.msstate.edu`, and housing events on `housing.msstate.edu`) added in v0.4.0 (2026-05-11), and **the MSU course catalog** on `catalog.msstate.edu` added in v0.6.0 (2026-05-12), to MCP-capable clients (Claude Code, Claude Desktop, Cursor, Windsurf, Zed, claude.ai connector, ChatGPT Plus/Pro connector). Tool count: **18** (4 policy + 2 calendar + 3 course + 4 emergency + 4 tuition + 1 health). Current version: **v0.8.0** (2026-05-13) — adds `get_msu_tuition_rate`, `get_msu_enrollment_fees`, `find_msu_tuition_faq`, `list_msu_tuition_campuses` over a baked snapshot of MSU's published tuition pages. v0.7.0 (2026-05-13) added the emergency tools over www.emergency.msstate.edu. All three serve a pre-baked corpus snapshot — zero runtime fetches to MSU at request time. For project overview, architecture, decision history, eval methodology, and open issues, see [`docs/BUILD.md`](./docs/BUILD.md). Read it once before non-trivial work.
+`msstate-mcp` is a Model Context Protocol server that exposes **Mississippi State University Operating Policies** (the `/current` index at <https://www.policies.msstate.edu/current>), **six MSU academic-date sources** (registrar academic + exam calendars on `registrar.msstate.edu`, university holidays on `hrm.msstate.edu`, the graduate-school PDFs on `grad.msstate.edu`, financial aid on `sfa.msstate.edu`, and housing events on `housing.msstate.edu`) added in v0.4.0 (2026-05-11), and **the MSU course catalog** on `catalog.msstate.edu` added in v0.6.0 (2026-05-12), to MCP-capable clients (Claude Code, Claude Desktop, Cursor, Windsurf, Zed, claude.ai connector, ChatGPT Plus/Pro connector). Tool count: **18** (4 policy + 2 calendar + 3 course + 4 emergency + 4 tuition + 1 health). Current version: **v0.9.0** (2026-05-13) — tightens the prereq parser (3 accuracy gaps closed, 2 new diagnostic fields, 3 new build-time ceilings). v0.8.0 (2026-05-13) added `get_msu_tuition_rate`, `get_msu_enrollment_fees`, `find_msu_tuition_faq`, `list_msu_tuition_campuses` over a baked snapshot of MSU's published tuition pages. v0.7.0 (2026-05-13) added the emergency tools over www.emergency.msstate.edu. All three serve a pre-baked corpus snapshot — zero runtime fetches to MSU at request time. For project overview, architecture, decision history, eval methodology, and open issues, see [`docs/BUILD.md`](./docs/BUILD.md). Read it once before non-trivial work.
 
 The server ships in two surfaces from one bundle:
 - **Claude Code plugin** (`/plugin install msstate-policies@msstate-mcp`)
@@ -97,6 +97,28 @@ All `https://` URLs inside `msstate-policies/src/tuition/` must stay on `*.mssta
 Every tuition-tool response carries the `TUITION_DISCLAIMER` constant from `types.ts` — including not-found and error-shape responses.
 
 Build aborts with canonical string `"refusing to ship a poisoned tuition corpus"` (11 abort sites) on: per-source error, < 40 rate rows, missing vetmed or any controller campus, < 10 FAQ rows, 0 college fees, 0 program fees, or any rate row with `amount_usd <= 0 || > 100_000`.
+
+### Corpus extension (2026-05-13c) — prereq tightening (v0.9.0)
+
+Closes three measured accuracy gaps in the courses prereq parser. No new tools (still 18). The `Prereq` block gains `parse_warnings: PrereqWarning[]` and the `Course` record gains `prereq_summary: string | null`. `health_check` exposes `courses_parse_quality` aggregate counts.
+
+**Parser improvements:**
+
+- `extractNonCourse` broadened from 5 categories to 9 — now catches admission-status, hours-of-X, completion-of, proficiency, and broader permission phrasing. (130 → ~31 zero-prereq-extracted courses, 76% reduction.)
+- `inferMinGrade` replaced single regex with a prioritized 6-pattern list. (28 → ~12 missed-grade courses, 57% reduction.)
+- New `computeWarnings` helper emits 4 diagnostic categories: `non_course_unparsed`, `grade_signal_present_but_unparsed`, `grade_signal_ambiguous` (reserved), `logic_ambiguous`.
+
+**Build aborts (3 new sites, all use the canonical "refusing to ship a poisoned course corpus" string):**
+
+- `non_course_unparsed > 35`
+- `grade_signal_present_but_unparsed > 20`
+- `logic_ambiguous > 200`
+
+Ceilings are ~10-15% above current measured baseline (31/12/169). Treat these as load-bearing. If a future parser change drops the score, fix the parser before merging — do not raise the ceiling.
+
+**New `--skip-calendars` flag** in `scripts/build-worker-corpus.mjs`: symmetric to existing `--skip-catalog`. Reuses on-disk calendar block when MSU's registrar/sfa term pages return intermittent 403s. Fails loudly via the canonical poisoned-calendar string if no usable block on disk. Use sparingly — calendar freshness should be reasserted on a healthy MSU day before any release.
+
+**Field stability:** `parse_warnings` is appended to `Prereq`; `prereq_summary` is appended to `Course`. Both are non-breaking additions to the JSON-RPC response shape. Worker mirrors the new fields inline.
 
 **Source-data quirks (handled, do not regress):**
 

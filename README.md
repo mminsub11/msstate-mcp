@@ -14,7 +14,7 @@ Covers five domains, all sourced exclusively from `*.msstate.edu`:
 | **Emergency guidance** | 12 guidelines + refuge areas + contacts | `emergency.msstate.edu` |
 | **Tuition & fees** | 74 rate rows × 5 campuses + 23 fees + 14 FAQs | `controller.msstate.edu` + `vetmed.msstate.edu` |
 
-**18 MCP tools.** Current version: **v0.8.0**. The hosted Worker ships server-side routing instructions over MCP — ChatGPT and Claude both pick the right tool without per-session prompting.
+**18 MCP tools.** Current version: **v0.9.0**. The hosted Worker ships server-side routing instructions over MCP — ChatGPT and Claude both pick the right tool without per-session prompting.
 
 ---
 
@@ -186,7 +186,7 @@ Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 
 | `get_msu_calendar` | Raw dump of one calendar source with optional term filter |
 | **Courses (3)** | |
 | `search_msu_courses` | Fuzzy search by code, title, or description (BM25 with code×4 / title×3 / description×1) |
-| `get_msu_course` | One course's full record — title, hours, prereqs (structured + raw prose), cross-listings, source URL |
+| `get_msu_course` | One course's full record — title, hours, prereqs (structured + `prereq_summary` one-liner + `parse_warnings` diagnostic array), cross-listings, source URL |
 | `get_msu_course_graph` | Walk the prereq DAG forward (`prereqs`) or reverse (`unlocks`). Depth 1–10, cycle detection, partial results when truncated |
 | **Emergency (4, v0.7.0)** | |
 | `get_msu_emergency_guideline` | Emergency-guidance lookup (tornado, fire, active shooter, …). Slug / alias / free-text fuzzy. Body verbatim + 911 reminder + quick contacts |
@@ -347,7 +347,7 @@ Self-hosters rebuilding the corpus additionally need `ANTHROPIC_API_KEY` for the
 |---|---|---|
 | Policies | 50 hand-written questions, Claude Sonnet judge, k=5 | 86 / 88 composite |
 | Calendar synonyms | 30 ground-truth queries (semantic-gap, BM25-favorable, smart-fallback buckets) | +13.3pp lift on semantic-gap, 0pp regression elsewhere |
-| Courses | 52 catalog-grounded questions across 3 buckets | 100% / 100% / 100% |
+| Courses | 70 catalog-grounded questions across 4 buckets (incl. parse_warnings + prereq_summary) | 100% / 100% / 100% / 100% |
 | Emergency | 25 questions (guideline / alias / refuge / contacts / refusal) | 24 / 25 |
 | Tuition | 32 questions (rate lookup / not-found routing / fees / FAQ / adversarial) | 32 / 32 |
 
