@@ -1935,7 +1935,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<Mc
     case "health_check": {
       return jsonContent({
         runtime: "cloudflare-workers",
-        version: "1.0.1",
+        version: "1.0.2",
         index_row_count: corpus.indexRowCount,
         policies_in_corpus: POLICIES.length,
         corpus_built_at: corpus.builtAt,
@@ -2060,7 +2060,7 @@ async function handleRpc(req: JsonRpcRequest): Promise<JsonRpcResponse | null> {
         id,
         result: {
           protocolVersion: PROTOCOL_VERSION,
-          serverInfo: { name: "msstate-policies", version: "1.0.1" },
+          serverInfo: { name: "msstate-policies", version: "1.0.2" },
           capabilities: { tools: { listChanged: false } },
           instructions: SERVER_INSTRUCTIONS,
         },
@@ -2131,7 +2131,7 @@ export default {
           JSON.stringify(
             {
               name: "msstate-policies-mcp",
-              version: "1.0.1",
+              version: "1.0.2",
               runtime: "cloudflare-workers",
               policies: POLICIES.length,
               builtAt: corpus.builtAt,
@@ -2175,14 +2175,22 @@ export default {
       // JSON body whose query field is small still costs us full JSON-parse
       // CPU. 64 KB is more than 10x the largest legitimate JSON-RPC envelope
       // we ever produce.
-      const contentLength = Number(request.headers.get("content-length") ?? "0");
-      if (contentLength > 64_000) {
+      //
+      // v1.0.2: fail-closed on missing / non-numeric Content-Length. Codex
+      // review surfaced that `Number(null ?? "0")` was 0, which bypassed the
+      // 64K cap for chunked or header-omitted requests. Cloudflare's runtime
+      // currently always sets Content-Length (so the bypass wasn't exploitable
+      // in practice), but defense-in-depth: require a finite, non-negative,
+      // ≤ 64 KB value. Every legitimate MCP client sends Content-Length.
+      const contentLengthHeader = request.headers.get("content-length");
+      const contentLength = contentLengthHeader === null ? NaN : Number(contentLengthHeader);
+      if (!Number.isFinite(contentLength) || contentLength < 0 || contentLength > 64_000) {
         return withCors(
           new Response(
             JSON.stringify({
               jsonrpc: "2.0",
               id: null,
-              error: { code: -32600, message: "Request too large." },
+              error: { code: -32600, message: "Request too large or missing Content-Length." },
             }),
             { status: 413, headers: { "Content-Type": "application/json" } },
           ),
