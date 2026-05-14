@@ -1077,6 +1077,135 @@ function onlFuzzyResolveProgram(query: string): { matched: OnlineProgram | null;
   };
 }
 
+// ---- dining block ----------------------------------------------------------
+
+interface DiningMealPeriod { open: string; close: string; label: string | null; }
+interface DiningHoursDay {
+  day_of_week: "monday"|"tuesday"|"wednesday"|"thursday"|"friday"|"saturday"|"sunday";
+  closed: boolean;
+  periods: DiningMealPeriod[];
+  raw_text: string;
+}
+type DiningParseWarning = "no_hours_extracted" | "hours_format_unrecognized" | "page_timeout";
+type DiningStatus =
+  | "open"
+  | "closed"
+  | { status: "opens_at"; at: string }
+  | { status: "closes_at"; at: string }
+  | "unknown";
+interface DiningLocation {
+  slug: string;
+  name: string;
+  url: string;
+  hours_by_day: DiningHoursDay[];
+  hours_today: DiningHoursDay | null;
+  hours_raw_text: string;
+  meal_periods_today: DiningMealPeriod[];
+  parse_warnings: DiningParseWarning[];
+  retrieved_at: string;
+}
+interface DiningCorpus {
+  builtAt: string;
+  source: string;
+  locations: DiningLocation[];
+}
+
+const DINING: DiningCorpus | null =
+  (corpus as { dining_services?: DiningCorpus }).dining_services ?? null;
+
+const DINING_DISCLAIMER =
+  "MSU dining locations and hours change frequently. The web/mobile connector " +
+  "refreshes this data daily; if you're using the local npx or Claude Code " +
+  "plugin install, this snapshot may be days-months old - verify against " +
+  "https://dining.msstate.edu/ before going to a closed venue.";
+
+function dnFilterLocations(req: { name_substring?: string; limit?: number; offset?: number }) {
+  const locations = DINING?.locations ?? [];
+  let filtered = locations;
+  if (req.name_substring && req.name_substring.trim().length > 0) {
+    const k = req.name_substring.trim().toLowerCase();
+    filtered = filtered.filter((l) =>
+      l.name.toLowerCase().includes(k) || l.slug.toLowerCase().includes(k));
+  }
+  const limit = Math.max(1, Math.min(req.limit ?? 50, 200));
+  const offset = Math.max(0, req.offset ?? 0);
+  return {
+    matches: filtered.slice(offset, offset + limit).map((l) => ({
+      slug: l.slug, name: l.name, url: l.url, hours_today: l.hours_today,
+    })),
+    total: locations.length,
+    filtered_total: filtered.length,
+  };
+}
+
+function dnFuzzyResolveLocation(query: string): { matched: DiningLocation | null; did_you_mean: Array<{ slug: string; name: string }> } {
+  const locations = DINING?.locations ?? [];
+  const qTokens = tokenize(query);
+  if (qTokens.length === 0) return { matched: null, did_you_mean: [] };
+  const scored = locations.map((l) => {
+    const slugT = tokenize(l.slug);
+    const nameT = tokenize(l.name);
+    let score = 0;
+    for (const q of qTokens) {
+      score += 4 * countOf(q, slugT);
+      score += 3 * countOf(q, nameT);
+    }
+    // Compact-query substring fallback (mirrors src/dining/search.ts fix).
+    if (score === 0 && qTokens.length === 1 && qTokens[0].length >= 4) {
+      const q = qTokens[0];
+      const joined = (l.slug + " " + l.name).toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (joined.includes(q)) score = 2;
+    }
+    return { l, score };
+  }).filter((x) => x.score > 0);
+  scored.sort((a, b) => b.score - a.score);
+  if (scored.length === 0) return { matched: null, did_you_mean: [] };
+  return {
+    matched: scored[0].l,
+    did_you_mean: scored.slice(1, 3).map((x) => ({ slug: x.l.slug, name: x.l.name })),
+  };
+}
+
+function dnChicagoNowParts(now: Date) {
+  const f = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    weekday: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const parts = f.formatToParts(now);
+  const weekday = (parts.find((p) => p.type === "weekday")?.value ?? "").toLowerCase() as DiningHoursDay["day_of_week"];
+  const hh = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
+  const mm = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
+  return { day: weekday, totalMinutes: hh * 60 + mm };
+}
+
+function dnHmToMinutes(hm: string): number | null {
+  const m = hm.match(/^(\d{2}):(\d{2})$/);
+  if (!m) return null;
+  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+}
+
+function dnComputeOpenStatus(location: DiningLocation, now: Date): DiningStatus {
+  if (location.hours_by_day.length === 0) return "unknown";
+  const { day, totalMinutes } = dnChicagoNowParts(now);
+  const today = location.hours_by_day.find((d) => d.day_of_week === day);
+  if (!today) return "unknown";
+  if (today.closed || today.periods.length === 0) return "closed";
+  for (const p of today.periods) {
+    const openM = dnHmToMinutes(p.open);
+    const closeM = dnHmToMinutes(p.close);
+    if (openM === null || closeM === null) continue;
+    if (totalMinutes >= openM && totalMinutes < closeM) {
+      if (closeM - totalMinutes <= 30) return { status: "closes_at", at: p.close };
+      return "open";
+    }
+    if (totalMinutes < openM) return { status: "opens_at", at: p.open };
+  }
+  return "closed";
+}
+
 // ---- Helpers ----------------------------------------------------------------
 
 function findPolicy(numberOrSlug?: string, url?: string): Policy | undefined {
@@ -1394,6 +1523,30 @@ const TOOLS = [
         scope: { type: "string", enum: ["all","state-authorization","military-assistance","orientation","faq","financial-matters","staff"] },
       },
       required: ["q"],
+    },
+  },
+  {
+    name: "list_msu_dining_locations",
+    description: "Browse / filter MSU's dining locations from the Touchpoint platform (dining.msstate.edu redirects there). Returns lightweight rows {slug, name, url, hours_today, status_now}. `open_now=true` filters to currently-open venues (uses America/Chicago). `name_substring` is case-insensitive substring on name + slug. `limit` (default 50, max 200) + `offset` paginate. Carries the dining disclaimer.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        open_now: { type: "boolean" },
+        name_substring: { type: "string", description: "Substring match, max 4096 chars" },
+        limit: { type: "integer", minimum: 1, maximum: 200 },
+        offset: { type: "integer", minimum: 0 },
+      },
+    },
+  },
+  {
+    name: "get_msu_dining_hours",
+    description: "Fetch one dining venue's full record (hours per day, today's meal periods, status_now in America/Chicago). Provide `slug` (e.g. 'perry-food-hall') for direct lookup, OR `name_query` (e.g. 'perry') for fuzzy match. Exactly one required. Top-1 in matched, next-2 in did_you_mean. Carries the dining disclaimer.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        slug: { type: "string", description: "URL-tail slug, max 4096 chars" },
+        name_query: { type: "string", description: "Fuzzy name query, max 4096 chars" },
+      },
     },
   },
   {
@@ -1932,6 +2085,65 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<Mc
       });
     }
 
+    case "list_msu_dining_locations": {
+      const a = args as Record<string, unknown>;
+      const open_now = typeof a.open_now === "boolean" ? a.open_now : undefined;
+      const name_substring = typeof a.name_substring === "string" ? a.name_substring : undefined;
+      if (name_substring !== undefined && name_substring.length > MAX_QUERY_CHARS) return tooLong("name_substring", name_substring);
+      const limit = typeof a.limit === "number" ? a.limit : undefined;
+      if (limit !== undefined && (!Number.isInteger(limit) || limit < 1 || limit > 200)) return errorContent("limit must be 1-200.");
+      const offset = typeof a.offset === "number" ? a.offset : undefined;
+      if (offset !== undefined && (!Number.isInteger(offset) || offset < 0)) return errorContent("offset must be non-negative.");
+      const r = dnFilterLocations({ name_substring, limit, offset });
+      const now = new Date();
+      const all = DINING?.locations ?? [];
+      const rows = r.matches.map((m) => {
+        const full = all.find((l) => l.slug === m.slug)!;
+        return { ...m, status_now: dnComputeOpenStatus(full, now) };
+      });
+      const matches = open_now
+        ? rows.filter((row) => row.status_now === "open" || (typeof row.status_now === "object" && row.status_now.status === "closes_at"))
+        : rows;
+      return jsonContent({
+        disclaimer: DINING_DISCLAIMER,
+        matches,
+        total: r.total,
+        filtered_total: r.filtered_total,
+        corpus_built_at: DINING?.builtAt ?? null,
+      });
+    }
+    case "get_msu_dining_hours": {
+      const a = args as Record<string, unknown>;
+      const slug = typeof a.slug === "string" ? a.slug : undefined;
+      const name_query = typeof a.name_query === "string" ? a.name_query : undefined;
+      if ((slug && name_query) || (!slug && !name_query)) {
+        return errorContent("Exactly one of slug or name_query is required.");
+      }
+      if (slug && slug.length > MAX_QUERY_CHARS) return tooLong("slug", slug);
+      if (name_query && name_query.length > MAX_QUERY_CHARS) return tooLong("name_query", name_query);
+      let matched: DiningLocation | null = null;
+      let did_you_mean: Array<{ slug: string; name: string }> = [];
+      let not_found_reason: string | null = null;
+      if (slug) {
+        matched = (DINING?.locations ?? []).find((l) => l.slug === slug) ?? null;
+        if (!matched) not_found_reason = `No location with slug '${slug}'. Try list_msu_dining_locations.`;
+      } else if (name_query) {
+        const r = dnFuzzyResolveLocation(name_query);
+        matched = r.matched;
+        did_you_mean = r.did_you_mean;
+        if (!matched) not_found_reason = `No location matched '${name_query}'.`;
+      }
+      const status_now = matched ? dnComputeOpenStatus(matched, new Date()) : null;
+      return jsonContent({
+        disclaimer: DINING_DISCLAIMER,
+        matched,
+        status_now,
+        did_you_mean,
+        not_found_reason,
+        corpus_built_at: DINING?.builtAt ?? null,
+        source_url: matched?.url ?? null,
+      });
+    }
     case "health_check": {
       return jsonContent({
         runtime: "cloudflare-workers",
@@ -1957,6 +2169,7 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<Mc
         online_program_count: ONLINE?.programs.length ?? 0,
         online_info_page_count: ONLINE?.info_pages.length ?? 0,
         online_staff_count: ONLINE?.staff.length ?? 0,
+        dining_location_count: DINING?.locations.length ?? 0,
         courses_parse_quality: coursesParseQualityWorker(),
         note: "This is the Cloudflare Workers variant. Corpus is a pre-extracted snapshot; rebuild via scripts/build-worker-corpus.mjs to refresh.",
       });
