@@ -1,0 +1,47 @@
+name: dining-refresh
+
+on:
+  schedule:
+    - cron: "0 9 * * *"   # 09:00 UTC daily = 04:00 CDT / 03:00 CST
+  workflow_dispatch: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: msstate-policies/package-lock.json
+
+      - name: Install msstate-policies deps
+        working-directory: msstate-policies
+        run: npm ci
+
+      - name: Install Worker deps
+        working-directory: worker
+        run: npm ci
+
+      - name: Install Playwright chromium
+        working-directory: msstate-policies
+        run: npx playwright install --with-deps chromium
+
+      - name: Refresh dining block only
+        run: node scripts/build-worker-corpus.mjs --only-dining
+
+      - name: Deploy Worker
+        working-directory: worker
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx --no-install wrangler deploy
+
+      - name: Verify deployment
+        run: |
+          curl -sS -X POST "https://msstate-policies-mcp.mminsub90.workers.dev/mcp" \
+            -H "Content-Type: application/json" \
+            -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_msu_dining_locations","arguments":{}}}' \
+            | jq '.result.content[0].text | fromjson | {total, matches_len: (.matches | length), built: .corpus_built_at}'
