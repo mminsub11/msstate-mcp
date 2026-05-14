@@ -49,6 +49,10 @@ import { get_online_admissions_process } from "./tools/get_online_admissions_pro
 import { find_online_info } from "./tools/find_online_info.js";
 import { setOnlineCorpus } from "./online/corpus.js";
 import type { OnlineCorpus } from "./online/types.js";
+import { list_msu_dining_locations } from "./tools/list_msu_dining_locations.js";
+import { get_msu_dining_hours } from "./tools/get_msu_dining_hours.js";
+import { setDiningCorpus } from "./dining/corpus.js";
+import type { DiningCorpus } from "./dining/types.js";
 import { health_check } from "./tools/health_check.js";
 
 /**
@@ -105,6 +109,8 @@ const TOOLS = [
   get_online_program,
   get_online_admissions_process,
   find_online_info,
+  list_msu_dining_locations,
+  get_msu_dining_hours,
   health_check,
 ] as const;
 
@@ -124,6 +130,7 @@ declare const __COURSE_CORPUS__: CourseCorpus | undefined;
 declare const __EMERGENCY_CORPUS__: EmergencyCorpus | undefined;
 declare const __TUITION_CORPUS__: TuitionCorpus | undefined;
 declare const __ONLINE_CORPUS__: OnlineCorpus | undefined;
+declare const __DINING_CORPUS__: DiningCorpus | undefined;
 
 function safeVersion(): string {
   return typeof __VERSION__ !== "undefined" ? __VERSION__ : "";
@@ -181,6 +188,17 @@ function loadBakedOnlineCorpus(): void {
     });
   } else {
     log("warn", "no baked online corpus available; online tools will return empty results");
+  }
+}
+
+function loadBakedDiningCorpus(): void {
+  if (typeof __DINING_CORPUS__ !== "undefined" && __DINING_CORPUS__) {
+    setDiningCorpus(__DINING_CORPUS__);
+    log("info", "dining corpus loaded", {
+      locations: __DINING_CORPUS__.locations.length,
+    });
+  } else {
+    log("warn", "no baked dining corpus available; dining tools will return empty results");
   }
 }
 
@@ -275,6 +293,7 @@ async function main(): Promise<void> {
   loadBakedEmergencyCorpus();
   loadBakedTuitionCorpus();
   loadBakedOnlineCorpus();
+  loadBakedDiningCorpus();
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
