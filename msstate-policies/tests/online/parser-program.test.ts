@@ -74,3 +74,42 @@ describe("parseProgramHtml — empty input fallback", () => {
     assert.ok(p.parse_warnings.includes("no_deadlines_extracted"));
   });
 });
+
+describe("parseProgramHtml — bas-bot (advisingBlock + quickInner)", () => {
+  const html = fixture("program-bas-bot.html");
+  const result = parseProgramHtml(html, "bas-bot", "bachelor", "https://www.online.msstate.edu/bas-bot");
+
+  test("returns a program (not null)", () => {
+    assert.ok(result);
+  });
+  test("extracts at least one contact via advisingBlock fallback", () => {
+    assert.ok(result.contacts.length >= 1, `contacts=${result.contacts.length}`);
+    assert.ok(result.contacts[0].name.length > 0);
+    assert.ok(result.contacts[0].email || result.contacts[0].phone);
+  });
+  test("extracts tuition via quickInner fallback", () => {
+    assert.notEqual(result.tuition.per_credit_usd, null);
+    assert.ok((result.tuition.per_credit_usd ?? 0) > 100);
+  });
+  test("extracts at least one deadline via quickInner fallback", () => {
+    assert.ok(result.application_deadlines.length >= 1, `deadlines=${result.application_deadlines.length}`);
+  });
+  test("does NOT emit no_contacts_extracted", () => {
+    assert.ok(!result.parse_warnings.includes("no_contacts_extracted"));
+  });
+});
+
+describe("parseProgramHtml — phcse (advisingBlock contacts + cowbell tuition)", () => {
+  const html = fixture("program-phcse.html");
+  const result = parseProgramHtml(html, "phcse", "doctoral", "https://www.online.msstate.edu/phcse");
+
+  test("returns a program", () => {
+    assert.ok(result);
+  });
+  test("extracts at least one contact via advisingBlock fallback", () => {
+    assert.ok(result.contacts.length >= 1);
+  });
+  test("does NOT emit no_contacts_extracted", () => {
+    assert.ok(!result.parse_warnings.includes("no_contacts_extracted"));
+  });
+});

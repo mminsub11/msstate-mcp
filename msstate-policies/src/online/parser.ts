@@ -433,8 +433,76 @@ export function parseProgramHtml(
     /admission/i,
   ]);
 
-  const contacts = extractContacts($);
-  const application_deadlines = extractDeadlines($);
+  let contacts = extractContacts($);
+  let application_deadlines = extractDeadlines($);
+
+  // Fallback A.1: advisingBlock contacts (BAS/PhD style)
+  if (contacts.length === 0) {
+    const seen = new Set<string>();
+    $("[class*='advisingBlock']").each((_, el) => {
+      const $card = $(el);
+      // Find first non-empty h4 for the name
+      let name = "";
+      $card.find("h4").each((__, h4) => {
+        const t = $(h4).text().trim();
+        if (t.length > 0 && name.length === 0) name = t;
+      });
+      if (!name) return;
+      // Title: first non-empty p.mb-2
+      let titleP = "";
+      $card.find("p.mb-2").each((__, p) => {
+        const t = $(p).text().trim();
+        if (t.length > 0 && titleP.length === 0) titleP = t;
+      });
+      // Department: h5 text (merge into title if title already set)
+      const dept = $card.find("h5").first().text().trim();
+      const title = titleP || dept || "";
+      const email =
+        $card.find('a[href^="mailto:"]').first().attr("href")?.replace(/^mailto:/, "") || null;
+      const phone =
+        $card.find('a[href^="tel:"]').first().attr("href")?.replace(/^tel:/, "") || null;
+      const key = `${name.toLowerCase()}|${(email ?? "").toLowerCase()}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      contacts.push({ name, title, email, phone });
+    });
+  }
+
+  // Fallback A.2: quickInner tuition (BAS style)
+  if (tuition.per_credit_usd === null) {
+    const $credit = $("strong#credit_hours").first();
+    if ($credit.length) {
+      const m = $credit.text().match(/\$?([\d,]+(?:\.\d+)?)/);
+      if (m) tuition.per_credit_usd = parseFloat(m[1].replace(/,/g, ""));
+    }
+    const $isFee = $("strong#isFee").first();
+    if ($isFee.length) {
+      const m = $isFee.text().match(/\$?([\d,]+(?:\.\d+)?)/);
+      if (m) tuition.instructional_fee_per_credit_usd = parseFloat(m[1].replace(/,/g, ""));
+    }
+    if (!tuition.raw_prose) {
+      const $block = $("strong#credit_hours").closest("div.quickInner");
+      if ($block.length) tuition.raw_prose = $block.text().trim().slice(0, 400);
+    }
+  }
+
+  // Fallback A.3: quickInner deadlines (BAS style)
+  if (application_deadlines.length === 0) {
+    const seen = new Set<string>();
+    $("strong#deadline").each((_, el) => {
+      const $strong = $(el);
+      const dateText = $strong.text().trim();
+      if (!dateText) return;
+      const $block = $strong.closest("div.quickInner");
+      const blockText = $block.text().replace(/\s+/g, " ").trim();
+      const termMatch = blockText.match(/\b(Spring|Summer|Fall|Winter)\s+(?:Semester|Term|\d{4})?/i);
+      const term = termMatch ? termMatch[0].trim() : "Next Application Deadline";
+      const key = `${term.toLowerCase()}|${dateText.toLowerCase()}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      application_deadlines.push({ term, date_text: dateText });
+    });
+  }
 
   // Entrance exams — use full body text for exam signals (they appear outside the admissions section)
   const fullBodyText = $("body").text();
