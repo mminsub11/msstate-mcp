@@ -649,6 +649,78 @@ The two M-tier deferred items relevant to security (M1 rate limiting, M2 branch 
 
 The corpus rule's third source (`catalog.msstate.edu`) now joins `policies.msstate.edu` and the six calendar URLs as a permitted egress target. `SECURITY.md`'s "Out of scope" and "Trust model" sections were broadened accordingly. The script `scripts/_scrape-catalog.ts` mirrors `_scrape-calendars.ts` (one-shot subprocess, stdout=JSON, stderr=logs, `console.log → stderr` early to keep the pipe clean).
 
+## MSU Online module (v1.0.0, 2026-05-13)
+
+Adds 4 MCP tools over a baked snapshot of online.msstate.edu, the program marketing site that targets prospective fully-online students. Bumps the surface to 22 tools.
+
+### Why these 4 tools
+
+The site's user-tested information architecture maps cleanly to 4 question categories:
+
+| User question shape | Tool | Returns |
+| --- | --- | --- |
+| "What online programs are available in <field>?" | `list_online_programs` | Lightweight rows {slug, name, degree_level, short_description, url} |
+| "Tell me about the online <X> program" | `get_online_program` | Full record: contacts (advisor + coordinator), deadlines, tuition, admission_requirements, accreditation, forms |
+| "How do I apply as a <undergrad/grad/transfer/readmit/international>?" | `get_online_admissions_process` | Section per student type + shared prelude + central front-desk contact + application_fee_tiers + external apply URLs |
+| "Does MSU online operate in <state>?" / "Honorlock?" / "military assistance?" | `find_online_info` | BM25 over 5 support pages + staff directory; verbatim excerpt + full_body + source_url |
+
+### Scrape design
+
+Two-pass:
+- **Pass 1** — fetch `/academic-programs`, parse the `div.Prg-card` index for 114 programs + degree-level taxonomy (inferred from program name via `LEVEL_NAME_MAP`).
+- **Pass 2** — concurrency-pool (4 workers, 150-500ms jitter, 3 retries with [500,1500,4000]ms backoff) fetches each program slug + `/admissions-process` + `/staff` + 5 `SUPPORT_PAGE_SLUGS` pages.
+
+URL allowlist (`isAllowedOnlineUrl`) requires: `https://`, host = `www.online.msstate.edu`, AND URL in ONLINE_ROOTS OR URL in base+SUPPORT_PAGE_SLUGS OR slug in per-scrape allowlist built from the index.
+
+WAF detector (`detectOnlineWaf`) checks for "Just a moment...", `cf-chl-bypass`, and meta-refresh tokens. Hits throw `OnlineWafError` which retry-with-backoff does not suppress.
+
+### Schema split
+
+For each program, the parser extracts structured fields where MSU's wording is reliable (per_credit_usd, application_deadlines.term + date_text, contacts.email/phone, accreditation) and keeps verbatim prose for everything else (admission_requirements, raw_prose tuition note, raw_sections catch-all).
+
+Deadlines are kept as `term + date_text` strings (never ISO-parsed) — MSU mixes "August 1st", "December 1", and "12/1/2025" forms; the model can read all three.
+
+Three markup patterns observed in the live data:
+- **Pattern A** (`tuitioncowbell` + `card-directory`): degree pages like MBA/BSEE.
+- **Pattern B** (`quickInner` + `advisingBlock`): BAS degree-completion pages.
+- **Pattern C** (`advisingBlock` contacts + `tuitioncowbell` tuition): PhD/MS engineering pages.
+
+The parser tries Pattern A selectors first, then falls back to Pattern B / C extractors before emitting `no_contacts_extracted` / `tuition_unparsed` warnings.
+
+### Build-time ceilings
+
+13 abort sites in `scripts/build-worker-corpus.mjs::scrapeOnlineViaSubprocess`. All use the canonical string `"refusing to ship a poisoned online corpus"` (security check ONL4 grep-counts this; the count must stay >= 8).
+
+Category-specific parser-quality ceilings (NOT a single aggregate warning count):
+- `no_contacts_extracted` > 5 -> abort
+- `tuition_unparsed` > 5 -> abort
+- `admissions_section_missing` > 3 -> abort
+- `no_deadlines_extracted` is NOT bounded — many MSU programs legitimately don't publish a deadline (~38% baseline).
+
+Other ceilings:
+- < 100 programs (114 measured)
+- < 5 admissions sections, all five must be non-empty
+- < 1 staff (23 measured)
+- < 5 info pages (5 measured, must equal SUPPORT_PAGE_SLUGS count)
+- any info page `body_markdown` < 200 chars
+- `central_contact.email` must end on msstate.edu
+
+### Eval
+
+30 questions across 5 buckets (program lookup / list / admissions / info / adversarial). 90% pass threshold. Latest live run: 30/30 (after BM25-targeted query refinements for FAQ + off-topic adversarial — see commit `75be365`).
+
+Two known eval gotchas (not bugs):
+- "frequently asked" is not a phrase that appears in the FAQ body — only "FAQ" (the acronym). Use queries that match actual text.
+- Off-topic adversarial queries are sensitive to common stop-word collisions ("miss" in "Ole Miss" matches "miss out" in the financial-matters body via BM25). Sports-team queries are cleaner adversarial examples.
+
+### Routing
+
+The 6th instruction rule (added in `SERVER_INSTRUCTIONS` for both stdio and Worker) maps online questions to the 4 new tools. Distinct from policies/courses/tuition.
+
+### Rate limiting tolerance
+
+MSU's online.msstate.edu has tolerated 4-worker concurrency in measured builds. If MSU adds aggressive rate limiting, drop CONCURRENCY in `scraper.ts` and re-tune.
+
 ## Conventions
 
 - Single-responsibility files. `chain_find_relevant.ts` orchestrates; index/scoring lives in `search.ts`/`corpus.ts`; gating in pure `gateRetrieval`; evidence assembly in `buildEvidenceResult`.

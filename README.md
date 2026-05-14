@@ -13,8 +13,9 @@ Covers five domains, all sourced exclusively from `*.msstate.edu`:
 | **Course catalog** | 3,737 undergrad + grad courses with prereq DAG | `catalog.msstate.edu` |
 | **Emergency guidance** | 12 guidelines + refuge areas + contacts | `emergency.msstate.edu` |
 | **Tuition & fees** | 74 rate rows × 5 campuses + 23 fees + 14 FAQs | `controller.msstate.edu` + `vetmed.msstate.edu` |
+| **Online programs** | ~126 program pages + admissions + staff + 5 support pages | `online.msstate.edu` |
 
-**18 MCP tools.** Current version: **v0.9.0**. The hosted Worker ships server-side routing instructions over MCP — ChatGPT and Claude both pick the right tool without per-session prompting.
+**22 MCP tools.** Current version: **v0.9.0**. The hosted Worker ships server-side routing instructions over MCP — ChatGPT and Claude both pick the right tool without per-session prompting.
 
 ---
 
@@ -45,6 +46,13 @@ Covers five domains, all sourced exclusively from `*.msstate.edu`:
 - *"What do I do during a tornado on campus?"*
 - *"What's the number for MSU PD?"*
 
+**Online programs** (v1.0.0)
+- *"Does MSU have an online MBA?"*
+- *"How do I apply to MSU online as an international student?"*
+- *"Who's the advisor for the online psychology program?"*
+- *"What's the application deadline for the online MS in Cybersecurity?"*
+- *"Does MSU online operate in my state?"*
+
 The model **refuses** when no MSU source covers the question (*"What's the weather?"*, *"Football scores?"*) rather than guessing.
 
 ---
@@ -67,7 +75,7 @@ Fastest path. Works in the browser and the Claude iOS/Android apps. Requires a p
 1. Sign in at <https://claude.ai>
 2. **Settings → Connectors → Add custom connector**
 3. **Name:** `MSU` &nbsp;&nbsp; **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
-4. Save. You should see **18 tools** appear
+4. Save. You should see **22 tools** appear
 5. New chat, enable the connector, ask a question
 
 Mobile apps pick up the connector automatically once you set it up on web.
@@ -79,7 +87,7 @@ Same flow as claude.ai. Free-tier ChatGPT can't add connectors — use the [Open
 1. Sign in at <https://chatgpt.com>
 2. **Settings → Connectors → Add custom connector**
 3. **Name:** `MSU` &nbsp;&nbsp; **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
-4. Save → 18 tools available
+4. Save → 22 tools available
 
 ChatGPT routing used to be hit-or-miss before v0.8.0 because there was no way to inject a system prompt through the connector. The server now provides routing rules via MCP's `InitializeResult.instructions` field, so GPT picks the right tool out of the box.
 
@@ -122,7 +130,7 @@ You need [Node.js 18+](https://nodejs.org).
 
 **3.** Fully quit the client (Cmd+Q / right-click tray → Quit) and reopen.
 
-**4.** Verify the `msstate-policies` server shows **18 tools**. First call takes ~5 seconds (cold fetch); later calls reuse cached data.
+**4.** Verify the `msstate-policies` server shows **22 tools**. First call takes ~5 seconds (cold fetch); later calls reuse cached data.
 
 Ready-to-paste snippet at [`examples/claude_desktop_config.json`](examples/claude_desktop_config.json).
 
@@ -172,7 +180,7 @@ Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 
 
 ---
 
-## The 18 tools
+## The 22 tools
 
 | Tool | Use it for |
 |---|---|
@@ -198,6 +206,11 @@ Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 
 | `get_msu_enrollment_fees` | Per-college / per-program / per-course fees with substring filter (e.g. "engineering", "honors", "business administration") |
 | `find_msu_tuition_faq` | BM25 search across MSU's 14-question tuition FAQ. Top-k Q&A pairs verbatim with anchor URLs |
 | `list_msu_tuition_campuses` | Enumerate the 5 published tuition campuses with levels_offered + rate_basis + source URL |
+| **Online (4, v1.0.0)** | |
+| `list_online_programs` | Browse/filter MSU's online programs by degree level and subject keyword |
+| `get_online_program` | Fetch one program's full record (contacts, deadlines, tuition) by slug or fuzzy name |
+| `get_online_admissions_process` | Return admissions process sectioned by student type (UG/Grad/Transfer/Readmit/International) |
+| `find_online_info` | BM25 search over support pages (state auth, military, orientation, FAQ, financial) + central staff directory |
 | **Diagnostic (1)** | |
 | `health_check` | Per-source counts, last build timestamp, last errors |
 
@@ -301,7 +314,7 @@ Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 
 
 The MCP server returns a `InitializeResult.instructions` string on every `initialize` handshake. Spec-compliant clients (Claude.ai, ChatGPT custom connector, Cursor, Windsurf, Zed) prepend this to the model's system context. It includes:
 
-- **Routing rules** — which tool to call for each question category (policies / dates / courses / emergency / tuition)
+- **Routing rules** — which tool to call for each question category (policies / dates / courses / emergency / tuition / online). 6 rules total; the 6th maps online-program, admissions, and student-services questions to the 4 new online tools.
 - **Anti-hallucination rules** — use only tool data, quote verbatim, refuse outside-corpus questions, try alternative tools before falling back to general knowledge
 
 Before v0.8.0, ChatGPT's custom connector flow routed blind from tool descriptions alone — it would sometimes pick a policy tool for a date question and then fall back to training data when the wrong tool returned nothing useful. Adding server-side instructions fixed this without requiring users to inject their own system prompt.
@@ -350,6 +363,7 @@ Self-hosters rebuilding the corpus additionally need `ANTHROPIC_API_KEY` for the
 | Courses | 70 catalog-grounded questions across 4 buckets (incl. parse_warnings + prereq_summary) | 100% / 100% / 100% / 100% |
 | Emergency | 25 questions (guideline / alias / refuge / contacts / refusal) | 24 / 25 |
 | Tuition | 32 questions (rate lookup / not-found routing / fees / FAQ / adversarial) | 32 / 32 |
+| Online | 30-question eval (program lookup / list / admissions / info / adversarial) | 30/30 (100% on 2026-05-13 build) |
 
 Run locally:
 

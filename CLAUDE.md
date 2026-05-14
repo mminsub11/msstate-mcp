@@ -160,3 +160,29 @@ A few patterns to keep in mind so the score doesn't drift:
   - **CAL5 (regression-guard)**: `Authorization` stays out of Worker CORS allowlist.
 - `SECURITY.md` `## Out of scope: client-side circumvention` captures the user-side abuse classes we explicitly disclaim. Treat that section as authoritative when triaging issue reports — anything matching those bullets is `wontfix` by design.
 - `SECURITY.md` `## Build-time egress (v0.5.0)` documents that `ANTHROPIC_API_KEY` is build-time only; runtime deploys (Worker, npm) make no third-party calls.
+
+### Corpus extension (2026-05-13d) — online programs (v1.0.0)
+
+Adds 4 MCP tools (`list_online_programs`, `get_online_program`, `get_online_admissions_process`, `find_online_info`) over a baked snapshot of online.msstate.edu — ~126 program pages + admissions process + central staff directory + 5 support pages (state-authorization, military-assistance, orientation, faq, financial-matters). Tool count 18 -> 22.
+
+**Allowlists (frozen in `msstate-policies/src/online/types.ts`):**
+- `ONLINE_ROOTS` — 4 base URLs (academic-programs index, admissions-process, staff, base for slugs)
+- `SUPPORT_PAGE_SLUGS` — 5 support-page slugs pinned to whitelist
+
+Per-program URLs are extracted from the live `/academic-programs` index, never constructed from external input. Support-page URLs are formed by joining the base + a SUPPORT_PAGE_SLUGS entry. The scraper's per-scrape program-slug allowlist is built from the index parse and pinned for the pass-2 fan-out (`isAllowedOnlineUrl` requires it).
+
+**Mandatory disclaimer (`ONLINE_DISCLAIMER`):** "Contact info, application deadlines, tuition, and program details on online.msstate.edu can change between releases. Verify against the source URL before applying." Carried on every response. ONL5 enforces presence in all 4 tool files.
+
+**Build aborts (13 canonical-string sites, all use "refusing to ship a poisoned online corpus"):** subprocess failure, unparseable JSON, malformed payload, any per-source error, < 100 programs, < 5 admissions sections, central_contact.email not on msstate.edu, < 1 staff, < 5 info pages, any info page body < 200 chars, no_contacts_extracted > 5, tuition_unparsed > 5, admissions_section_missing > 3.
+
+**Per-program `parse_warnings: OnlineParseWarning[]`** (v0.9.0 pattern): `no_contacts_extracted`, `no_deadlines_extracted`, `tuition_unparsed`, `admissions_section_missing`, `format_field_missing`. Empty array means fully parsed. Build-time ceilings are category-specific — `no_deadlines_extracted` is intentionally NOT bounded because many MSU online programs legitimately don't publish a deadline on their page (~38% as of 2026-05-13).
+
+**Parser markup patterns (handle, do not regress):**
+- **Pattern A** (`tuitioncowbell` + `card-directory`): MBA-style. Tuition `<table>` inside `<div class="tuitioncowbell">`; contacts in `<div class="card-directory">`; deadlines in "Start Term / Deadline" table.
+- **Pattern B** (`quickInner` blocks): BAS-style. Tuition uses `<strong id="credit_hours">` + `<strong id="isFee">`; deadline uses `<strong id="deadline">`; contacts use `advisingBlock`.
+- **Pattern C** (`advisingBlock` contacts + cowbell tuition): PhD-style. Same advisingBlock contact card; tuition still cowbell.
+The parser tries Pattern A first, then falls back to Pattern B / C extractors before emitting warnings.
+
+**Server-side routing:** `InitializeResult.instructions` gains a 6th rule routing online-program / admissions / student-services questions to the 4 new tools. Distinct from policies/courses/tuition (which cover the broader MSU corpus).
+
+**Security checks ONL1-ONL5 (+12 pts; 245 -> 257 macOS, 269 Linux CI):** allowlist URLs stay on msstate.edu; `Object.freeze` on `ONLINE_ROOTS` + `SUPPORT_PAGE_SLUGS`; Worker length-caps `q`/`subject_keyword`/`name_query` before parse; build aborts on poisoned corpus; `ONLINE_DISCLAIMER` referenced in types.ts + all 4 tool files.
