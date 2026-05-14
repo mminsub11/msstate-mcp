@@ -33,6 +33,8 @@ import type {
   OnlineProgramTuition,
   OnlineProgram,
   OnlineParseWarning,
+  StudentType,
+  OnlineAdmissionsProcess,
 } from "./types.js";
 
 /** Sentinel value replaced by the scraper with the actual fetch timestamp. */
@@ -486,6 +488,286 @@ export function parseProgramHtml(
     forms,
     raw_sections: sections,
     parse_warnings,
+    retrieved_at: RETRIEVED_AT_PLACEHOLDER,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// parseAdmissionsProcessHtml helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Ordered rules for matching h3 headings to StudentType.
+ * "international" MUST come before "graduate" to avoid mis-routing
+ * "International Graduate Application Requirements" into the graduate bucket.
+ */
+const STUDENT_TYPE_HEADING_MAP: Array<[RegExp, StudentType]> = [
+  [/international/i, "international"],
+  [/undergraduate/i, "undergraduate"],
+  [/graduate/i, "graduate"],
+  [/transfer/i, "transfer"],
+  [/readmission|readmit/i, "readmit"],
+];
+
+/**
+ * Collect all text from a container element (including nested elements),
+ * returning it as a single trimmed string.
+ */
+function containerText($: ReturnType<typeof cheerioLoad>, el: ReturnType<typeof $>): string {
+  return el.text().replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Extract the central contact (ask@online.msstate.edu + phone) from the
+ * page footer contact block. Falls back to the first matching email in the
+ * page body if the block is not found.
+ */
+function extractCentralContact(
+  $: ReturnType<typeof cheerioLoad>,
+): OnlineContact {
+  // The contact block is in the footer area with mailto: and tel: links
+  const $emailLink = $("a[href^='mailto:ask@online.msstate.edu']").first();
+  const $phoneLink = $("a[href^='tel:(662) 325-3473']").first();
+
+  const email = $emailLink.length > 0
+    ? ($emailLink.attr("href") ?? "").replace(/^mailto:/, "").trim()
+    : null;
+
+  const phone = $phoneLink.length > 0
+    ? ($phoneLink.attr("href") ?? "").replace(/^tel:/, "").trim()
+    : null;
+
+  return {
+    name: "Office of Online Education",
+    title: "Front-desk contact",
+    email,
+    phone,
+  };
+}
+
+/**
+ * Extract application fee tiers from the fee breakdown block.
+ * The fixture has: <p class="mb-0">$50 (Undergraduate)</p> etc.
+ */
+function extractApplicationFeeTiers(
+  $: ReturnType<typeof cheerioLoad>,
+): { kind: string; usd: number }[] {
+  const out: { kind: string; usd: number }[] = [];
+  const seen = new Set<string>();
+
+  // Primary: the "See Fees" details block — <p class="mb-0">$50 (Undergraduate)</p>
+  $("details.detsAdmisPageCostDropdown p, .detsAdmisPageCostDropdown p").each((_, p) => {
+    const text = $(p).text().replace(/\s+/g, " ").trim();
+    const m = /^\$(\d+)\s*\(([^)]+)\)/.exec(text);
+    if (!m) return;
+    const usd = Number(m[1]);
+    const kind = m[2].trim();
+    const key = `${usd}|${kind.toLowerCase()}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ kind, usd });
+  });
+
+  // Fallback: scan all body text for "$50 (Undergraduate)" patterns
+  if (out.length < 2) {
+    $("body").find("p, li").each((_, el) => {
+      const text = $(el).text().replace(/\s+/g, " ").trim();
+      const m = /^\$(\d+)\s*\(([^)]+)\)/.exec(text);
+      if (!m) return;
+      const usd = Number(m[1]);
+      const kind = m[2].trim();
+      if (usd < 10 || usd > 500) return;
+      if (kind.length === 0 || kind.length > 60) return;
+      const key = `${usd}|${kind.toLowerCase()}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push({ kind, usd });
+    });
+  }
+
+  return out;
+}
+
+/**
+ * Extract external apply URLs (apply.msstate.edu and grad.msstate.edu/apply).
+ */
+function extractExternalApplyUrls(
+  $: ReturnType<typeof cheerioLoad>,
+): { kind: string; url: string }[] {
+  const out: { kind: string; url: string }[] = [];
+  const seen = new Set<string>();
+
+  $("a[href]").each((_, a) => {
+    const href = $(a).attr("href") ?? "";
+    if (!/apply\.msstate\.edu|grad\.msstate\.edu\/apply/i.test(href)) return;
+    if (seen.has(href)) return;
+    seen.add(href);
+    const label = $(a).text().replace(/\s+/g, " ").trim() || href;
+    let kind = label;
+    if (/grad\.msstate\.edu/i.test(href)) kind = "Graduate application";
+    else if (/apply\.msstate\.edu/i.test(href)) kind = "Undergraduate application";
+    out.push({ kind, url: href });
+  });
+
+  return out;
+}
+
+/**
+ * Parse /admissions-process into an OnlineAdmissionsProcess record.
+ *
+ * Structure of this Drupal page:
+ *   - h2 "Undergraduate Admissions" followed by <details> dropdowns, each
+ *     containing an h3 that identifies the sub-type (freshman, transfer, readmit)
+ *   - h2 "Graduate Admissions" followed by <details> dropdowns, each containing
+ *     an h3 (graduate, international, readmit)
+ *
+ * We collect text at two granularities:
+ *   1. h3-level (inside each <details> div.p-4) for transfer / readmit / international
+ *   2. h2-level (all text under the "Undergraduate Admissions" h2) for undergraduate
+ *      and (minus international) for graduate
+ */
+export function parseAdmissionsProcessHtml(
+  html: string,
+  pageUrl: string,
+): OnlineAdmissionsProcess {
+  const $ = cheerioLoad(html);
+
+  // --- shared_prelude: text in the first h2 block ("Your Story Starts Here")
+  // The admissions page is structured as:
+  //   h2 "Your Story Starts Here" — intro/prelude text
+  //   h2 "Undergraduate Admissions" — first student-type section
+  //   h2 "Graduate Admissions" — second student-type section
+  // The h1 lives in a separate Drupal region div, so $h1.next() walks within
+  // that region, not the content area. Instead we collect all siblings between
+  // the first h2 and the second h2 in the document.
+  const $allH2 = $("h2");
+  const preludeParts: string[] = [];
+  if ($allH2.length >= 2) {
+    const $firstH2 = $allH2.first();
+    // Include the first h2 text itself as the prelude opener
+    const firstH2Text = $firstH2.text().replace(/\s+/g, " ").trim();
+    if (firstH2Text.length > 0) preludeParts.push(firstH2Text);
+    let $cur = $firstH2.next();
+    while ($cur.length > 0) {
+      const node = $cur.get(0);
+      const tag = node && node.type === "tag" ? node.name.toLowerCase() : "";
+      if (tag === "h2") break;
+      const t = $cur.text().replace(/\s+/g, " ").trim();
+      if (t.length > 0) preludeParts.push(t);
+      $cur = $cur.next();
+    }
+  } else {
+    // Fallback: use h1 text
+    preludeParts.push($("h1").first().text().replace(/\s+/g, " ").trim());
+  }
+  const shared_prelude = preludeParts.join("\n").trim();
+
+  // --- section extraction ---
+  // Strategy: each <details.colorful-dropdown-details> block corresponds to one
+  // student-type sub-section. The h3 inside it identifies the type via
+  // STUDENT_TYPE_HEADING_MAP. We collect all text from the <div.p-4> content div.
+  const sections: Record<StudentType, string> = {
+    undergraduate: "",
+    graduate: "",
+    transfer: "",
+    readmit: "",
+    international: "",
+  };
+
+  // Track which h2 section each <details> block belongs to by finding its
+  // nearest preceding h2.
+  $("details.colorful-dropdown-details").each((_, details) => {
+    const $details = $(details);
+
+    // Find the content div (div.p-4 inside the details)
+    const $contentDiv = $details.find("div.p-4").first();
+    if ($contentDiv.length === 0) return;
+
+    // Get the h3 inside the content div to identify student type
+    const $h3 = $contentDiv.find("h3").first();
+    const h3Text = $h3.text().replace(/\s+/g, " ").trim();
+
+    // Get the h4 in the summary (the button label) as fallback
+    const $summaryH4 = $details.find("summary h4").first();
+    const summaryText = $summaryH4.text().replace(/\s+/g, " ").trim();
+
+    // Match student type: h3 text first, then summary h4 text
+    let matched: StudentType | null = null;
+    const textToMatch = h3Text || summaryText;
+    for (const [re, type] of STUDENT_TYPE_HEADING_MAP) {
+      if (re.test(textToMatch)) {
+        matched = type;
+        break;
+      }
+    }
+
+    if (!matched) return;
+
+    const body = containerText($, $contentDiv);
+    if (body.length === 0) return;
+
+    // Append to the matched section (readmit can appear under both undergrad and grad)
+    sections[matched] = sections[matched]
+      ? `${sections[matched]}\n\n${body}`
+      : body;
+  });
+
+  // --- undergraduate: if still empty, collect all text under "Undergraduate Admissions" h2 ---
+  // This handles the "New Admissions" / freshman block which doesn't have a clear
+  // sub-type heading but belongs to undergraduate.
+  if (sections.undergraduate.length === 0) {
+    $("h2").each((_, h2) => {
+      const text = $(h2).text().replace(/\s+/g, " ").trim();
+      if (!/undergraduate/i.test(text)) return;
+      let $n = $(h2).next();
+      const parts: string[] = [];
+      while ($n.length > 0) {
+        const node = $n.get(0);
+        const tag = node && node.type === "tag" ? node.name.toLowerCase() : "";
+        if (tag === "h2") break;
+        const t = $n.text().replace(/\s+/g, " ").trim();
+        if (t.length > 0) parts.push(t);
+        $n = $n.next();
+      }
+      sections.undergraduate = parts.join("\n").trim();
+    });
+  }
+
+  // --- graduate: if still empty, collect from "Graduate Admissions" h2 ---
+  if (sections.graduate.length === 0) {
+    $("h2").each((_, h2) => {
+      const text = $(h2).text().replace(/\s+/g, " ").trim();
+      if (!/graduate/i.test(text) || /undergraduate/i.test(text)) return;
+      let $n = $(h2).next();
+      const parts: string[] = [];
+      while ($n.length > 0) {
+        const node = $n.get(0);
+        const tag = node && node.type === "tag" ? node.name.toLowerCase() : "";
+        if (tag === "h2") break;
+        const t = $n.text().replace(/\s+/g, " ").trim();
+        if (t.length > 0) parts.push(t);
+        $n = $n.next();
+      }
+      sections.graduate = parts.join("\n").trim();
+    });
+  }
+
+  // --- central contact ---
+  const central_contact = extractCentralContact($);
+
+  // --- fee tiers ---
+  const application_fee_tiers = extractApplicationFeeTiers($);
+
+  // --- external apply URLs ---
+  const external_apply_urls = extractExternalApplyUrls($);
+
+  return {
+    url: pageUrl,
+    central_contact,
+    shared_prelude,
+    sections,
+    application_fee_tiers,
+    external_apply_urls,
     retrieved_at: RETRIEVED_AT_PLACEHOLDER,
   };
 }
