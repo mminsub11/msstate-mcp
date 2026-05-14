@@ -35,6 +35,7 @@ import type {
   OnlineParseWarning,
   StudentType,
   OnlineAdmissionsProcess,
+  OnlineStaffEntry,
 } from "./types.js";
 
 /** Sentinel value replaced by the scraper with the actual fetch timestamp. */
@@ -770,4 +771,81 @@ export function parseAdmissionsProcessHtml(
     external_apply_urls,
     retrieved_at: RETRIEVED_AT_PLACEHOLDER,
   };
+}
+
+// ---------------------------------------------------------------------------
+// parseStaffDirectoryHtml
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse /staff into a list of OnlineStaffEntry records.
+ *
+ * The page renders staff using Drupal card-directory markup — the same pattern
+ * used by per-program contact cards. Each staff card (`div.card-directory`)
+ * contains:
+ *   h2.directory--name        — staff member name
+ *   p.directory--department   — department / office label
+ *   ul.directory--titles li   — job title (first li)
+ *   a.directory--email        — mailto: link
+ *   a.directory--phone        — tel: link (may be absent)
+ *
+ * Selector strategy: `div.card-directory` matches cheerio's partial-class
+ * selector, which fires on `class="card card-directory ..."` elements.
+ */
+export function parseStaffDirectoryHtml(
+  html: string,
+  pageUrl: string,
+): OnlineStaffEntry[] {
+  const $ = cheerioLoad(html);
+  const out: OnlineStaffEntry[] = [];
+  const seenEmails = new Set<string>();
+
+  $("div.card-directory").each((_, el) => {
+    const $card = $(el);
+
+    const name = $card.find("h2.directory--name").text().replace(/\s+/g, " ").trim();
+    if (name.length === 0) return;
+
+    // Title: prefer ul.directory--titles first li (job title), fall back to department
+    const titleFromList = $card
+      .find("ul.directory--titles li")
+      .first()
+      .text()
+      .replace(/\s+/g, " ")
+      .trim();
+    const titleFromDept = $card
+      .find("p.directory--department")
+      .text()
+      .replace(/\s+/g, " ")
+      .trim();
+    const title = titleFromList || titleFromDept;
+
+    // Department / office: p.directory--department
+    const office = titleFromDept;
+
+    const emailHref = $card.find("a.directory--email").attr("href") ?? "";
+    const email = emailHref.startsWith("mailto:")
+      ? emailHref.slice(7).trim()
+      : null;
+
+    // Deduplicate by email when present, by name when email absent
+    const dedupeKey = email ? email.toLowerCase() : name.toLowerCase();
+    if (seenEmails.has(dedupeKey)) return;
+    seenEmails.add(dedupeKey);
+
+    const phoneHref = $card.find("a.directory--phone").attr("href") ?? "";
+    const phone = phoneHref.startsWith("tel:") ? phoneHref.slice(4).trim() : null;
+
+    out.push({
+      name,
+      title,
+      email,
+      phone,
+      office,
+      url: pageUrl,
+      retrieved_at: RETRIEVED_AT_PLACEHOLDER,
+    });
+  });
+
+  return out;
 }
