@@ -162,14 +162,60 @@ export function filterPrograms(programs: OnlineProgram[], req: ProgramFilterRequ
 
 // ---- Fuzzy resolver for get_online_program(name_query) ---------------------
 
+/**
+ * Tokens that appear in nearly every program's name or description and
+ * carry zero discriminating signal. Stripped from query tokenization in
+ * resolveProgram only (not in info-page search).
+ */
+const PROGRAM_STOP_WORDS = new Set([
+  "online", "program", "degree", "msu", "msstate",
+]);
+
+export type ProgramMatchStrategy = "substring" | "bm25" | "no_signal" | "no_match";
+
 export interface FuzzyResolveResult {
   matched: OnlineProgram | null;
   did_you_mean: Array<{ slug: string; name: string }>;
+  match_strategy: ProgramMatchStrategy;
 }
 
-export function fuzzyResolveProgram(programs: OnlineProgram[], query: string): FuzzyResolveResult {
-  const qTokens = tokenize(query);
-  if (qTokens.length === 0) return { matched: null, did_you_mean: [] };
+function tokenizeProgram(s: string): string[] {
+  return tokenize(s).filter((t) => !PROGRAM_STOP_WORDS.has(t));
+}
+
+export function resolveProgram(programs: OnlineProgram[], query: string): FuzzyResolveResult {
+  const qTokens = tokenizeProgram(query);
+  if (qTokens.length === 0) {
+    return { matched: null, did_you_mean: [], match_strategy: "no_signal" };
+  }
+  const qNorm = qTokens.join(" ");
+
+  // Substring pre-stage: walk programs, score each by match strength
+  const substringHits: Array<{ p: OnlineProgram; strength: number }> = [];
+  for (const p of programs) {
+    const slugNorm = p.slug.toLowerCase().replace(/-/g, " ");
+    const nameNorm = p.name.toLowerCase();
+    if (slugNorm === qNorm) {
+      substringHits.push({ p, strength: 3 });            // exact slug
+    } else if (slugNorm.includes(qNorm) || nameNorm.includes(qNorm)) {
+      substringHits.push({ p, strength: 2 });            // substring
+    } else if (qTokens.every((t) => slugNorm.includes(t) || nameNorm.includes(t))) {
+      substringHits.push({ p, strength: 1 });            // all tokens present (different order)
+    }
+  }
+
+  if (substringHits.length > 0) {
+    substringHits.sort((a, b) =>
+      b.strength - a.strength || a.p.name.length - b.p.name.length,
+    );
+    return {
+      matched: substringHits[0].p,
+      did_you_mean: substringHits.slice(1, 3).map((x) => ({ slug: x.p.slug, name: x.p.name })),
+      match_strategy: "substring",
+    };
+  }
+
+  // BM25 fallback (stop-word-filtered query tokens, existing 4/3/1 weights)
   const scored = programs.map((p) => {
     const slugT = tokenize(p.slug);
     const nameT = tokenize(p.name);
@@ -183,9 +229,24 @@ export function fuzzyResolveProgram(programs: OnlineProgram[], query: string): F
     return { p, score };
   }).filter((x) => x.score > 0);
   scored.sort((a, b) => b.score - a.score);
-  if (scored.length === 0) return { matched: null, did_you_mean: [] };
+  if (scored.length === 0) {
+    return { matched: null, did_you_mean: [], match_strategy: "no_match" };
+  }
   return {
     matched: scored[0].p,
     did_you_mean: scored.slice(1, 3).map((x) => ({ slug: x.p.slug, name: x.p.name })),
+    match_strategy: "bm25",
   };
+}
+
+/**
+ * Back-compat alias for callers that haven't migrated yet. Same behavior as
+ * resolveProgram but discards match_strategy. Remove in v1.2.0.
+ */
+export function fuzzyResolveProgram(programs: OnlineProgram[], query: string): {
+  matched: OnlineProgram | null;
+  did_you_mean: Array<{ slug: string; name: string }>;
+} {
+  const r = resolveProgram(programs, query);
+  return { matched: r.matched, did_you_mean: r.did_you_mean };
 }
