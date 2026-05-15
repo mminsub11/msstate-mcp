@@ -21,6 +21,12 @@ import type {
 let CORPUS: OnlineCorpus | null = null;
 
 export function setOnlineCorpus(c: OnlineCorpus): void {
+  // Backfill for older corpus snapshots that lack staff_to_programs.
+  // New builds always include it; this guards against load-time crashes
+  // when a stale dist is paired with new code.
+  if (!Array.isArray((c as { staff_to_programs?: unknown }).staff_to_programs)) {
+    (c as { staff_to_programs: StaffToProgramsIndex }).staff_to_programs = [];
+  }
   CORPUS = c;
   indexInfoPages(c.info_pages, c.staff);
 }
