@@ -307,6 +307,9 @@ function extractTuition(
     const $table = $cowbell.next("div.table-responsive, table").find("table").addBack("table").first();
     // The table is a sibling of the tuitioncowbell div, inside a shared parent
     const $parent = $cowbell.parent();
+    // Strip page-chrome and analytics injectors before .text() — these leak
+    // GTM noscript-iframe HTML and nav menu strings into raw_prose.
+    $parent.find("script, style, noscript, iframe, nav, header, footer").remove();
     $parent.find("table tr").each((_, tr) => {
       const cells = $(tr)
         .find("td")
@@ -524,7 +527,10 @@ export function parseProgramHtml(
     }
     if (!tuition.raw_prose) {
       const $block = $("strong#credit_hours").closest("div.quickInner");
-      if ($block.length) tuition.raw_prose = $block.text().trim().slice(0, 400);
+      if ($block.length) {
+        $block.find("script, style, noscript, iframe, nav, header, footer").remove();
+        tuition.raw_prose = $block.text().trim().slice(0, 400);
+      }
     }
   }
 
