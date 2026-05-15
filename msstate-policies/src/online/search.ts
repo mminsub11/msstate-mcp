@@ -86,6 +86,36 @@ function countOf(token: string, arr: string[]): number {
   return c;
 }
 
+// ---- Similarity helpers ----------------------------------------------------
+
+/**
+ * Jaccard similarity over character trigrams. Used by resolveStaff to suggest
+ * did_you_mean alternates when a query doesn't match any staff member.
+ * Inline implementation — no new dependency.
+ *
+ * Both inputs should already be normalized (lowercased, diacritic-stripped).
+ * Result is in [0, 1]. Identical strings score 1.0; disjoint strings score 0.
+ */
+function trigrams(s: string): Set<string> {
+  const padded = ` ${s} `;
+  const out = new Set<string>();
+  for (let i = 0; i <= padded.length - 3; i++) {
+    out.add(padded.slice(i, i + 3));
+  }
+  return out;
+}
+
+export function trigramScore(a: string, b: string): number {
+  if (!a || !b) return 0;
+  const A = trigrams(a);
+  const B = trigrams(b);
+  if (A.size === 0 || B.size === 0) return 0;
+  let inter = 0;
+  for (const t of A) if (B.has(t)) inter++;
+  const union = A.size + B.size - inter;
+  return union === 0 ? 0 : inter / union;
+}
+
 export type InfoScope =
   | "all"
   | "state-authorization"
