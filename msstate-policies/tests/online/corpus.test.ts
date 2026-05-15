@@ -34,6 +34,7 @@ const SAMPLE: OnlineCorpus = {
   },
   staff: [{ name: "Jane Doe", title: "Director", email: "jdoe@msstate.edu", phone: null, office: "O", url: "x", retrieved_at: "x" }],
   info_pages: [{ slug: "orientation", title: "Orientation", url: "x", body_markdown: "x", retrieved_at: "x" }],
+  staff_to_programs: [],
 };
 
 describe("online/corpus", () => {
