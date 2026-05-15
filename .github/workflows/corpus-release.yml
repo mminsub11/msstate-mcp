@@ -32,6 +32,13 @@ jobs:
         working-directory: msstate-policies
         run: npx playwright install --with-deps chromium
 
+      # scripts/build-worker-corpus.mjs and its tsx subprocesses import cheerio,
+      # pdf-parse, and playwright from msstate-policies/node_modules. Node ESM
+      # resolves modules upward from each script's directory; locally a symlink
+      # at the repo root makes that work. Recreate it here so CI matches.
+      - name: Symlink node_modules at repo root (matches local layout)
+        run: ln -sfn msstate-policies/node_modules node_modules
+
       - name: Full corpus rebuild
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
