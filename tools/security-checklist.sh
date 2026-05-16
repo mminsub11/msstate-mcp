@@ -622,26 +622,26 @@ fi
 # ONL4: Build aborts with canonical string on poisoned online corpus.
 ONL4_COUNT=$(grep -c "refusing to ship a poisoned online corpus" scripts/build-worker-corpus.mjs 2>/dev/null | tr -d ' ')
 ONL4_COUNT=${ONL4_COUNT:-0}
-if [ "$ONL4_COUNT" -ge "8" ] 2>/dev/null; then
+if [ "$ONL4_COUNT" -ge "10" ] 2>/dev/null; then
   score=$((score + 2))
   note "PASS" "ONL4 build aborts on poisoned online corpus ($ONL4_COUNT abort sites)" 2
 else
-  note "FAIL" "ONL4 only $ONL4_COUNT 'refusing to ship a poisoned online corpus' sites (need >= 8)" 2
+  note "FAIL" "ONL4 only $ONL4_COUNT 'refusing to ship a poisoned online corpus' sites (need >= 10)" 2
 fi
 
-# ONL5: ONLINE_DISCLAIMER present in types.ts AND referenced in all 4 online tool files.
+# ONL5: ONLINE_DISCLAIMER present in types.ts AND referenced in all 5 online tool files.
 ONL5_OK=1
 if ! grep -q 'ONLINE_DISCLAIMER' msstate-policies/src/online/types.ts 2>/dev/null; then
   ONL5_OK=0
 fi
-for f in list_online_programs get_online_program get_online_admissions_process find_online_info; do
+for f in list_online_programs get_online_program get_online_admissions_process find_online_info list_programs_by_staff; do
   if ! grep -q 'ONLINE_DISCLAIMER' "msstate-policies/src/tools/${f}.ts" 2>/dev/null; then
     ONL5_OK=0
   fi
 done
 if [ "$ONL5_OK" = "1" ]; then
   score=$((score + 2))
-  note "PASS" "ONL5 ONLINE_DISCLAIMER present in types.ts + 4 tool files" 2
+  note "PASS" "ONL5 ONLINE_DISCLAIMER present in types.ts + 5 tool files" 2
 else
   note "FAIL" "ONL5 ONLINE_DISCLAIMER missing from types.ts or one of the tool files" 2
 fi
