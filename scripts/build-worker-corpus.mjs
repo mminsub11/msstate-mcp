@@ -579,6 +579,24 @@ async function scrapeOnlineViaSubprocess() {
   console.error(
     `[build-worker-corpus]   online: ${parsed.programs.length} programs, ${parsed.staff.length} staff, ${parsed.info_pages.length} info pages (${totalWithWarnings} programs have any warning; no_contacts=${counts.no_contacts_extracted}, tuition_unparsed=${counts.tuition_unparsed}, admissions_section_missing=${counts.admissions_section_missing})`,
   );
+  // v1.1.1: staff_to_programs index must be present and populated
+  if (!Array.isArray(parsed.staff_to_programs) || parsed.staff_to_programs.length === 0) {
+    throw new Error(
+      "online: staff_to_programs index is empty or missing - refusing to ship a poisoned online corpus",
+    );
+  }
+  const totalStaffRefs = parsed.staff_to_programs.reduce(
+    (sum, s) => sum + (Array.isArray(s.programs) ? s.programs.length : 0),
+    0,
+  );
+  if (totalStaffRefs === 0) {
+    throw new Error(
+      "online: staff_to_programs has 0 program refs across all staff - refusing to ship a poisoned online corpus",
+    );
+  }
+  console.error(
+    `[build-worker-corpus]   staff_to_programs: ${parsed.staff_to_programs.length} staff, ${totalStaffRefs} program refs`,
+  );
   return parsed;
 }
 
