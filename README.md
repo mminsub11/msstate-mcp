@@ -4,7 +4,7 @@
 
 > ⚠️ **Unofficial.** Not affiliated with, endorsed by, or sponsored by Mississippi State University. Every answer must be verified against the official MSU source before you act on it — see [Always double-check](#always-double-check) for why.
 
-**24 MCP tools across 7 MSU content domains.** Current version: **v1.1.0** (2026-05-14). The hosted Cloudflare Worker ships routing instructions over MCP — Claude and ChatGPT both pick the right tool without per-session prompting.
+**25 MCP tools across 7 MSU content domains.** Current version: **v1.1.1** (2026-05-16). The hosted Cloudflare Worker ships routing instructions over MCP — Claude and ChatGPT both pick the right tool without per-session prompting.
 
 | Domain | Coverage | Source |
 |---|---|---|
@@ -52,6 +52,8 @@
 - *"Who's the advisor for the online psychology program?"*
 - *"What's the application deadline for the online MS in Cybersecurity?"*
 - *"Does MSU online operate in my state?"*
+- *"What programs is Lily Hudson responsible for?"*
+- *"Who handles the online MBA at MSU?"*
 
 **Dining**
 - *"Is Perry open right now?"*
@@ -129,7 +131,7 @@ Fastest path. Works in the browser and the Claude iOS/Android apps. Requires a p
 1. Sign in at <https://claude.ai>
 2. **Settings → Connectors → Add custom connector**
 3. **Name:** `MSU` &nbsp;&nbsp; **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
-4. Save. You should see **24 tools** appear
+4. Save. You should see **25 tools** appear
 5. New chat, enable the connector, ask a question
 
 Mobile apps pick up the connector automatically once you set it up on web.
@@ -141,7 +143,7 @@ Same flow as claude.ai. Free-tier ChatGPT can't add connectors — use the [Open
 1. Sign in at <https://chatgpt.com>
 2. **Settings → Connectors → Add custom connector**
 3. **Name:** `MSU` &nbsp;&nbsp; **URL:** `https://msstate-policies-mcp.mminsub90.workers.dev/mcp`
-4. Save → 24 tools available
+4. Save → 25 tools available
 
 ChatGPT routing used to be hit-or-miss because there was no way to inject a system prompt through the connector. Since v0.8.0 the server provides routing rules via MCP's `InitializeResult.instructions` field, so GPT picks the right tool out of the box.
 
@@ -184,7 +186,7 @@ You need [Node.js 18+](https://nodejs.org).
 
 **3.** Fully quit the client (Cmd+Q / right-click tray → Quit) and reopen.
 
-**4.** Verify the `msstate-policies` server shows **24 tools**. First call takes ~5 seconds (cold fetch); later calls reuse cached data.
+**4.** Verify the `msstate-policies` server shows **25 tools**. First call takes ~5 seconds (cold fetch); later calls reuse cached data.
 
 Ready-to-paste snippet at [`examples/claude_desktop_config.json`](examples/claude_desktop_config.json).
 
@@ -234,7 +236,7 @@ Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 
 
 ---
 
-## The 24 tools
+## The 25 tools
 
 | Tool | Use it for |
 |---|---|
@@ -260,11 +262,12 @@ Free claude.ai can't add MCP connectors, so use a curated **starter zip** of 22 
 | `get_msu_enrollment_fees` | Per-college / per-program / per-course fees with substring filter (e.g. "engineering", "honors", "business administration") |
 | `find_msu_tuition_faq` | BM25 search across MSU's 14-question tuition FAQ. Top-k Q&A pairs verbatim with anchor URLs |
 | `list_msu_tuition_campuses` | Enumerate the 5 published tuition campuses with `levels_offered` + `rate_basis` + source URL |
-| **Online (4)** | |
+| **Online (5)** | |
 | `list_online_programs` | Browse/filter MSU's 114 online programs by degree level and subject keyword |
 | `get_online_program` | One program's full record (contacts, deadlines, tuition, accreditation, forms) by slug or fuzzy name |
 | `get_online_admissions_process` | Admissions process sectioned by student type (UG / Grad / Transfer / Readmit / International) + central front-desk contact + application-fee tiers |
 | `find_online_info` | BM25 search over 5 support pages (state authorization, military assistance, orientation, FAQ, financial matters) + central staff directory |
+| `list_programs_by_staff` | Reverse-lookup: given an email or staff name, return their full MSU Online program portfolio with per-program role labels. The killer tool for the Center for Distance Education "what's mine?" workflow. |
 | **Dining (2)** | |
 | `list_msu_dining_locations` | Browse/filter dining venues; open-now filter; substring match. Returns 24 venues with today's hours. |
 | `get_msu_dining_hours` | Full per-venue hours (all 7 days) + `status_now` (open / closed / unknown) computed in America/Chicago. Slug or fuzzy name. |

@@ -48,7 +48,7 @@ msstate-mcp/                              # repo root = Claude Code marketplace
 │   ├── run-eval.mjs                      # MCP-driven eval harness
 │   └── sync-version.mjs                  # syncs package.json -> plugin.json
 ├── worker/                               # Cloudflare Worker variant (HTTP/JSON-RPC)
-│   ├── src/index.ts                      # MCP-over-HTTP, all 24 tools, BM25 only
+│   ├── src/index.ts                      # MCP-over-HTTP, all 25 tools, BM25 only
 │   ├── corpus.json                       # pre-extracted policies + academic_calendar block
 │   ├── wrangler.toml                     # Cloudflare deploy config
 │   ├── package.json                      # devDeps: wrangler, workers-types
@@ -69,7 +69,7 @@ msstate-mcp/                              # repo root = Claude Code marketplace
     │   ├── index.js                      # COMMITTED bundle (~14 MB)
     │   └── embeddings.json               # COMMITTED embeddings (~24 MB)
     └── src/
-        ├── index.ts                      # MCP server entry (stdio) — registers all 24 tools
+        ├── index.ts                      # MCP server entry (stdio) — registers all 25 tools
         ├── log.ts                        # stderr-only structured logger
         ├── types.ts                      # PolicyEntry, PolicyDocument, PolicyIndex, HealthState
         ├── cache.ts                      # TTLCache<T> (mem + opt-in disk)
@@ -122,11 +122,12 @@ msstate-mcp/                              # repo root = Claude Code marketplace
 | `get_msu_enrollment_fees` | Per-college / per-program / per-course fees with substring filter. |
 | `find_msu_tuition_faq` | BM25 search across MSU's 14-question tuition FAQ. |
 | `list_msu_tuition_campuses` | Enumerate the 5 published tuition campuses. |
-| **Online (4, v1.0.0)** | |
+| **Online (5, v1.0.0 + v1.1.1)** | |
 | `list_online_programs` | Browse/filter MSU's online programs by degree level and subject keyword. |
 | `get_online_program` | One program's full record (contacts, deadlines, tuition) by slug or fuzzy name. |
 | `get_online_admissions_process` | Admissions process sectioned by student type (UG/Grad/Transfer/Readmit/International). |
 | `find_online_info` | BM25 over support pages + central staff directory. |
+| `list_programs_by_staff` | Reverse-lookup: given an email or staff name, returns full MSU Online program portfolio with per-program role labels (v1.1.1). |
 | **Dining (2, v1.1.0)** | |
 | `list_msu_dining_locations` | Browse/filter dining venues; open-now filter; substring match. |
 | `get_msu_dining_hours` | Full per-venue hours + status_now (slug or fuzzy name). |
@@ -752,6 +753,53 @@ The 6th instruction rule (added in `SERVER_INSTRUCTIONS` for both stdio and Work
 ### Rate limiting tolerance
 
 MSU's online.msstate.edu has tolerated 4-worker concurrency in measured builds. If MSU adds aggressive rate limiting, drop CONCURRENCY in `scraper.ts` and re-tune.
+
+### v1.1.1 fixes (2026-05-15)
+
+Surfaced by live testing against the deployed Worker:
+
+1. **Fuzzy resolver fixed for "online <X>" queries.** Old behavior:
+   `get_online_program(name_query="online MBA")` returned BAS-BOT because
+   "online" appears in every program's name and short_description, and the
+   short marketing copy outscored the literal slug match. Fix: introduce
+   `PROGRAM_STOP_WORDS = {online, program, degree, msu, msstate}` and a
+   substring pre-stage that returns deterministic matches when the
+   stop-word-stripped query is a substring of slug or name. BM25 (with
+   stop-word-filtered tokens) is the fallback when no substring hits.
+
+2. **`list_programs_by_staff` tool.** Reverse-lookup over a `staff_to_programs`
+   inverted index baked into `corpus.json` at scrape time. Email-primary
+   resolution (case-insensitive, exact match); name-fallback uses
+   diacritic-normalized substring or all-tokens-present matching.
+   Ambiguous names surface ≥2 matches so the model can disambiguate;
+   no-match returns up to 3 `did_you_mean` suggestions ranked by trigram
+   Jaccard similarity (~30 LOC inline, no new dep).
+
+3. **HTML strip in `parseTuition`.** Both call sites (primary
+   `.tuitioncowbell` path and BAS-style `quickInner` fallback) now call
+   `.find('script, style, noscript, iframe, nav, header, footer').remove()`
+   before `.text()`. Fixes the GTM-noscript-iframe leakage observed in
+   BAS-BOT's `tuition.raw_prose`.
+
+**Live scrape baseline (2026-05-16):** 114 programs, 23 staff,
+`staff_to_programs` index 113 entries with 378 total program refs.
+Max programs per staff: 68 (Samantha Clardy as Enrollment & Onboarding
+Coach). 43 staff appear on 2+ programs — the Center for Distance Education
+coordinator pattern.
+
+**Eval delta:** +10 fuzzy regression cases (across 10 query patterns covering
+the most-frequent "online <X>" shapes) + 5 staff lookup cases (email exact,
+unique first/last name, ambiguous shared substring, no-match w/ did_you_mean).
+Online suite goes 30 → 45 questions.
+
+**Build-time guards added:** 2 new abort sites (total 15) using the
+canonical `"refusing to ship a poisoned online corpus"` string for empty
+or zero-ref staff index.
+
+**Source-data quirk handled (do not regress):** GTM injects a
+`<noscript><iframe>` fallback on every program page. cheerio's `.text()`
+recurses into `<noscript>` content as plain text; that's why the chrome
+strip is mandatory before extracting verbatim prose.
 
 ## MSU Dining module (v1.1.0, 2026-05-14)
 

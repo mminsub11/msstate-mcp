@@ -24,7 +24,7 @@ After any change in scope, run `bash tools/security-checklist.sh | tail -1` and 
 6. **Online programs** — `online.msstate.edu` (added in v1.0.0)
 7. **Dining** — `dining.msstate.edu` → `msstatedining.mydininghub.com` (added in v1.1.0)
 
-Tool count: **24** (4 policy + 2 calendar + 3 course + 4 emergency + 4 tuition + 4 online + 2 dining + 1 health). Current version: **v1.1.0** (2026-05-14) — adds the dining module (2 tools, daily-refreshed corpus, Playwright modal-click for SPA-rendered hours, status_now computation in America/Chicago). v1.0.2 (2026-05-14) fixed the calendars stdio-bundle path + Worker fail-closed Content-Length. v1.0.1 (2026-05-13) fixed online parser admissions heading match + short_description sourcing. v1.0.0 (2026-05-13) shipped the online module (4 tools). v0.9.0 tightened the prereq parser (3 accuracy gaps closed, 2 new diagnostic fields, 3 new build-time ceilings). All sources serve a pre-baked corpus snapshot — zero runtime fetches to MSU at request time on the Worker; local stdio path live-scrapes policies. For project overview, architecture, decision history, eval methodology, and open issues, see [`docs/BUILD.md`](./docs/BUILD.md). Read it once before non-trivial work.
+Tool count: **25** (4 policy + 2 calendar + 3 course + 4 emergency + 4 tuition + 5 online + 2 dining + 1 health). Current version: **v1.1.1** (2026-05-16) — fixes the broken fuzzy program resolver (PROGRAM_STOP_WORDS + substring pre-stage), strips analytics-injected HTML chrome from `tuition.raw_prose`, and adds the new `list_programs_by_staff` reverse-lookup tool. v1.1.0 (2026-05-14) added the dining module (2 tools, daily-refreshed corpus, Playwright modal-click for SPA-rendered hours, status_now computation in America/Chicago). v1.0.2 (2026-05-14) fixed the calendars stdio-bundle path + Worker fail-closed Content-Length. v1.0.1 (2026-05-13) fixed online parser admissions heading match + short_description sourcing. v1.0.0 (2026-05-13) shipped the online module (4 tools). v0.9.0 tightened the prereq parser (3 accuracy gaps closed, 2 new diagnostic fields, 3 new build-time ceilings). All sources serve a pre-baked corpus snapshot — zero runtime fetches to MSU at request time on the Worker; local stdio path live-scrapes policies. For project overview, architecture, decision history, eval methodology, and open issues, see [`docs/BUILD.md`](./docs/BUILD.md). Read it once before non-trivial work.
 
 The server ships in two surfaces from one bundle:
 - **Claude Code plugin** (`/plugin install msstate-policies@msstate-mcp`)
@@ -250,3 +250,31 @@ questions to the 2 new tools.
 discipline, frozen DINING_ROOTS, Worker input-length caps, build-time
 poisoned-corpus aborts, DINING_DISCLAIMER presence, polite-scraping policy
 visible in scraper.ts source.
+
+### Corpus extension (2026-05-15) — online module fixes (v1.1.1)
+
+Patches three bugs and adds one tool over the existing online module. No
+new corpus sources; same `ONLINE_ROOTS` allowlist.
+
+**Bugs fixed:**
+- `get_online_program(name_query="online MBA")` now resolves deterministically
+  to the MBA program. New `PROGRAM_STOP_WORDS = {online, program, degree,
+  msu, msstate}` filter on query tokens + substring pre-stage on slug + name
+  before BM25 fallback.
+- `parseTuition` strips `script, style, noscript, iframe, nav, header,
+  footer` before `.text()` extraction. Fixes GTM noscript-iframe leakage
+  into `tuition.raw_prose`.
+- Worker dispatch mirrors the stdio fix so claude.ai + ChatGPT connectors
+  get the corrected behavior on deploy.
+
+**New tool:** `list_programs_by_staff(query)` — email-primary, name-fallback
+reverse lookup over a staff→programs inverted index baked into
+`corpus.json.online.staff_to_programs` at scrape time. Trigram-similarity
+`did_you_mean` for no-match queries (no new dep). Tool count 24 → 25.
+
+**Build aborts** (2 new sites, total 15 with canonical "refusing to ship
+a poisoned online corpus" string): empty `staff_to_programs` index;
+zero program refs across all staff entries.
+
+**Security checks updated:** ONL4 target ≥10 (was 8). ONL5 references in 5
+tool files (was 4 — new `list_programs_by_staff.ts`). Score stays at **284**.
