@@ -973,6 +973,7 @@ process.stdout.write(JSON.stringify(breakdown));
     admissions_process: onlinePayload.admissions_process,
     staff: onlinePayload.staff,
     info_pages: onlinePayload.info_pages,
+    staff_to_programs: onlinePayload.staff_to_programs,
   };
 
   if (!skipDining) {
