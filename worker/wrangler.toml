@@ -20,3 +20,9 @@ minify = true
 
 [observability]
 enabled = true
+
+# Telemetry (v1.2.0+). Anonymous aggregate counts only — see PRIVACY.md.
+# Set TELEMETRY_DISABLED=1 in [vars] or via dashboard to disable recording.
+[[analytics_engine_datasets]]
+binding = "TELEMETRY"
+dataset = "msstate_mcp_events"

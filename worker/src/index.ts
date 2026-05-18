@@ -1721,6 +1721,57 @@ function tooLong(name: string, value: string): McpToolResponse {
   );
 }
 
+// ---- Telemetry (v1.2.0+) ---------------------------------------------------
+// Anonymous aggregate only. See PRIVACY.md. NO IPs, NO payloads, NO user
+// identifiers, NO sub-day timestamps. The country code from request.cf is
+// bucketed before recording to prevent quasi-identification at small volumes.
+
+interface TelemetryEnv {
+  TELEMETRY?: {
+    writeDataPoint: (data: {
+      blobs?: string[];
+      doubles?: number[];
+      indexes?: string[];
+    }) => void;
+  };
+  TELEMETRY_DISABLED?: string;
+}
+
+const EU_COUNTRIES = new Set([
+  "AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT",
+  "LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE","GB",
+]);
+
+function bucketCountry(raw: string | undefined | null): "US" | "NA-other" | "EU" | "Other" | "??" {
+  if (!raw) return "??";
+  if (raw === "US") return "US";
+  if (raw === "CA" || raw === "MX") return "NA-other";
+  if (EU_COUNTRIES.has(raw)) return "EU";
+  return "Other";
+}
+
+function recordEvent(
+  env: TelemetryEnv,
+  request: Request,
+  toolName: string,
+  ok: boolean,
+): void {
+  if (env.TELEMETRY_DISABLED === "1") return;
+  if (!env.TELEMETRY) return;
+  const date = new Date().toISOString().slice(0, 10); // YYYY-MM-DD UTC, day granularity only
+  const country = (request as Request & { cf?: { country?: string } }).cf?.country;
+  const bucket = bucketCountry(country);
+  try {
+    env.TELEMETRY.writeDataPoint({
+      blobs: [toolName, bucket],
+      doubles: [ok ? 1 : 0],
+      indexes: [date],
+    });
+  } catch {
+    // Telemetry failure is never propagated.
+  }
+}
+
 function buildCalendarNotes(
   matches: Array<{ event: string; term?: string }>,
   fallbackTriggered: boolean,
@@ -1748,7 +1799,7 @@ function buildCalendarNotes(
   return modeNote;
 }
 
-async function callTool(name: string, args: Record<string, unknown>): Promise<McpToolResponse> {
+async function callTool(name: string, args: Record<string, unknown>, _env?: TelemetryEnv): Promise<McpToolResponse> {
   switch (name) {
     case "search_policies": {
       const query = String(args.query ?? "");
@@ -2426,7 +2477,7 @@ function coursesParseQualityWorker(): {
   };
 }
 
-async function handleRpc(req: JsonRpcRequest): Promise<JsonRpcResponse | null> {
+async function handleRpc(req: JsonRpcRequest, env: TelemetryEnv, request: Request): Promise<JsonRpcResponse | null> {
   const id = req.id ?? null;
   switch (req.method) {
     case "initialize":
@@ -2453,7 +2504,8 @@ async function handleRpc(req: JsonRpcRequest): Promise<JsonRpcResponse | null> {
       const params = req.params ?? {};
       const name = String(params.name ?? "");
       const args = (params.arguments ?? {}) as Record<string, unknown>;
-      const result = await callTool(name, args);
+      const result = await callTool(name, args, env);
+      recordEvent(env, request, name, !result.isError);
       return { jsonrpc: "2.0", id, result };
     }
 
@@ -2492,7 +2544,7 @@ function withCors(response: Response): Response {
 // ---- Worker entry -----------------------------------------------------------
 
 export default {
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request, env: TelemetryEnv): Promise<Response> {
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
@@ -2594,7 +2646,7 @@ export default {
       }
 
       try {
-        const response = await handleRpc(body);
+        const response = await handleRpc(body, env, request);
         if (response === null) {
           return withCors(new Response(null, { status: 202 }));
         }
