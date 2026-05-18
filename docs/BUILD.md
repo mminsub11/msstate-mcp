@@ -59,9 +59,10 @@ msstate-mcp/                              # repo root = Claude Code marketplace
     ├── build.mjs                         # esbuild bundler
     ├── eval/
     │   ├── questions.jsonl               # 50 grounded-answer policy eval questions
-    │   ├── audit-2026-05-07.csv          # PDF-parse yield audit
-    │   ├── eval-2026-05-08-*.json        # policy eval run results
-    │   └── eval-calendars-2026-05-11.json # 16-question calendar eval (v0.4.0)
+    │   ├── emergency.jsonl               # emergency module eval (v0.7.0+)
+    │   ├── tuition.jsonl                 # tuition module eval (v0.8.0+)
+    │   ├── online.jsonl                  # online module eval (v1.0.0+)
+    │   └── dining.jsonl                  # dining module eval (v1.1.0+)
     ├── tests/                            # tsx --test tests/*.test.ts
     │   ├── fixtures/calendars/           # captured HTML + 1 PDF for parser tests
     │   └── parsers-*.test.ts             # per-shape parser tests
@@ -301,7 +302,7 @@ Worker reads from `worker/corpus.json`'s `academic_calendar` block; local instal
 
 Corpus rule addendum in [`CLAUDE.md`](../CLAUDE.md#corpus-extension-2026-05-11--academic-dates) lists all six URL bases; `tools/security-checklist.sh` enforces (CAL1-4) that calendar URLs are hardcoded, calendar code never touches non-msstate.edu hosts, the Worker caps `find_msu_date` query length, and the build aborts on WAF/empty.
 
-Tool count: 5 â 7. Eval set at [`msstate-policies/eval/eval-calendars-2026-05-11.json`](../msstate-policies/eval/eval-calendars-2026-05-11.json) (16 questions, mixed across the 6 sources + 1 refusal case).
+Tool count: 5 -> 7. Initial eval (May 2026) was 16 questions across the 6 sources + 1 refusal case; the snapshot file has since been retired in favor of the live runner (`scripts/run-eval.mjs --suite=calendar`).
 
 ### Calendar quality improvements (v0.4.1, 2026-05-11)
 
@@ -481,9 +482,7 @@ Sub-metrics:
 2. **Answer correctness** — Sonnet-4-6 judge (separate Claude API call) grades the final prose answer against retrieved policy text.
 3. **Refusal correctness** — deterministic. For negatives, response must contain a refusal phrase AND must NOT contain a fabricated OP number matching `/\b\d{2}\.\d{2,3}\b/`.
 
-### Current state — composite **86/88**
-
-`msstate-policies/eval/eval-2026-05-08-k5-sonnet-4-6.json` (BM25-only, Sonnet-4-6 judge):
+### Sprint 2 baseline — composite **86/88** (May 2026, BM25-only, Sonnet-4-6 judge)
 
 ```
 retrieval  37 / 38 passed   (1 miss: tornado conceptual case)
@@ -495,12 +494,11 @@ The Sprint 2 DoD targets ≥ 99% retrieval / 0 observed answer errors / 100% ref
 
 ### Eval artifacts in `msstate-policies/eval/`
 
-- `questions.jsonl` — the 50 questions.
-- `audit-2026-05-07.csv` — Sprint 1 PDF-parse yield audit (per-policy bytes / pages / extracted chars / parse errors).
-- `eval-2026-05-08-k5-sonnet-4-6.json` — **canonical** validated baseline (BM25-only, 86/88).
-- `eval-2026-05-08-k5-sonnet-4-6-{bm25,hybrid,embed}.json` — comparative eval per mode.
-- `eval-2026-05-08-k5-sonnet-4-6-F2v2-regression.json` — preserved snapshot of the F2 v2 regression run (78/88) so the calibration finding stays reproducible.
-- `eval-2026-05-07-k5-sonnet-4-6.json` — the pre-codex-fix baseline (81/87).
+- `questions.jsonl` — the 50 policy questions (canonical, re-runnable).
+- Per-module JSONL suites: `emergency.jsonl`, `tuition.jsonl`, `online.jsonl`, `dining.jsonl` (each added with its module release).
+- Run a suite via `node scripts/run-eval.mjs --suite=<module>`.
+
+Historic point-in-time snapshots (Sprint 1 PDF-parse audit, May 8 BM25/hybrid/embed comparison, F2 v2 regression) have been removed from the tree — re-derive any of them by re-running the runner.
 
 ### Re-running
 

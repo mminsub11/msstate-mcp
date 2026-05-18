@@ -1,10 +1,16 @@
 /**
  * Cloudflare Worker variant of the msstate-policies MCP server.
  *
- * Serves the same 5 tools as the stdio server but over HTTP/JSON-RPC,
- * so claude.ai's web connector + Claude mobile can use it. Reads policy
- * text from a pre-built corpus.json (run scripts/build-worker-corpus.mjs
- * to refresh) — the Worker can't run pdf-parse at request time.
+ * Mirrors the stdio server's 24 tools (4 policy + 2 calendar + 3 course +
+ * 4 emergency + 4 tuition + 4 online + 2 dining + 1 health) over
+ * HTTP/JSON-RPC, so claude.ai's web connector + Claude mobile + ChatGPT
+ * connector can use it. Reads content from a pre-built corpus.json
+ * (run scripts/build-worker-corpus.mjs to refresh) — the Worker can't
+ * run pdf-parse or playwright at request time.
+ *
+ * Daily Worker refresh: .github/workflows/dining-refresh.yml (09:00 UTC)
+ *   re-scrapes the dining block and redeploys.
+ * Quarterly full release: .github/workflows/corpus-release.yml.
  *
  * MCP protocol: POST /mcp with JSON-RPC 2.0. Stateless. No sessions.
  *
