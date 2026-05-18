@@ -1,0 +1,36 @@
+// Adversarial regression fixtures — defend the structural advantage of the
+// MCP corpus over generic web-summary answers. Every case here exercises a
+// footnote, asterisk, line item, structured field, or graph edge that a
+// page-summarizing LLM (e.g. ChatGPT without this MCP) is empirically known
+// to drop. If any case regresses, the moat narrowed — investigate before
+// merging.
+//
+// Every expected value was confirmed against the live MCP on 2026-05-18
+// (corpus snapshots: 2026-05-13T16:48:28.947Z for policies/calendars,
+// 2026-05-18T14:35:16.534Z for online/tuition/emergency/courses).
+// Corpus-rule-clean — no training-data fallback.
+//
+// Dispatched by `tool` field. Assertion type determined by `kind`. Threshold
+// is 100%: even one regression should fail the suite.
+//
+// SCOPE: only deterministic tools (online, emergency, tuition, courses) are
+// covered here so this suite can be CI-gated. The analogous moat cases for
+// chain_find_relevant_policies (e.g. "grade appeal → AOP 13.14") and
+// find_msu_date (e.g. "Fall 2026 finals = 2026-12-03 to 2026-12-10") live in
+// the dates suite + the policies questions.jsonl — those tools live-scrape
+// MSU from the stdio bundle and are too flaky for CI. Run them manually
+// before each release via `npm run eval -- --suite dates` /
+// `npm run eval -- --suite policies`.
+{"kind":"raw_section_contains","desc":"BSEE: 'Not available online' asterisk footnote preserved on required courses","tool":"get_online_program","args":{"slug":"bsee"},"section":"Required Courses","substring":"Not available online"}
+{"kind":"raw_section_contains","desc":"BSEE: Course Rotation table preserved (Capstone Design I)","tool":"get_online_program","args":{"slug":"bsee"},"section":"Course Rotation","substring":"Capstone Design I"}
+{"kind":"field_contains_all","desc":"Mitchell Library refuge: exact rooms 1050/1054/1056/1252","tool":"find_msu_severe_weather_refuge","args":{"building_name":"Mitchell Memorial Library"},"path":["matches",0,"area"],"substrings":["1050","1054","1056","1252"]}
+{"kind":"field_contains","desc":"Mitchell Library refuge: Hardy Rd entrance note preserved","tool":"find_msu_severe_weather_refuge","args":{"building_name":"Mitchell Memorial Library"},"path":["matches",0,"area"],"substring":"Hardy Rd"}
+{"kind":"tuition_line_item","desc":"DVM non-resident: Non-Resident Surcharge $11,370/sem line item","tool":"get_msu_tuition_rate","args":{"campus":"vetmed","level":"dvm","residency":"non_resident","term":"fall_spring"},"label":"Non-Resident Surcharge","amount_usd":11370}
+{"kind":"field_equals","desc":"DVM non-resident: rate_basis = per_semester_flat (NOT per-credit)","tool":"get_msu_tuition_rate","args":{"campus":"vetmed","level":"dvm","residency":"non_resident","term":"fall_spring"},"path":["matches",0,"rate_basis"],"value":"per_semester_flat"}
+{"kind":"field_approx","desc":"DVM non-resident: total $26,321.50/semester","tool":"get_msu_tuition_rate","args":{"campus":"vetmed","level":"dvm","residency":"non_resident","term":"fall_spring"},"path":["matches",0,"amount_usd"],"value":26321.5,"tolerance":0.5}
+{"kind":"graph_edge","desc":"CSE 1284 → CSE 2813 with min_grade=C preserved","tool":"get_msu_course_graph","args":{"code":"CSE 1284","direction":"unlocks","depth":2},"from":"CSE 1284","to":"CSE 2813","min_grade":"C"}
+{"kind":"graph_node_present","desc":"CSE 1284 unlocks CSE 4693 (ML)","tool":"get_msu_course_graph","args":{"code":"CSE 1284","direction":"unlocks","depth":2},"code":"CSE 4693"}
+{"kind":"graph_node_present","desc":"CSE 1284 unlocks CSE 3713 (Cybersec)","tool":"get_msu_course_graph","args":{"code":"CSE 1284","direction":"unlocks","depth":2},"code":"CSE 3713"}
+{"kind":"deadline_term_text","desc":"BSEE: Fall application deadline = August 1","tool":"get_online_program","args":{"slug":"bsee"},"term":"Fall","text_contains":"August 1"}
+{"kind":"field_contains","desc":"BSEE: ABET accreditation preserved","tool":"get_online_program","args":{"slug":"bsee"},"path":["matched","accreditation"],"substring":"ABET"}
+{"kind":"field_contains","desc":"Tuition response carries 'subject to change' disclaimer","tool":"get_msu_tuition_rate","args":{"campus":"vetmed","level":"dvm","residency":"non_resident","term":"fall_spring"},"path":["disclaimer"],"substring":"subject to change"}

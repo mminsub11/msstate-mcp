@@ -1,0 +1,23 @@
+// Date-correctness eval. Every (start, end, term) tuple was confirmed against
+// the live MSU corpus via find_msu_date queries on 2026-05-18 (corpus snapshot
+// 2026-05-13T16:48:28.947Z). Authoring is corpus-rule-clean — no training-data
+// fallback, no third-party mirrors. Re-run a few representative queries after
+// any registrar/SFA/grad-school/HRM rebuild and refresh expected values that
+// drift; do NOT silently weaken assertions to chase a passing run.
+//
+// kind=date_match passes when matches[].some((r) => predicate). Every
+// predicate field is optional; specify enough to disambiguate (typically
+// term + event_contains + start + end).
+{"kind":"date_match","desc":"Spring 2026 spring break","q":"Spring Break 2026","expect":{"event_contains":"Spring Break","term":"Spring 2026","start":"2026-03-09","end":"2026-03-13"}}
+{"kind":"date_match","desc":"Spring 2027 spring break","q":"Spring Break 2027","expect":{"event_contains":"Spring Break","term":"Spring 2027","start":"2027-03-08","end":"2027-03-12"}}
+{"kind":"date_match","desc":"Fall 2026 Thanksgiving holiday","q":"Thanksgiving 2026","expect":{"event_contains":"Thanksgiving","term":"Fall 2026","start":"2026-11-25","end":"2026-11-27"}}
+{"kind":"date_match","desc":"Fall 2027 Thanksgiving holiday","q":"Thanksgiving 2027","expect":{"event_contains":"Thanksgiving","term":"Fall 2027","start":"2027-11-24","end":"2027-11-26"}}
+{"kind":"date_match","desc":"Labor Day 2026","q":"Labor Day 2026","expect":{"event_contains":"Labor Day","start":"2026-09-07","end":"2026-09-07"}}
+{"kind":"date_match","desc":"Labor Day 2027","q":"Labor Day 2027","expect":{"event_contains":"Labor Day","start":"2027-09-06","end":"2027-09-06"}}
+{"kind":"date_match","desc":"Labor Day 2028 (university_holidays)","q":"Labor Day 2028","expect":{"event_contains":"Labor Day","start":"2028-09-04","end":"2028-09-04"}}
+{"kind":"date_match","desc":"Fall 2026 classes begin","q":"Fall 2026 classes begin","expect":{"event_contains":"Classes begin","term":"Fall 2026","start":"2026-08-19","end":"2026-08-19"}}
+{"kind":"date_match","desc":"Fall 2026 final examinations (Dec 3,4,7,8,9,10 — weekend skipped)","q":"Fall 2026 final examinations","expect":{"event_contains":"Final examinations","term":"Fall 2026","start":"2026-12-03","end":"2026-12-10"}}
+{"kind":"date_match","desc":"Fall 2026 fall break","q":"Fall Break 2026","expect":{"event_contains":"Fall Break","term":"Fall 2026","start":"2026-10-08","end":"2026-10-09"}}
+{"kind":"date_match","desc":"Spring 2026 classes begin","q":"Spring 2026 classes begin","expect":{"event_contains":"Classes begin","term":"Spring 2026","start":"2026-01-14","end":"2026-01-14"}}
+{"kind":"date_match","desc":"Spring 2026 final examinations (May 7,8,11,12,13 — weekend skipped)","q":"Spring 2026 final examinations","expect":{"event_contains":"Final examinations","term":"Spring 2026","start":"2026-05-07","end":"2026-05-13"}}
+{"kind":"date_match","desc":"Summer 2026 graduation (no commencement ceremony)","q":"Summer 2026 graduation","expect":{"event_contains":"Graduation","start":"2026-08-12","end":"2026-08-12"}}

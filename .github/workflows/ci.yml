@@ -47,6 +47,33 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: regression eval (deterministic suites — no API key required)
+        # Defends the structural advantage of the curated corpus over generic
+        # web-summary answers. Each suite asserts on exact values (ISO dates,
+        # dollar amounts, room numbers, AOP numbers, prereq min-grades) that
+        # page-summarizing LLMs are empirically known to drop. If a corpus
+        # rebuild silently regresses a load-bearing footnote, this gate fires.
+        #
+        # SCOPE (CI-gated): courses, emergency, tuition, dining, adversarial
+        # — all deterministic against the baked corpus snapshots.
+        #
+        # NOT gated here (run manually before release):
+        # - 'online' — current baseline 39/45 (below the 90% threshold);
+        #   fix precision misses first, then add.
+        # - 'dates' — find_msu_date live-scrapes MSU registrar/SFA/grad-school
+        #   pages. CI runner IPs frequently get HTTP 403 from those hosts,
+        #   making this flaky in CI. Run via
+        #   `cd msstate-policies && npm run eval -- --suite dates`.
+        # - 'policies' — needs ANTHROPIC_API_KEY (LLM judge stage); also
+        #   live-scrapes policies.msstate.edu.
+        # - 'eval:synonyms' — manual recall check, separate harness.
+        run: |
+          for suite in courses emergency tuition dining adversarial; do
+            echo "::group::eval $suite"
+            npm run eval -- --suite $suite
+            echo "::endgroup::"
+          done
+
       - name: tools/list smoke test (must list exactly 25 tools — 4 policy + 2 calendar + 3 course + 4 emergency + 4 tuition + 5 online + 2 dining + 1 health)
         run: |
           PAYLOAD='{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'

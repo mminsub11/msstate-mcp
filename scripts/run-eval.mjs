@@ -641,6 +641,229 @@ if (suite === "dining") {
   process.exit(pass >= threshold ? 0 : 1);
 }
 
+// ---- dates suite (deterministic — no LLM judge) --------------------------
+// Asserts that find_msu_date returns rows with the exact ISO start/end the
+// upstream calendar publishes. The synonyms eval at evals/calendar-synonyms-eval.ts
+// covers recall ("did we retrieve the right event?"); this suite covers
+// correctness ("did the date returned match?"). Re-seed expected values from
+// the live corpus after any calendar rebuild — do not trust memory.
+if (suite === "dates") {
+  const { spawn: spawnDates } = await import("node:child_process");
+  const datesPath = resolve(evalDir, "dates.jsonl");
+  if (!existsSync(datesPath)) {
+    console.error(`run-eval: ${datesPath} not found`);
+    process.exit(1);
+  }
+  const rows = readFileSync(datesPath, "utf8")
+    .split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("//")).map((l) => JSON.parse(l));
+
+  class DatesMcp {
+    constructor() {
+      this.proc = spawnDates("node", [distPath], { stdio: ["pipe", "pipe", "inherit"] });
+      this.buf = ""; this.pending = new Map(); this.nextId = 1;
+      this.proc.stdout.on("data", (chunk) => {
+        this.buf += chunk.toString();
+        let nl;
+        while ((nl = this.buf.indexOf("\n")) >= 0) {
+          const line = this.buf.slice(0, nl);
+          this.buf = this.buf.slice(nl + 1);
+          if (!line.trim()) continue;
+          try {
+            const msg = JSON.parse(line);
+            if (msg.id && this.pending.has(msg.id)) {
+              const { r, j } = this.pending.get(msg.id);
+              this.pending.delete(msg.id);
+              if (msg.error) j(new Error(msg.error.message ?? "MCP error"));
+              else r(msg.result);
+            }
+          } catch { /* ignore */ }
+        }
+      });
+    }
+    call(method, params) {
+      const id = this.nextId++;
+      return new Promise((r, j) => {
+        this.pending.set(id, { r, j });
+        this.proc.stdin.write(JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n");
+      });
+    }
+    async init() {
+      await this.call("initialize", { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "run-eval-dates", version: "0.1.0" } });
+    }
+    callTool(name, args) { return this.call("tools/call", { name, arguments: args }); }
+    close() { this.proc.kill(); }
+  }
+
+  const mcp = new DatesMcp();
+  await mcp.init();
+  // Warm-up: discard the first response so subsequent assertions see the
+  // fully-loaded calendar corpus. Without this, cold CI runners can race
+  // the background calendar scrape.
+  try { await mcp.callTool("find_msu_date", { q: "warmup" }); } catch { /* ignore */ }
+  let pass = 0;
+  const failures = [];
+  for (const q of rows) {
+    let res;
+    try {
+      res = await mcp.callTool("find_msu_date", { q: q.q });
+    } catch (err) {
+      failures.push({ q, got: `error: ${err.message}` });
+      continue;
+    }
+    const text = res?.content?.[0]?.text ?? "";
+    let parsed; try { parsed = JSON.parse(text); } catch { parsed = null; }
+    let ok = false;
+    if (q.kind === "date_match") {
+      const e = q.expect ?? {};
+      const matches = parsed?.matches ?? [];
+      ok = matches.some((r) =>
+        (e.term === undefined || r.term === e.term) &&
+        (e.event_contains === undefined || (r.event ?? "").includes(e.event_contains)) &&
+        (e.start === undefined || r.start === e.start) &&
+        (e.end === undefined || r.end === e.end));
+    }
+    if (ok) pass++;
+    else failures.push({ q, got: (parsed?.matches ?? []).slice(0, 3).map((r) => ({ event: r.event, term: r.term, start: r.start, end: r.end })) });
+  }
+  mcp.close();
+  console.log(`dates eval: ${pass}/${rows.length} passed`);
+  for (const f of failures.slice(0, 20)) console.error("FAIL", JSON.stringify(f.q.desc ?? f.q.q), "got", JSON.stringify(f.got).slice(0, 400));
+  const threshold = Math.ceil(rows.length * 0.9);
+  process.exit(pass >= threshold ? 0 : 1);
+}
+
+// ---- adversarial suite (deterministic — no LLM judge) --------------------
+// Cross-cutting moat-defense fixtures. Each case exercises a specific
+// footnote / line item / structured field that page-summarizing LLMs are
+// known to drop. Threshold is 100%: one regression should fail the suite.
+if (suite === "adversarial") {
+  const { spawn: spawnAdv } = await import("node:child_process");
+  const advPath = resolve(evalDir, "adversarial.jsonl");
+  if (!existsSync(advPath)) {
+    console.error(`run-eval: ${advPath} not found`);
+    process.exit(1);
+  }
+  const rows = readFileSync(advPath, "utf8")
+    .split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("//")).map((l) => JSON.parse(l));
+
+  class AdvMcp {
+    constructor() {
+      this.proc = spawnAdv("node", [distPath], { stdio: ["pipe", "pipe", "inherit"] });
+      this.buf = ""; this.pending = new Map(); this.nextId = 1;
+      this.proc.stdout.on("data", (chunk) => {
+        this.buf += chunk.toString();
+        let nl;
+        while ((nl = this.buf.indexOf("\n")) >= 0) {
+          const line = this.buf.slice(0, nl);
+          this.buf = this.buf.slice(nl + 1);
+          if (!line.trim()) continue;
+          try {
+            const msg = JSON.parse(line);
+            if (msg.id && this.pending.has(msg.id)) {
+              const { r, j } = this.pending.get(msg.id);
+              this.pending.delete(msg.id);
+              if (msg.error) j(new Error(msg.error.message ?? "MCP error"));
+              else r(msg.result);
+            }
+          } catch { /* ignore */ }
+        }
+      });
+    }
+    call(method, params) {
+      const id = this.nextId++;
+      return new Promise((r, j) => {
+        this.pending.set(id, { r, j });
+        this.proc.stdin.write(JSON.stringify({ jsonrpc: "2.0", id, method, params }) + "\n");
+      });
+    }
+    async init() {
+      await this.call("initialize", { protocolVersion: "2024-11-05", capabilities: {}, clientInfo: { name: "run-eval-adversarial", version: "0.1.0" } });
+    }
+    callTool(name, args) { return this.call("tools/call", { name, arguments: args }); }
+    close() { this.proc.kill(); }
+  }
+
+  function getPath(obj, path) {
+    let v = obj;
+    for (const k of path ?? []) {
+      if (v == null) return undefined;
+      v = v[k];
+    }
+    return v;
+  }
+
+  const mcp = new AdvMcp();
+  await mcp.init();
+  // Warm-up: force the calendar background scrape to complete before any
+  // assertion fires. The bundle starts corpora warm on stdio startup but
+  // serves partial responses until each adapter finishes. Without this,
+  // find_msu_date can race the calendar warm on cold CI runners.
+  try { await mcp.callTool("find_msu_date", { q: "warmup" }); } catch { /* ignore */ }
+  let pass = 0;
+  const failures = [];
+  for (const q of rows) {
+    let res;
+    try {
+      res = await mcp.callTool(q.tool, q.args ?? {});
+    } catch (err) {
+      failures.push({ q, got: `error: ${err.message}` });
+      continue;
+    }
+    const text = res?.content?.[0]?.text ?? "";
+    let parsed; try { parsed = JSON.parse(text); } catch { parsed = null; }
+    let ok = false;
+
+    if (q.kind === "raw_section_contains") {
+      const section = parsed?.matched?.raw_sections?.[q.section];
+      ok = typeof section === "string" && section.includes(q.substring);
+    } else if (q.kind === "field_contains") {
+      const v = getPath(parsed, q.path);
+      ok = typeof v === "string" && v.includes(q.substring);
+    } else if (q.kind === "field_contains_all") {
+      const v = getPath(parsed, q.path);
+      ok = typeof v === "string" && q.substrings.every((s) => v.includes(s));
+    } else if (q.kind === "field_equals") {
+      ok = getPath(parsed, q.path) === q.value;
+    } else if (q.kind === "field_approx") {
+      const v = getPath(parsed, q.path);
+      ok = typeof v === "number" && Math.abs(v - q.value) <= (q.tolerance ?? 0.5);
+    } else if (q.kind === "tuition_line_item") {
+      const items = parsed?.matches?.[0]?.line_items;
+      ok = Array.isArray(items) && items.some((li) => li.label === q.label && Math.abs((li.amount_usd ?? Number.NaN) - q.amount_usd) < 0.5);
+    } else if (q.kind === "graph_edge") {
+      const edges = parsed?.edges;
+      ok = Array.isArray(edges) && edges.some((e) => e.from === q.from && e.to === q.to && (q.min_grade === undefined || e.min_grade === q.min_grade));
+    } else if (q.kind === "graph_node_present") {
+      const nodes = parsed?.nodes;
+      ok = Array.isArray(nodes) && nodes.some((n) => n.code === q.code);
+    } else if (q.kind === "policy_in_results") {
+      const results = parsed?.results;
+      ok = Array.isArray(results) && results.some((p) => p.number === q.op_number);
+    } else if (q.kind === "date_row_present") {
+      const matches = parsed?.matches;
+      ok = Array.isArray(matches) && matches.some((r) =>
+        (q.term === undefined || r.term === q.term) &&
+        (q.event_contains === undefined || (r.event ?? "").includes(q.event_contains)) &&
+        (q.start === undefined || r.start === q.start) &&
+        (q.end === undefined || r.end === q.end));
+    } else if (q.kind === "deadline_term_text") {
+      const dls = parsed?.matched?.application_deadlines;
+      ok = Array.isArray(dls) && dls.some((d) => d.term === q.term && (d.date_text ?? "").includes(q.text_contains));
+    } else {
+      failures.push({ q, got: `unknown kind: ${q.kind}` });
+      continue;
+    }
+
+    if (ok) pass++;
+    else failures.push({ q, got: parsed ? JSON.stringify(parsed).slice(0, 400) : text.slice(0, 200) });
+  }
+  mcp.close();
+  console.log(`adversarial eval: ${pass}/${rows.length} passed`);
+  for (const f of failures.slice(0, 20)) console.error("FAIL", JSON.stringify(f.q.desc ?? f.q.kind), "got", JSON.stringify(f.got).slice(0, 400));
+  // Moat defense — every case must pass.
+  process.exit(pass === rows.length ? 0 : 1);
+}
+
 const allQuestions = readFileSync(questionsPath, "utf8")
   .split("\n")
   .map((l) => l.trim())
