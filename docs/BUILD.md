@@ -62,7 +62,9 @@ msstate-mcp/                              # repo root = Claude Code marketplace
     │   ├── emergency.jsonl               # emergency module eval (v0.7.0+)
     │   ├── tuition.jsonl                 # tuition module eval (v0.8.0+)
     │   ├── online.jsonl                  # online module eval (v1.0.0+)
-    │   └── dining.jsonl                  # dining module eval (v1.1.0+)
+    │   ├── dining.jsonl                  # dining module eval (v1.1.0+)
+    │   ├── dates.jsonl                   # ISO-date assertions for calendars (v1.2.1, manual)
+    │   └── adversarial.jsonl             # cross-cutting moat-regression suite (v1.2.1, CI-gated)
     ├── tests/                            # tsx --test tests/*.test.ts
     │   ├── fixtures/calendars/           # captured HTML + 1 PDF for parser tests
     │   └── parsers-*.test.ts             # per-shape parser tests
@@ -496,6 +498,8 @@ The Sprint 2 DoD targets ≥ 99% retrieval / 0 observed answer errors / 100% ref
 
 - `questions.jsonl` — the 50 policy questions (canonical, re-runnable).
 - Per-module JSONL suites: `emergency.jsonl`, `tuition.jsonl`, `online.jsonl`, `dining.jsonl` (each added with its module release).
+- `dates.jsonl` (v1.2.1, 2026-05-18) — 13 ISO-date assertions across spring break / Thanksgiving / Labor Day / finals / classes-begin / graduation. Asserts on the exact `start`/`end` returned by `find_msu_date`; complements the synonyms eval at `evals/calendar-synonyms-eval.ts` (which covers recall). **Manual-only** — `find_msu_date` live-scrapes registrar/SFA/grad-school pages from stdio and CI runner IPs hit HTTP 403 too often for a stable gate.
+- `adversarial.jsonl` (v1.2.1, 2026-05-18) — 13 cross-cutting moat-defense cases targeting footnotes, line items, structured fields, and graph edges that page-summarizing LLMs (ChatGPT without this MCP) are empirically known to drop: the BSEE "Not available online" asterisk, Mitchell Library refuge room numbers, DVM `per_semester_flat` rate basis + `$11,370` Non-Resident Surcharge line item, CSE 1284→2813 edge with `min_grade=C`, tuition disclaimer presence. Threshold is **100%** (not 90%) — every case here defends a specific structural advantage; one regression means the gap narrowed. CI-gated. Live-scrape cases (`chain_find_relevant_policies`, `find_msu_date`) intentionally excluded — those live in the policies + dates suites.
 - Run a suite via `node scripts/run-eval.mjs --suite=<module>`.
 
 Historic point-in-time snapshots (Sprint 1 PDF-parse audit, May 8 BM25/hybrid/embed comparison, F2 v2 regression) have been removed from the tree — re-derive any of them by re-running the runner.

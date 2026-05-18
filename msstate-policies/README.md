@@ -2,7 +2,7 @@
 
 MCP server exposing seven Mississippi State University content domains: Operating Policies (<https://www.policies.msstate.edu/current>), six academic-date sources (registrar academic + exam calendars, university holidays, graduate school PDFs, financial aid, housing), the course catalog with prereq DAG, emergency guidance, tuition & fees, online programs, and dining venues with per-day hours. **Unofficial — not affiliated with MSU. Always verify against the official source.**
 
-Current version: **v1.1.1** (2026-05-16). Adds the dining module (2 tools, daily-refreshed corpus, status_now in America/Chicago). v1.0.0 added the online module (4 tools). Calendar retrieval uses BM25 over a 4-field weighted index where the `synonyms` field is populated at **build time** by Anthropic Claude Haiku — runtime stays pure BM25 with **zero third-party API calls**.
+Current version: **v1.2.0** (2026-05-18). Adds anonymous-aggregate Worker telemetry (Cloudflare Analytics Engine; k-anonymity enforced at query time). v1.1.1 fixed the fuzzy program resolver and added `list_programs_by_staff`. v1.1.0 added the dining module (2 tools, daily-refreshed corpus, status_now in America/Chicago). v1.0.0 added the online module (4 tools). Calendar retrieval uses BM25 over a 4-field weighted index where the `synonyms` field is populated at **build time** by Anthropic Claude Haiku — runtime stays pure BM25 with **zero third-party API calls**.
 
 This is the publishable npm package and the Claude Code plugin source. See the [repository root README](../README.md) for the user-facing walkthrough, install paths, and what to expect from a response.
 
@@ -59,8 +59,10 @@ npm run typecheck     # tsc --noEmit
 npm test              # tsx --test tests/*.test.ts
 npm run audit:pdfs    # download + parse all current PDFs (live; writes eval/audit-*.csv)
 npm run embeddings    # build dist/embeddings.json for POLICY search (needs OPENAI_API_KEY)
-npm run eval          # run the policy eval harness against the live MCP
+npm run eval          # run the policy eval harness against the live MCP (--suite=<name> to target a specific module suite)
 npm run eval:synonyms # v0.5.0 calendar synonyms eval — pure BM25, zero API cost
+                      # Deterministic suites (CI-gated): courses, emergency, tuition, dining, adversarial
+                      # Manual suites (live-scrape MSU): dates, policies (--suite=policies needs ANTHROPIC_API_KEY)
 npm run bundle        # build the Claude Project starter zip (released as dist-bundle/)
 ```
 

@@ -427,17 +427,21 @@ Self-hosters rebuilding the corpus additionally need `ANTHROPIC_API_KEY` for the
 | Tuition | 32 questions (rate lookup / not-found routing / fees / FAQ / adversarial) | 32 / 32 |
 | Online | 30 questions (program lookup / list / admissions / info / adversarial) | 30 / 30 (2026-05-13 build) |
 | Dining | 15 questions (slug / name_query / list / open-status / adversarial) | 15 / 15 (2026-05-14 build) |
+| Dates (manual) | 13 ISO-date assertions across spring break / Thanksgiving / Labor Day / finals / classes-begin / graduation | 13 / 13 (2026-05-18 build) |
+| Adversarial (CI-gated) | 13 moat-defense cases across online / emergency / tuition / courses — asserts on footnotes, line items, refuge rooms, prereq min-grades that page-summarizing LLMs drop | 13 / 13 (2026-05-18 build) |
 
 Run locally:
 
 ```bash
-cd msstate-policies && npm run eval                          # policies
+cd msstate-policies && npm run eval                          # policies (needs ANTHROPIC_API_KEY)
 npm run eval:synonyms                                         # calendar synonyms
 node ../scripts/run-eval.mjs --suite=courses                  # courses
 node ../scripts/run-eval.mjs --suite=emergency                # emergency
 node ../scripts/run-eval.mjs --suite=tuition                  # tuition
 node ../scripts/run-eval.mjs --suite=online                   # online
 node ../scripts/run-eval.mjs --suite=dining                   # dining
+node ../scripts/run-eval.mjs --suite=dates                    # dates (manual — live-scrapes calendars)
+node ../scripts/run-eval.mjs --suite=adversarial              # adversarial moat defense (CI-gated)
 ```
 
 Full eval artifacts in [`msstate-policies/eval/`](msstate-policies/eval/).
